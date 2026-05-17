@@ -67,10 +67,95 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            DashboardContent(
-                activities = uiState.activities,
-                onToggleHabit = { viewModel.toggleHabitCompletion(it) }
-            )
+            when (selectedItem) {
+                0 -> {
+                    DashboardContent(
+                        activities = uiState.activities,
+                        onToggleHabit = { viewModel.toggleHabitCompletion(it) }
+                    )
+                }
+                1 -> {
+                    PetScreenContent()
+                }
+                else -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Screen Coming Soon",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PetScreenContent() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "MY PET",
+            style = MaterialTheme.typography.displayLarge,
+            fontSize = 24.sp,
+            color = Color.Black
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        PetHeroContainer()
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Text(
+            text = "Stats & Customization coming soon!",
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.Gray
+        )
+    }
+}
+
+@Composable
+fun PetHeroContainer() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .background(Color(0xFFD1D5DB), RoundedCornerShape(24.dp))
+            .border(4.dp, DarkBackground, RoundedCornerShape(24.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        // Placeholder for Pixel Art Pet
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("(◕‿◕)", fontSize = 60.sp, color = DarkBackground)
+        }
+
+        // Badge
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .background(DarkBackground, RoundedCornerShape(8.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.EmojiEvents,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(12.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("1", color = Color.White, fontSize = 12.sp)
+            }
         }
     }
 }
@@ -151,41 +236,8 @@ fun DashboardContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // PET SCREEN
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp)
-                .background(Color(0xFFD1D5DB), RoundedCornerShape(24.dp))
-                .border(4.dp, DarkBackground, RoundedCornerShape(24.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            // Placeholder for Pixel Art Pet
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("(◕‿◕)", fontSize = 60.sp, color = DarkBackground)
-                // In a real app, this would be a pixel art Image
-            }
-
-            // Badge
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-                    .background(DarkBackground, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.EmojiEvents,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("1", color = Color.White, fontSize = 12.sp)
-                }
-            }
-        }
+        // BUDDY WINDOW
+        PetHeroContainer()
 
         Spacer(modifier = Modifier.height(24.dp))
 
