@@ -18,12 +18,15 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NudgieDashboard() {
+fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedItem by remember { mutableIntStateOf(0) }
     val items = listOf("Home", "Pet", "Learn", "Stats", "Settings")
     val icons = listOf(
@@ -64,211 +67,216 @@ fun NudgieDashboard() {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
-            ) {
-                // HEADER
-                Text(
-                    text = "BUDDY",
-                    style = MaterialTheme.typography.displayLarge,
-                    fontSize = 24.sp,
-                    color = Color.Black
-                )
-                Text(
-                    text = "Level 5 • Baby Stage",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.Gray,
-                    fontSize = 14.sp
-                )
+            DashboardContent(
+                activities = uiState.activities,
+                onToggleHabit = { viewModel.toggleHabitCompletion(it) }
+            )
+        }
+    }
+}
 
-                Spacer(modifier = Modifier.height(16.dp))
+@Composable
+fun DashboardContent(
+    activities: List<ActivityItem>,
+    onToggleHabit: (ActivityItem) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        // HEADER
+        Text(
+            text = "BUDDY",
+            style = MaterialTheme.typography.displayLarge,
+            fontSize = 24.sp,
+            color = Color.Black
+        )
+        Text(
+            text = "Level 5 • Baby Stage",
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.Gray,
+            fontSize = 14.sp
+        )
 
-                // TOP HAPPINESS BAR
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = DarkBackground),
-                    shape = RoundedCornerShape(12.dp),
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // TOP HAPPINESS BAR
+        Card(
+            colors = CardDefaults.cardColors(containerColor = DarkBackground),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    Icons.Filled.Favorite,
-                                    contentDescription = null,
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    "HAPPINESS",
-                                    color = Color.Gray,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Text(
-                                "85%",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        LinearProgressIndicator(
-                            progress = { 0.85f },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(12.dp)
-                                .clip(CircleShape),
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.Favorite,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "HAPPINESS",
                             color = Color.Gray,
-                            trackColor = Color(0xFF374151)
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
+                    Text(
+                        "85%",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // PET SCREEN
-                Box(
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = { 0.85f },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(220.dp)
-                        .background(Color(0xFFD1D5DB), RoundedCornerShape(24.dp))
-                        .border(4.dp, DarkBackground, RoundedCornerShape(24.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Placeholder for Pixel Art Pet
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("(◕‿◕)", fontSize = 60.sp, color = DarkBackground)
-                        // In a real app, this would be a pixel art Image
-                    }
-
-                    // Badge
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(16.dp)
-                            .background(DarkBackground, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Filled.EmojiEvents,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("1", color = Color.White, fontSize = 12.sp)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // DASHBOARD SECTION
-                Text(
-                    text = "DASHBOARD",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.Black
+                        .height(12.dp)
+                        .clip(CircleShape),
+                    color = Color.Gray,
+                    trackColor = Color(0xFF374151)
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // STATS GRID
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        NewStatCard(
-                            label = "HAPPINESS",
-                            value = "85%",
-                            icon = Icons.Filled.Favorite,
-                            iconColor = Color.Red,
-                            bgColor = CardRedBg,
-                            borderColor = HeartRed,
-                            modifier = Modifier.weight(1f)
-                        )
-                        NewStatCard(
-                            label = "ENERGY",
-                            value = "62%",
-                            icon = Icons.Filled.FlashOn,
-                            iconColor = Color(0xFFFFC107),
-                            bgColor = CardYellowBg,
-                            borderColor = ElectricYellow,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        NewStatCard(
-                            label = "LEVEL",
-                            value = "5",
-                            icon = Icons.Filled.Star,
-                            iconColor = Color.Blue,
-                            bgColor = CardBlueBg,
-                            borderColor = LevelUpBlue,
-                            modifier = Modifier.weight(1f)
-                        )
-                        NewStatCard(
-                            label = "AGE",
-                            value = "5 Days",
-                            icon = Icons.Filled.CalendarToday,
-                            iconColor = Color.Green,
-                            bgColor = CardGreenBg,
-                            borderColor = SuccessGreen,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // TODAY'S ACTIVITY
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.Schedule,
-                        contentDescription = null,
-                        tint = Color.Black,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "TODAY'S ACTIVITY",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Placeholder Data for UI Verification
-                val placeholderActivities = listOf(
-                    ActivityItem(1, "🍖", "Fed Buddy", "08:30", true),
-                    ActivityItem(2, "⚽", "Played with ball", "10:15", true),
-                    ActivityItem(3, "🎯", "Training session", "12:00", false),
-                    ActivityItem(4, "🌳", "Walk outside", "15:00", false),
-                    ActivityItem(5, "🍽️", "Evening meal", "18:00", false)
-                )
-                
-                DailyActivityLog(placeholderActivities)
-                
-                Spacer(modifier = Modifier.height(80.dp)) // Extra space for scroll
             }
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // PET SCREEN
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+                .background(Color(0xFFD1D5DB), RoundedCornerShape(24.dp))
+                .border(4.dp, DarkBackground, RoundedCornerShape(24.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            // Placeholder for Pixel Art Pet
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("(◕‿◕)", fontSize = 60.sp, color = DarkBackground)
+                // In a real app, this would be a pixel art Image
+            }
+
+            // Badge
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .background(DarkBackground, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.EmojiEvents,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("1", color = Color.White, fontSize = 12.sp)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // DASHBOARD SECTION
+        Text(
+            text = "DASHBOARD",
+            style = MaterialTheme.typography.labelMedium,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color.Black
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // STATS GRID
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NewStatCard(
+                    label = "HAPPINESS",
+                    value = "85%",
+                    icon = Icons.Filled.Favorite,
+                    iconColor = Color.Red,
+                    bgColor = CardRedBg,
+                    borderColor = HeartRed,
+                    modifier = Modifier.weight(1f)
+                )
+                NewStatCard(
+                    label = "ENERGY",
+                    value = "62%",
+                    icon = Icons.Filled.FlashOn,
+                    iconColor = Color(0xFFFFC107),
+                    bgColor = CardYellowBg,
+                    borderColor = ElectricYellow,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NewStatCard(
+                    label = "LEVEL",
+                    value = "5",
+                    icon = Icons.Filled.Star,
+                    iconColor = Color.Blue,
+                    bgColor = CardBlueBg,
+                    borderColor = LevelUpBlue,
+                    modifier = Modifier.weight(1f)
+                )
+                NewStatCard(
+                    label = "AGE",
+                    value = "5 Days",
+                    icon = Icons.Filled.CalendarToday,
+                    iconColor = Color.Green,
+                    bgColor = CardGreenBg,
+                    borderColor = SuccessGreen,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // TODAY'S ACTIVITY
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Filled.Schedule,
+                contentDescription = null,
+                tint = Color.Black,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "TODAY'S ACTIVITY",
+                style = MaterialTheme.typography.labelMedium,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        DailyActivityLog(activities, onToggleHabit)
+
+        Spacer(modifier = Modifier.height(80.dp)) // Extra space for scroll
     }
 }
 
 // Main log container
 @Composable
-fun DailyActivityLog(activities: List<ActivityItem>) {
+fun DailyActivityLog(
+    activities: List<ActivityItem>,
+    onToggleHabit: (ActivityItem) -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -276,7 +284,7 @@ fun DailyActivityLog(activities: List<ActivityItem>) {
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             activities.forEachIndexed { index, activity ->
-                ActivityLogItem(activity)
+                ActivityLogItem(activity, onToggleHabit)
                 if (index < activities.size - 1) {
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -287,12 +295,17 @@ fun DailyActivityLog(activities: List<ActivityItem>) {
 
 // Individual log item
 @Composable
-fun ActivityLogItem(activity: ActivityItem) {
+fun ActivityLogItem(
+    activity: ActivityItem,
+    onToggleHabit: (ActivityItem) -> Unit
+) {
     val itemBgColor = if (activity.isCompleted) Color(0xFF1F2937).copy(alpha = 0.4f) else Color(0xFF374151)
     val contentAlpha = if (activity.isCompleted) 0.5f else 1.0f
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggleHabit(activity) },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = itemBgColor)
     ) {
@@ -302,7 +315,7 @@ fun ActivityLogItem(activity: ActivityItem) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Status Icon Box
+            // Status Icon Box (Acts as Checkbox)
             Box(
                 modifier = Modifier
                     .size(28.dp)
@@ -346,8 +359,18 @@ fun ActivityLogItem(activity: ActivityItem) {
 @Preview(showBackground = true)
 @Composable
 fun FIGMA_DASHBOARD_PREVIEW() {
+    val mockActivities = listOf(
+        ActivityItem(1, "🍖", "Fed Buddy", "08:30", true),
+        ActivityItem(2, "⚽", "Played with ball", "10:15", true),
+        ActivityItem(3, "🎯", "Training session", "12:00", false),
+        ActivityItem(4, "🌳", "Walk outside", "15:00", false),
+        ActivityItem(5, "🍽️", "Evening meal", "18:00", false)
+    )
     NudgieTheme {
-        NudgieDashboard()
+        DashboardContent(
+            activities = mockActivities,
+            onToggleHabit = {}
+        )
     }
 }
 
