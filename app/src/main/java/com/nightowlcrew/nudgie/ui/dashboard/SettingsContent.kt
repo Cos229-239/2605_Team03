@@ -2,9 +2,12 @@ package com.nightowlcrew.nudgie.ui.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -102,6 +105,8 @@ fun HabitCreatorSection(
     var isExpanded by remember { mutableStateOf(false) }
     var title by remember { mutableStateOf("") }
     var selectedCategory by rememberSaveable { mutableStateOf(CozyCategory.BODY_VITALITY) }
+    var selectedEmoji by rememberSaveable { mutableStateOf("💧") }
+    val emojis = listOf("💧", "💊", "🧘", "🪥", "☕", "🏃", "📚", "🧹")
     var isDropdownExpanded by remember { mutableStateOf(false) }
 
     Card(
@@ -167,6 +172,34 @@ fun HabitCreatorSection(
                         }
                     }
 
+                    Text(
+                        text = "Pick an Emoji",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 4.dp)
+                    ) {
+                        items(emojis) { emoji ->
+                            val isSelected = selectedEmoji == emoji
+                            Surface(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clickable { selectedEmoji = emoji },
+                                shape = MaterialTheme.shapes.medium,
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(text = emoji, style = MaterialTheme.typography.titleLarge)
+                                }
+                            }
+                        }
+                    }
+
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
@@ -178,7 +211,7 @@ fun HabitCreatorSection(
                     Button(
                         onClick = {
                             if (title.isNotBlank()) {
-                                onAddHabit(title, selectedCategory)
+                                onAddHabit("$selectedEmoji $title", selectedCategory)
                                 title = ""
                                 isExpanded = false
                             }
