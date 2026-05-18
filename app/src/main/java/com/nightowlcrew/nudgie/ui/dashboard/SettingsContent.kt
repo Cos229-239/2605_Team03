@@ -81,12 +81,12 @@ fun SettingsContent(
         )
 
         Text(
-            text = "Active Inventory",
+            text = "Active Habits",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold
         )
 
-        CategorizedInventoryList(
+        CategorizedHabitList(
             activities = activities,
             onToggleHabit = onToggleHabit,
             modifier = Modifier.weight(1f)
@@ -195,7 +195,7 @@ fun HabitCreatorSection(
 }
 
 @Composable
-fun CategorizedInventoryList(
+fun CategorizedHabitList(
     activities: List<ActivityItem>,
     onToggleHabit: (ActivityItem) -> Unit,
     modifier: Modifier = Modifier
