@@ -6,7 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,11 +35,10 @@ fun SettingsScreen(
     SettingsContent(
         activities = uiState.activities,
         onAddHabit = { title, category -> 
-            // Mapping category displayName to icon string for now as repository 
-            // expects an icon string.
             viewModel.addNewHabit(title, category.name, 1) 
         },
-        onDeleteHabit = { id -> viewModel.deleteHabit(id) }
+        onDeleteHabit = { id -> viewModel.deleteHabit(id) },
+        onToggleHabit = { item -> viewModel.toggleHabitCompletion(item) }
     )
 }
 
@@ -59,6 +58,7 @@ fun SettingsContent(
     activities: List<ActivityItem>,
     onAddHabit: (String, CozyCategory) -> Unit,
     onDeleteHabit: (Int) -> Unit,
+    onToggleHabit: (ActivityItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var screenTimeGoal by rememberSaveable { mutableFloatStateOf(2f) }
@@ -90,7 +90,7 @@ fun SettingsContent(
 
         CategorizedInventoryList(
             activities = activities,
-            onDeleteHabit = onDeleteHabit,
+            onToggleHabit = onToggleHabit,
             modifier = Modifier.weight(1f)
         )
     }
@@ -101,8 +101,10 @@ fun SettingsContent(
 fun HabitCreatorSection(
     onAddHabit: (String, CozyCategory) -> Unit
 ) {
+    var isExpanded by remember { mutableStateOf(false) }
     var title by remember { mutableStateOf("") }
     var selectedCategory by rememberSaveable { mutableStateOf(CozyCategory.BODY_VITALITY) }
+    var isDropdownExpanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -112,56 +114,83 @@ fun HabitCreatorSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Create New Habit",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Habit Title") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Text(
-                text = "Select Category",
-                style = MaterialTheme.typography.labelMedium
-            )
-
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = !isExpanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                SecondaryScrollableTabRow(
-                    selectedTabIndex = selectedCategory.ordinal,
-                    edgePadding = 0.dp,
-                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    divider = {}
-                ) {
-                    CozyCategory.entries.forEach { category ->
-                        FilterChip(
-                            selected = selectedCategory == category,
-                            onClick = { selectedCategory = category },
-                            label = { Text(category.displayName) },
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        )
-                    }
-                }
+                Text(
+                    text = "Add New Habit",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    modifier = Modifier.rotate(if (isExpanded) 45f else 0f)
+                )
             }
 
-            Button(
-                onClick = {
-                    if (title.isNotBlank()) {
-                        onAddHabit(title, selectedCategory)
-                        title = ""
+            AnimatedVisibility(visible = isExpanded) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ExposedDropdownMenuBox(
+                        expanded = isDropdownExpanded,
+                        onExpandedChange = { isDropdownExpanded = !isDropdownExpanded },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = selectedCategory.displayName,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Category") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = isDropdownExpanded,
+                            onDismissRequest = { isDropdownExpanded = false }
+                        ) {
+                            CozyCategory.entries.forEach { category ->
+                                DropdownMenuItem(
+                                    text = { Text(category.displayName) },
+                                    onClick = {
+                                        selectedCategory = category
+                                        isDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
                     }
-                },
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Text("Add Habit")
+
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Habit Title") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Button(
+                        onClick = {
+                            if (title.isNotBlank()) {
+                                onAddHabit(title, selectedCategory)
+                                title = ""
+                                isExpanded = false
+                            }
+                        },
+                        enabled = title.isNotBlank(),
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Save Habit")
+                    }
+                }
             }
         }
     }
@@ -170,7 +199,7 @@ fun HabitCreatorSection(
 @Composable
 fun CategorizedInventoryList(
     activities: List<ActivityItem>,
-    onDeleteHabit: (Int) -> Unit,
+    onToggleHabit: (ActivityItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -186,7 +215,7 @@ fun CategorizedInventoryList(
                 ExpandableCategorySection(
                     categoryTitle = category.displayName,
                     habits = filteredActivities,
-                    onDeleteHabit = onDeleteHabit
+                    onToggleHabit = onToggleHabit
                 )
             }
         }
@@ -197,7 +226,7 @@ fun CategorizedInventoryList(
 private fun ExpandableCategorySection(
     categoryTitle: String,
     habits: List<ActivityItem>,
-    onDeleteHabit: (Int) -> Unit
+    onToggleHabit: (ActivityItem) -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val rotationState by animateFloatAsState(
@@ -254,7 +283,7 @@ private fun ExpandableCategorySection(
                     habits.forEach { item ->
                         ActivityRow(
                             item = item,
-                            onDelete = { onDeleteHabit(item.id) }
+                            onToggle = { onToggleHabit(item) }
                         )
                     }
                 }
@@ -266,7 +295,7 @@ private fun ExpandableCategorySection(
 @Composable
 fun ActivityRow(
     item: ActivityItem,
-    onDelete: () -> Unit
+    onToggle: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -285,13 +314,10 @@ fun ActivityRow(
                 text = item.description,
                 style = MaterialTheme.typography.bodyLarge
             )
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete Habit",
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
+            Switch(
+                checked = item.isCompleted,
+                onCheckedChange = { onToggle() }
+            )
         }
     }
 }
@@ -351,7 +377,6 @@ fun SettingsContentPreview() {
         ActivityItem(2, CozyCategory.BODY_VITALITY.name, "Drink Water", "10:00", true),
         ActivityItem(3, CozyCategory.MIND_SPACE.name, "Meditation", "07:00", false),
         ActivityItem(4, CozyCategory.DAILY_RHYTHMS.name, "Bedtime Reading", "22:00", false),
-        // Empty categories: SELF_CARE_RITUALS, CONNECTIONS
     )
 
     MaterialTheme {
@@ -359,7 +384,8 @@ fun SettingsContentPreview() {
             SettingsContent(
                 activities = mockActivities,
                 onAddHabit = { _, _ -> },
-                onDeleteHabit = { }
+                onDeleteHabit = { },
+                onToggleHabit = { }
             )
         }
     }
