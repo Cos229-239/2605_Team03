@@ -37,7 +37,6 @@ fun SettingsScreen(
         onAddHabit = { title, category -> 
             viewModel.addNewHabit(title, category.name, 1) 
         },
-        onDeleteHabit = { id -> viewModel.deleteHabit(id) },
         onToggleHabit = { item -> viewModel.toggleHabitCompletion(item) }
     )
 }
@@ -57,7 +56,6 @@ enum class CozyCategory(val displayName: String) {
 fun SettingsContent(
     activities: List<ActivityItem>,
     onAddHabit: (String, CozyCategory) -> Unit,
-    onDeleteHabit: (Int) -> Unit,
     onToggleHabit: (ActivityItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -150,7 +148,7 @@ fun HabitCreatorSection(
                             label = { Text("Category") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
                             modifier = Modifier
-                                .menuAnchor()
+                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                                 .fillMaxWidth()
                         )
                         ExposedDropdownMenu(
@@ -384,7 +382,6 @@ fun SettingsContentPreview() {
             SettingsContent(
                 activities = mockActivities,
                 onAddHabit = { _, _ -> },
-                onDeleteHabit = { },
                 onToggleHabit = { }
             )
         }
