@@ -18,7 +18,30 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.data.ActivityItem
+
+/**
+ * Stateful container for the Settings screen.
+ * Collects state from NudgieViewModel and passes it to the stateless SettingsContent.
+ */
+@Composable
+fun SettingsScreen(
+    viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    SettingsContent(
+        activities = uiState.activities,
+        onAddHabit = { title, category -> 
+            // Mapping category displayName to icon string for now as repository 
+            // expects an icon string.
+            viewModel.addNewHabit(title, category.name, 1) 
+        },
+        onDeleteHabit = { id -> viewModel.deleteHabit(id) }
+    )
+}
 
 /**
  * The 5 cozy life-balance categories.

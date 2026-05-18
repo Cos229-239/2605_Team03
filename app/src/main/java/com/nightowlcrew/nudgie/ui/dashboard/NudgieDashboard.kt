@@ -77,6 +77,9 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
                 1 -> {
                     PetScreenContent()
                 }
+                4 -> {
+                    SettingsScreen(viewModel = viewModel)
+                }
                 else -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
