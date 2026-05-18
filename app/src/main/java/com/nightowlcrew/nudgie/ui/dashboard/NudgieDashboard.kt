@@ -14,8 +14,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
+import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -243,9 +246,108 @@ fun NudgieDashboard() {
                         color = Color.Black
                     )
                 }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Placeholder Data for UI Verification
+                val placeholderActivities = listOf(
+                    ActivityItem(1, "🍖", "Fed Buddy", "08:30", true),
+                    ActivityItem(2, "⚽", "Played with ball", "10:15", true),
+                    ActivityItem(3, "🎯", "Training session", "12:00", false),
+                    ActivityItem(4, "🌳", "Walk outside", "15:00", false),
+                    ActivityItem(5, "🍽️", "Evening meal", "18:00", false)
+                )
+                
+                DailyActivityLog(placeholderActivities)
+                
                 Spacer(modifier = Modifier.height(80.dp)) // Extra space for scroll
             }
         }
+    }
+}
+
+// Main log container
+@Composable
+fun DailyActivityLog(activities: List<ActivityItem>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = DarkBackground)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            activities.forEachIndexed { index, activity ->
+                ActivityLogItem(activity)
+                if (index < activities.size - 1) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        }
+    }
+}
+
+// Individual log item
+@Composable
+fun ActivityLogItem(activity: ActivityItem) {
+    val itemBgColor = if (activity.isCompleted) Color(0xFF1F2937).copy(alpha = 0.4f) else Color(0xFF374151)
+    val contentAlpha = if (activity.isCompleted) 0.5f else 1.0f
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = itemBgColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Status Icon Box
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(Color(0xFF1F2937), RoundedCornerShape(8.dp))
+                    .border(1.dp, Color(0xFF4B5563), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (activity.isCompleted) {
+                    Box(modifier = Modifier.size(10.dp).background(Color.White, CircleShape))
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Emoji/Icon
+            Text(text = activity.icon, fontSize = 20.sp)
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Description
+            Text(
+                text = activity.description,
+                color = Color.White.copy(alpha = contentAlpha),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                textDecoration = if (activity.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                modifier = Modifier.weight(1f)
+            )
+
+            // Time
+            Text(
+                text = activity.time,
+                color = Color.Gray,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun FIGMA_DASHBOARD_PREVIEW() {
+    NudgieTheme {
+        NudgieDashboard()
     }
 }
 
