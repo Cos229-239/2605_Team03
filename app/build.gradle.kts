@@ -50,12 +50,6 @@ android {
                 "build/generated/ksp/debug/java"
             )
         }
-        getByName("release") {
-            java.srcDirs(
-                "build/generated/ksp/release/kotlin",
-                "build/generated/ksp/release/java"
-            )
-        }
     }
 }
 
