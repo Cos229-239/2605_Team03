@@ -38,7 +38,7 @@ fun SettingsContent(
     onDeleteHabit: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var screenUsageHours by remember { mutableStateOf(4f) }
+    var screenTimeGoal by rememberSaveable { mutableFloatStateOf(2f) }
 
     Column(
         modifier = modifier
@@ -47,7 +47,7 @@ fun SettingsContent(
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         Text(
-            text = "Settings",
+            text = "MANAGEMENT CENTERS",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
@@ -55,8 +55,8 @@ fun SettingsContent(
         HabitCreatorSection(onAddHabit = onAddHabit)
 
         DigitalBalanceCard(
-            usageHours = screenUsageHours,
-            onUsageChange = { screenUsageHours = it }
+            usageHours = screenTimeGoal,
+            onUsageChange = { screenTimeGoal = it }
         )
 
         Text(
@@ -79,7 +79,7 @@ fun HabitCreatorSection(
     onAddHabit: (String, CozyCategory) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(CozyCategory.BODY_VITALITY) }
+    var selectedCategory by rememberSaveable { mutableStateOf(CozyCategory.BODY_VITALITY) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -291,11 +291,6 @@ fun DigitalBalanceCard(
                 fontWeight = FontWeight.Bold
             )
             
-            Text(
-                text = "Daily Screen Usage: ${"%.1f".format(usageHours)}${if (usageHours >= 8f) "+" else ""} hours",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
             Slider(
                 value = usageHours,
                 onValueChange = onUsageChange,
@@ -303,6 +298,19 @@ fun DigitalBalanceCard(
                 steps = 15 // 0.5 hour increments
             )
             
+            val goalText = if (usageHours >= 8f) {
+                "Goal: 8+ hours today"
+            } else {
+                "Goal: Less than ${"%.1f".format(usageHours)} hours today"
+            }
+
+            Text(
+                text = goalText,
+                style = MaterialTheme.typography.bodyMedium,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
             Text(
                 text = "Track and log your estimated daily screen usage manually.",
                 style = MaterialTheme.typography.labelSmall,
