@@ -7,7 +7,10 @@ import kotlinx.coroutines.flow.map
  * Concrete implementation of the HabitRepository.
  * Bridges Room DAO operations with the UI domain models.
  */
-class HabitRepositoryImpl(private val habitDao: HabitDao) : HabitRepository {
+class HabitRepositoryImpl(
+    private val habitDao: HabitDao,
+    private val screenTimeDao: ScreenTimeDao
+) : HabitRepository {
 
     override fun getAllHabitsWithLogs(): Flow<List<ActivityItem>> {
         return habitDao.getHabitsWithLogs().map { list ->
@@ -29,5 +32,13 @@ class HabitRepositoryImpl(private val habitDao: HabitDao) : HabitRepository {
 
     override suspend fun deleteHabit(habit: HabitEntity) {
         habitDao.deleteHabit(habit)
+    }
+
+    override fun getScreenTimeForDay(date: String): Flow<ScreenTimeRecord?> {
+        return screenTimeDao.getScreenTimeForDay(date)
+    }
+
+    override suspend fun insertOrUpdateScreenTime(record: ScreenTimeRecord) {
+        screenTimeDao.insertOrUpdateScreenTime(record)
     }
 }

@@ -5,14 +5,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewModelScope
 import com.nightowlcrew.nudgie.NudgieApplication
-import com.nightowlcrew.nudgie.data.ActivityItem
-import com.nightowlcrew.nudgie.data.HabitEntity
-import com.nightowlcrew.nudgie.data.HabitLogEntity
-import com.nightowlcrew.nudgie.data.HabitRepository
-import com.nightowlcrew.nudgie.data.HabitRepositoryImpl
+import com.nightowlcrew.nudgie.data.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -22,6 +19,8 @@ import java.util.*
  */
 data class DashboardUiState(
     val activities: List<ActivityItem> = emptyList(),
+    val currentScreenTimeMinutes: Int = 0,
+    val screenTimeGoalMinutes: Int = 240, // Default 4 hours
     val isLoading: Boolean = true
 )
 
@@ -34,10 +33,25 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
+    val isOverScreenTimeLimit: Boolean
+        get() = uiState.value.currentScreenTimeMinutes > uiState.value.screenTimeGoalMinutes
+
     init {
         viewModelScope.launch {
-            repository.getAllHabitsWithLogs().collect { activities ->
-                _uiState.value = DashboardUiState(activities = activities, isLoading = false)
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            
+            combine(
+                repository.getAllHabitsWithLogs(),
+                repository.getScreenTimeForDay(today)
+            ) { activities, screenTime ->
+                DashboardUiState(
+                    activities = activities,
+                    currentScreenTimeMinutes = screenTime?.actualMinutes ?: 0,
+                    screenTimeGoalMinutes = screenTime?.limitMinutes ?: 240,
+                    isLoading = false
+                )
+            }.collect { updatedState ->
+                _uiState.value = updatedState
             }
         }
     }
@@ -88,6 +102,22 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
         }
     }
 
+    /**
+     * Updates the screen time goal for the current day.
+     */
+    fun updateScreenTimeGoal(minutes: Int) {
+        viewModelScope.launch {
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val currentRecord = uiState.value
+            val record = ScreenTimeRecord(
+                dateString = today,
+                limitMinutes = minutes,
+                actualMinutes = currentRecord.currentScreenTimeMinutes
+            )
+            repository.insertOrUpdateScreenTime(record)
+        }
+    }
+
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -95,7 +125,10 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
                 // Get the Application object from extras
                 val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]) as NudgieApplication
                 // Get the repository through our lazy database property
-                val repository = HabitRepositoryImpl(application.database.habitDao())
+                val repository = HabitRepositoryImpl(
+                    application.database.habitDao(),
+                    application.database.screenTimeDao()
+                )
 
                 return NudgieViewModel(repository) as T
             }

@@ -3,6 +3,7 @@ package com.nightowlcrew.nudgie.ui.dashboard
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -178,7 +179,8 @@ fun HabitCreatorSection(
                         )
                         ExposedDropdownMenu(
                             expanded = isDropdownExpanded,
-                            onDismissRequest = { isDropdownExpanded = false }
+                            onDismissRequest = { isDropdownExpanded = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                         ) {
                             CozyCategory.entries.forEach { category ->
                                 DropdownMenuItem(
