@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -57,6 +58,17 @@ enum class CozyCategory(val displayName: String) {
     CONNECTIONS("Connections")
 }
 
+/**
+ * Static catalog of default habits.
+ */
+val HABIT_TEMPLATES = mapOf(
+    CozyCategory.BODY_VITALITY to listOf("Drink 8oz water", "Take daily vitamins or medications", "Morning full-body stretch", "15-minute outdoor walk"),
+    CozyCategory.MIND_SPACE to listOf("5-minute evening journaling", "Deep breathing exercise", "Clear off workspace desk", "Read 5 pages of a book"),
+    CozyCategory.DAILY_RHYTHMS to listOf("Make the bed", "Wash the breakfast dishes", "Check and clear email inbox", "Review the daily study schedule"),
+    CozyCategory.SELF_CARE_RITUALS to listOf("Evening skincare routine", "Brush and floss teeth", "Morning warm shower", "Unplug from electronics 30 mins before sleep"),
+    CozyCategory.CONNECTIONS to listOf("Send a check-in text to a friend", "Call a family member", "Feed and water household pets", "Water the indoor plants")
+)
+
 @Composable
 fun SettingsContent(
     activities: List<ActivityItem>,
@@ -80,19 +92,6 @@ fun SettingsContent(
             fontWeight = FontWeight.Bold
         )
 
-        HabitCreatorSection(onAddHabit = onAddHabit)
-
-        DefaultTemplatesSection(
-            activities = activities,
-            onAddHabit = onAddHabit,
-            onDeleteHabit = onDeleteHabit
-        )
-
-        DigitalBalanceCard(
-            usageHours = screenTimeGoal,
-            onUsageChange = { screenTimeGoal = it }
-        )
-
         Text(
             text = "Active Habits",
             style = MaterialTheme.typography.titleLarge,
@@ -101,10 +100,19 @@ fun SettingsContent(
 
         CategorizedHabitList(
             activities = activities,
+            onAddHabit = onAddHabit,
             onToggleHabit = onToggleHabit,
+            onDeleteHabit = onDeleteHabit,
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 1000.dp)
+        )
+
+        HabitCreatorSection(onAddHabit = onAddHabit)
+
+        DigitalBalanceCard(
+            usageHours = screenTimeGoal,
+            onUsageChange = { screenTimeGoal = it }
         )
     }
 }
@@ -242,7 +250,9 @@ fun HabitCreatorSection(
 @Composable
 fun CategorizedHabitList(
     activities: List<ActivityItem>,
+    onAddHabit: (String, CozyCategory) -> Unit,
     onToggleHabit: (ActivityItem) -> Unit,
+    onDeleteHabit: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -256,95 +266,11 @@ fun CategorizedHabitList(
             ExpandableCategorySection(
                 categoryTitle = category.displayName,
                 habits = filteredActivities,
-                onToggleHabit = onToggleHabit
+                onToggleHabit = onToggleHabit,
+                onDeleteHabit = onDeleteHabit,
+                category = category,
+                onAddTemplate = { title -> onAddHabit(title, category) }
             )
-        }
-    }
-}
-
-@Composable
-fun DefaultTemplatesSection(
-    activities: List<ActivityItem>,
-    onAddHabit: (String, CozyCategory) -> Unit,
-    onDeleteHabit: (Int) -> Unit
-) {
-    val templates = mapOf(
-        CozyCategory.BODY_VITALITY to listOf("Drink 8oz water", "Take daily vitamins or medications", "Morning full-body stretch", "15-minute outdoor walk"),
-        CozyCategory.MIND_SPACE to listOf("5-minute evening journaling", "Deep breathing exercise", "Clear off workspace desk", "Read 5 pages of a book"),
-        CozyCategory.DAILY_RHYTHMS to listOf("Make the bed", "Wash the breakfast dishes", "Check and clear email inbox", "Review the daily study schedule"),
-        CozyCategory.SELF_CARE_RITUALS to listOf("Evening skincare routine", "Brush and floss teeth", "Morning warm shower", "Unplug from electronics 30 mins before sleep"),
-        CozyCategory.CONNECTIONS to listOf("Send a check-in text to a friend", "Call a family member", "Feed and water household pets", "Water the indoor plants")
-    )
-
-    var isExpanded by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { isExpanded = !isExpanded },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Default Templates",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (isExpanded) "Collapse" else "Expand",
-                    modifier = Modifier.rotate(if (isExpanded) 180f else 0f)
-                )
-            }
-
-            AnimatedVisibility(visible = isExpanded) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    templates.forEach { (category, habitList) ->
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                text = category.displayName,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
-                            )
-                            habitList.forEach { templateTitle ->
-                                val existingHabit = activities.find { it.description == templateTitle }
-                                val isActive = existingHabit != null
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = templateTitle,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Switch(
-                                        checked = isActive,
-                                        onCheckedChange = { checked ->
-                                            if (checked) {
-                                                onAddHabit(templateTitle, category)
-                                            } else {
-                                                existingHabit?.let { onDeleteHabit(it.id) }
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }
@@ -353,7 +279,10 @@ fun DefaultTemplatesSection(
 private fun ExpandableCategorySection(
     categoryTitle: String,
     habits: List<ActivityItem>,
-    onToggleHabit: (ActivityItem) -> Unit
+    onToggleHabit: (ActivityItem) -> Unit,
+    onDeleteHabit: (Int) -> Unit,
+    category: CozyCategory,
+    onAddTemplate: (String) -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val rotationState by animateFloatAsState(
@@ -398,21 +327,36 @@ private fun ExpandableCategorySection(
                     .padding(top = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (habits.isEmpty()) {
+                // Show currently active custom or template habits
+                habits.forEach { item ->
+                    val isDefaultHabit = HABIT_TEMPLATES[category]?.contains(item.description) == true
+                    ActivityRow(
+                        item = item,
+                        onToggle = { onToggleHabit(item) },
+                        onDelete = if (isDefaultHabit) null else { { onDeleteHabit(item.id) } }
+                    )
+                }
+
+                // Show inactive templates as options
+                val templates = HABIT_TEMPLATES[category] ?: emptyList()
+                templates.forEach { templateTitle ->
+                    val isAlreadyActive = habits.any { it.description == templateTitle }
+                    if (!isAlreadyActive) {
+                        TemplateOptionRow(
+                            title = templateTitle,
+                            onEnable = { onAddTemplate(templateTitle) }
+                        )
+                    }
+                }
+
+                if (habits.isEmpty() && templates.all { t -> habits.any { it.description == t } }) {
                     Text(
-                        text = "* No habits added yet *",
+                        text = "* No custom habits added yet *",
                         style = MaterialTheme.typography.bodyMedium,
                         fontStyle = FontStyle.Italic,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                     )
-                } else {
-                    habits.forEach { item ->
-                        ActivityRow(
-                            item = item,
-                            onToggle = { onToggleHabit(item) }
-                        )
-                    }
                 }
             }
         }
@@ -420,9 +364,42 @@ private fun ExpandableCategorySection(
 }
 
 @Composable
+fun TemplateOptionRow(
+    title: String,
+    onEnable: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = false,
+                onCheckedChange = { if (it) onEnable() }
+            )
+        }
+    }
+}
+
+@Composable
 fun ActivityRow(
     item: ActivityItem,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -439,12 +416,31 @@ fun ActivityRow(
         ) {
             Text(
                 text = item.description,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
             )
-            Switch(
-                checked = item.isCompleted,
-                onCheckedChange = { onToggle() }
-            )
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onDelete != null) {
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Habit",
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                
+                Switch(
+                    checked = item.isCompleted,
+                    onCheckedChange = { onToggle() }
+                )
+            }
         }
     }
 }
