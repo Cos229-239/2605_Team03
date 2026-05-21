@@ -314,7 +314,7 @@ private fun ExpandableCategorySection(
                 Text(
                     text = categoryTitle,
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Bold
                 )
                 Icon(

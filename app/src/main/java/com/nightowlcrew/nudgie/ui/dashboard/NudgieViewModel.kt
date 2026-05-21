@@ -42,7 +42,7 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
             
             combine(
                 repository.getAllHabitsWithLogs(),
-                repository.getScreenTimeForDay(today)
+                repository.getScreenTimeForDate(today)
             ) { activities, screenTime ->
                 DashboardUiState(
                     activities = activities,

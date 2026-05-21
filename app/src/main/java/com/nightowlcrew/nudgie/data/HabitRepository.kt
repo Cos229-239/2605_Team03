@@ -14,7 +14,13 @@ interface HabitRepository {
     suspend fun deleteHabit(habit: HabitEntity)
 
     // Screen Time Operations
-    fun getScreenTimeForDay(date: String): Flow<ScreenTimeRecord?>
-    fun getAllScreenTimeRecords(): Flow<List<ScreenTimeRecord>>
+    /**
+     * Retrieves the screen time record for a specific date.
+     */
+    fun getScreenTimeForDate(date: String): Flow<ScreenTimeRecord?>
+
+    /**
+     * Inserts or updates a screen time record.
+     */
     suspend fun insertOrUpdateScreenTime(record: ScreenTimeRecord)
 }
