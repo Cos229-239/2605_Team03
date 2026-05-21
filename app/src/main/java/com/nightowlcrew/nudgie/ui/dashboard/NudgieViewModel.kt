@@ -19,8 +19,8 @@ import java.util.*
  */
 data class DashboardUiState(
     val activities: List<ActivityItem> = emptyList(),
-    val currentScreenTimeMinutes: Int = 0,
-    val screenTimeGoalMinutes: Int = 240, // Default 4 hours
+    val currentScreenTimeMillis: Long = 0L,
+    val screenTimeGoalMillis: Long = 14400000L, // Default 4 hours (4 * 3600 * 1000)
     val isLoading: Boolean = true
 )
 
@@ -34,7 +34,7 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     val isOverScreenTimeLimit: Boolean
-        get() = uiState.value.currentScreenTimeMinutes > uiState.value.screenTimeGoalMinutes
+        get() = uiState.value.currentScreenTimeMillis > uiState.value.screenTimeGoalMillis
 
     init {
         viewModelScope.launch {
@@ -46,8 +46,8 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
             ) { activities, screenTime ->
                 DashboardUiState(
                     activities = activities,
-                    currentScreenTimeMinutes = screenTime?.actualMinutes ?: 0,
-                    screenTimeGoalMinutes = screenTime?.limitMinutes ?: 240,
+                    currentScreenTimeMillis = screenTime?.actualDurationMillis ?: 0L,
+                    screenTimeGoalMillis = screenTime?.targetLimitMillis ?: 14400000L,
                     isLoading = false
                 )
             }.collect { updatedState ->
@@ -103,16 +103,18 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
     }
 
     /**
-     * Updates the screen time goal for the current day.
+     * Updates the screen time goal for the current day using hours.
+     * Conversion: hours * 3,600,000 ms
      */
-    fun updateScreenTimeGoal(minutes: Int) {
+    fun updateScreenTimeGoal(hours: Int) {
         viewModelScope.launch {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val currentRecord = uiState.value
+            val limitMillis = hours.toLong() * 3600000L
             val record = ScreenTimeRecord(
-                dateString = today,
-                limitMinutes = minutes,
-                actualMinutes = currentRecord.currentScreenTimeMinutes
+                date = today,
+                targetLimitMillis = limitMillis,
+                actualDurationMillis = currentRecord.currentScreenTimeMillis
             )
             repository.insertOrUpdateScreenTime(record)
         }

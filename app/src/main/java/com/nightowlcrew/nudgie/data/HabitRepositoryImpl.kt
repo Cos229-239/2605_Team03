@@ -35,10 +35,14 @@ class HabitRepositoryImpl(
     }
 
     override fun getScreenTimeForDay(date: String): Flow<ScreenTimeRecord?> {
-        return screenTimeDao.getScreenTimeForDay(date)
+        return screenTimeDao.getRecordForDate(date)
+    }
+
+    override fun getAllScreenTimeRecords(): Flow<List<ScreenTimeRecord>> {
+        return screenTimeDao.getAllRecords()
     }
 
     override suspend fun insertOrUpdateScreenTime(record: ScreenTimeRecord) {
-        screenTimeDao.insertOrUpdateScreenTime(record)
+        screenTimeDao.insertOrUpdateRecord(record)
     }
 }

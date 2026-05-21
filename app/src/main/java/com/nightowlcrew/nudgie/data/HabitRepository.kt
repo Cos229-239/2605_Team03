@@ -15,5 +15,6 @@ interface HabitRepository {
 
     // Screen Time Operations
     fun getScreenTimeForDay(date: String): Flow<ScreenTimeRecord?>
+    fun getAllScreenTimeRecords(): Flow<List<ScreenTimeRecord>>
     suspend fun insertOrUpdateScreenTime(record: ScreenTimeRecord)
 }

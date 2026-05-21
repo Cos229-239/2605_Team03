@@ -40,11 +40,13 @@ fun SettingsScreen(
 
     SettingsContent(
         activities = uiState.activities,
+        screenTimeGoalMillis = uiState.screenTimeGoalMillis,
         onAddHabit = { title, category -> 
             viewModel.addNewHabit(title, category.name, 1) 
         },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
-        onToggleHabit = { item -> viewModel.toggleHabitCompletion(item) }
+        onToggleHabit = { item -> viewModel.toggleHabitCompletion(item) },
+        onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) }
     )
 }
 
@@ -73,13 +75,13 @@ val HABIT_TEMPLATES = mapOf(
 @Composable
 fun SettingsContent(
     activities: List<ActivityItem>,
+    screenTimeGoalMillis: Long,
     onAddHabit: (String, CozyCategory) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onToggleHabit: (ActivityItem) -> Unit,
+    onUpdateScreenTimeGoal: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var screenTimeGoal by rememberSaveable { mutableFloatStateOf(2f) }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -111,9 +113,11 @@ fun SettingsContent(
 
         HabitCreatorSection(onAddHabit = onAddHabit)
 
+        val currentGoalHours = (screenTimeGoalMillis / 3600000L).toInt()
+
         DigitalBalanceCard(
-            usageHours = screenTimeGoal,
-            onUsageChange = { screenTimeGoal = it }
+            usageHours = currentGoalHours.toFloat(),
+            onUsageChange = { newHours -> onUpdateScreenTimeGoal(newHours.toInt()) }
         )
     }
 }
@@ -508,9 +512,11 @@ fun SettingsContentPreview() {
         Surface {
             SettingsContent(
                 activities = mockActivities,
+                screenTimeGoalMillis = 7200000L,
                 onAddHabit = { _, _ -> },
                 onDeleteHabit = { },
-                onToggleHabit = { }
+                onToggleHabit = { },
+                onUpdateScreenTimeGoal = { }
             )
         }
     }
