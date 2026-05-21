@@ -73,15 +73,26 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
 
     /**
      * Adds a new habit to the database.
+     * Optionally marks it as completed for the current day immediately.
      */
-    fun addNewHabit(title: String, icon: String, frequency: Int) {
+    fun addNewHabit(title: String, icon: String, frequency: Int, markAsCompleted: Boolean = false) {
         viewModelScope.launch {
             val habit = HabitEntity(
                 title = title,
                 icon = icon,
                 targetFrequencyPerDay = frequency
             )
-            repository.insertHabit(habit)
+            val habitId = repository.insertHabit(habit).toInt()
+            
+            if (markAsCompleted) {
+                val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+                val log = HabitLogEntity(
+                    habitId = habitId,
+                    completedAtTime = currentTime,
+                    isCompleted = true
+                )
+                repository.insertLog(log)
+            }
         }
     }
 

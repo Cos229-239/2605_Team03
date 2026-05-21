@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.Flow
 interface HabitRepository {
     fun getAllHabitsWithLogs(): Flow<List<ActivityItem>>
     fun getHistoricalLogs(date: String): Flow<List<HabitLogEntity>>
-    suspend fun insertHabit(habit: HabitEntity)
-    suspend fun insertLog(log: HabitLogEntity)
+    suspend fun insertHabit(habit: HabitEntity): Long
+    suspend fun insertLog(log: HabitLogEntity): Long
     suspend fun deleteHabit(habit: HabitEntity)
 
     // Screen Time Operations

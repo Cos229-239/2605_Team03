@@ -1,5 +1,7 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -10,9 +12,11 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -204,7 +208,9 @@ fun DashboardContent(
 
         // TOP HAPPINESS BAR
         Card(
-            colors = CardDefaults.cardColors(containerColor = DarkBackground),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -218,20 +224,22 @@ fun DashboardContent(
                         Icon(
                             Icons.Filled.Favorite,
                             contentDescription = null,
-                            tint = Color.Gray,
+                            tint = Color.Red,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "HAPPINESS".uppercase(),
-                            color = Color.Gray,
-                            style = MaterialTheme.typography.labelMedium
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                     Text(
                         text = "85%",
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelMedium
+                        color = Color.Black,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -239,10 +247,10 @@ fun DashboardContent(
                     progress = { 0.85f },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(12.dp)
+                        .height(10.dp)
                         .clip(CircleShape),
-                    color = Color.Gray,
-                    trackColor = Color(0xFF374151)
+                    color = Color.Red,
+                    trackColor = Color.Red.copy(alpha = 0.1f)
                 )
             }
         }
@@ -327,93 +335,208 @@ fun DashboardContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        DailyActivityLog(activities, onToggleHabit)
+        CategorizedActivityLog(activities, onToggleHabit)
 
         Spacer(modifier = Modifier.height(80.dp)) // Extra space for scroll
     }
 }
 
-// Main log container
+/**
+ * A categorized version of the activity log that uses expandable sections.
+ */
 @Composable
-fun DailyActivityLog(
+fun CategorizedActivityLog(
     activities: List<ActivityItem>,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = DarkBackground)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            activities.forEachIndexed { index, activity ->
-                ActivityLogItem(activity, onToggleHabit)
-                if (index < activities.size - 1) {
-                    Spacer(modifier = Modifier.height(8.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        CozyCategory.entries.forEach { category ->
+            val filteredActivities = activities.filter { it.icon == category.name }
+            if (filteredActivities.isNotEmpty()) {
+                ExpandableDashboardSection(
+                    categoryTitle = category.displayName,
+                    habits = filteredActivities,
+                    onToggleHabit = onToggleHabit
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExpandableDashboardSection(
+    categoryTitle: String,
+    habits: List<ActivityItem>,
+    onToggleHabit: (ActivityItem) -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(true) }
+    val rotationState by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        label = "RotationAnimation"
+    )
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded },
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(vertical = 14.dp, horizontal = 16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = categoryTitle.uppercase(),
+                    style = MaterialTheme.typography.headlineMedium, // Increased size/impact
+                    fontSize = 16.sp, // Scaled down for width management
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold
+                )
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (expanded) "Collapse" else "Expand",
+                    modifier = Modifier.rotate(rotationState),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                habits.forEach { activity ->
+                    ActivityLogItem(activity, onToggleHabit)
                 }
             }
         }
     }
 }
 
-// Individual log item
 @Composable
 fun ActivityLogItem(
     activity: ActivityItem,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
-    val itemBgColor = if (activity.isCompleted) Color(0xFF1F2937).copy(alpha = 0.4f) else Color(0xFF374151)
-    val contentAlpha = if (activity.isCompleted) 0.5f else 1.0f
+    val itemBgColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    val contentColor = MaterialTheme.colorScheme.onSurface
+    val isCompleted = activity.currentCount >= activity.targetCount
+    val contentAlpha = if (isCompleted) 0.5f else 1.0f
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onToggleHabit(activity) },
+            .clickable { 
+                if (activity.targetCount <= 1) {
+                    onToggleHabit(activity) 
+                }
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = itemBgColor)
     ) {
-        Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Status Icon Box (Acts as Checkbox)
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .background(Color(0xFF1F2937), RoundedCornerShape(8.dp))
-                    .border(1.dp, Color(0xFF4B5563), RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (activity.isCompleted) {
-                    Box(modifier = Modifier.size(10.dp).background(Color.White, CircleShape))
+                // Status Icon Box (Acts as Checkbox for single-step habits)
+                if (activity.targetCount <= 1) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                            .border(1.dp, Color.Gray.copy(alpha = 0.5f), RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (activity.isCompleted) {
+                            Box(modifier = Modifier.size(12.dp).background(Color.Black, CircleShape))
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                } else {
+                    // Multi-step habits: use a simple bullet point/indicator or hide completely 
+                    // since we have the row of checkboxes below.
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(Color.Black.copy(alpha = 0.05f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("•", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
                 }
+
+                // Emoji/Icon
+                if (activity.icon.length <= 2) {
+                    Text(text = activity.icon, fontSize = 20.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
+
+                // Description
+                Text(
+                    text = activity.description,
+                    color = contentColor.copy(alpha = contentAlpha),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Time
+                Text(
+                    text = activity.time,
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Emoji/Icon
-            Text(text = activity.icon, fontSize = 20.sp)
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Description - Pinned to clean sans-serif for accessibility
-            Text(
-                text = activity.description,
-                color = Color.White.copy(alpha = contentAlpha),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                textDecoration = if (activity.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                modifier = Modifier.weight(1f)
-            )
-
-            // Time - Pinned to clean sans-serif for accessibility
-            Text(
-                text = activity.time,
-                color = Color.Gray,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold
-            )
+            // Multi-step checkboxes (for habits like Water)
+            if (activity.targetCount > 1) {
+                Spacer(modifier = Modifier.height(12.dp))
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    repeat(activity.targetCount) { index ->
+                        val isChecked = index < activity.currentCount
+                        Box(
+                            modifier = Modifier
+                                .size(26.dp)
+                                .background(
+                                    if (isChecked) Color.Black.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.2f), 
+                                    RoundedCornerShape(6.dp)
+                                )
+                                .border(
+                                    1.dp, 
+                                    if (isChecked) Color.Black else Color.Gray.copy(alpha = 0.5f), 
+                                    RoundedCornerShape(6.dp)
+                                )
+                                .clickable {
+                                    // Clicking an unchecked slot adds a log
+                                    if (index == activity.currentCount) {
+                                        onToggleHabit(activity)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isChecked) {
+                                Box(modifier = Modifier.size(12.dp).background(Color.Black, CircleShape))
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

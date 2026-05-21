@@ -24,12 +24,12 @@ class HabitRepositoryImpl(
         return habitDao.getLogsByDate(date)
     }
 
-    override suspend fun insertHabit(habit: HabitEntity) {
-        habitDao.insertHabit(habit)
+    override suspend fun insertHabit(habit: HabitEntity): Long {
+        return habitDao.insertHabit(habit)
     }
 
-    override suspend fun insertLog(log: HabitLogEntity) {
-        habitDao.insertHabitLog(log)
+    override suspend fun insertLog(log: HabitLogEntity): Long {
+        return habitDao.insertHabitLog(log)
     }
 
     override suspend fun deleteHabit(habit: HabitEntity) {
