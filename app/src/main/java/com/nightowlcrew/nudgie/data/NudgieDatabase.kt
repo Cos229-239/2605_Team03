@@ -20,7 +20,9 @@ abstract class NudgieDatabase : RoomDatabase() {
                     context.applicationContext,
                     NudgieDatabase::class.java,
                     "nudgie_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .build()
                 INSTANCE = instance
                 instance
             }
