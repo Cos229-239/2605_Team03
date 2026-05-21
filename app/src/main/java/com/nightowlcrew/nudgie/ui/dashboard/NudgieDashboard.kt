@@ -474,3 +474,47 @@ fun NewStatCard(
         }
     }
 }
+
+@Composable
+fun SettingsScreen(viewModel: NudgieViewModel) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "SETTINGS",
+            style = MaterialTheme.typography.displayLarge,
+            fontSize = 24.sp,
+            color = Color.Black
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "App settings and customization coming soon!",
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    "Profile",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("User: Night Owl", color = Color.Gray)
+            }
+        }
+    }
+}
