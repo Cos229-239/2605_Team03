@@ -9,38 +9,83 @@ import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.text.googlefonts.Font
 import com.nightowlcrew.nudgie.R
 
+/**
+ * Nudgie Typography Design System
+ * 
+ * Uses 'Press Start 2P' for primary UI headers and pixel-perfect impact.
+ * Uses 'VT323' for dialogue and primary body text for a retro-CRT feel.
+ * Uses 'Fira Sans' for functional labels and micro-information.
+ */
+
 // Google Font Provider Setup
-val provider = GoogleFont.Provider(
+private val provider = GoogleFont.Provider(
     providerAuthority = "com.google.android.gms.fonts",
     providerPackage = "com.google.android.gms.fonts",
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
-// Header Font: Press Start 2P
+// Primary Retro Headers
 val PressStart2P = FontFamily(
     Font(googleFont = GoogleFont("Press Start 2P"), fontProvider = provider)
 )
 
-// Dialogue Font: VT323
+// Retro Terminal/Dialogue Body
 val VT323 = FontFamily(
     Font(googleFont = GoogleFont("VT323"), fontProvider = provider)
 )
 
-// The Nudgie Typography Style Set
+// Functional Clean Sans-Serif
+val FiraSans = FontFamily(
+    Font(googleFont = GoogleFont("Fira Sans"), fontProvider = provider)
+)
+
+// The Nudgie Typography Configuration
 val Typography = Typography(
+    // Large pixel-style headers (Grid multiples of 8)
     displayLarge = TextStyle(
         fontFamily = PressStart2P,
         fontWeight = FontWeight.Normal,
-        fontSize = 32.sp
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = 0.sp
     ),
+    headlineMedium = TextStyle(
+        fontFamily = PressStart2P,
+        fontWeight = FontWeight.Normal,
+        fontSize = 24.sp,
+        lineHeight = 30.sp,
+        letterSpacing = 0.sp
+    ),
+
+    // Readable retro body text (Minimum threshold 18.sp for VT323 legibility)
     bodyLarge = TextStyle(
         fontFamily = VT323,
         fontWeight = FontWeight.Normal,
-        fontSize = 18.sp
+        fontSize = 20.sp,
+        lineHeight = 26.sp,
+        letterSpacing = 0.5.sp
     ),
+    bodyMedium = TextStyle(
+        fontFamily = VT323,
+        fontWeight = FontWeight.Normal,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    ),
+
+    // Functional labels for navigation and small data points
     labelMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = FiraSans,
         fontWeight = FontWeight.Bold,
-        fontSize = 12.sp
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = FiraSans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
+        lineHeight = 14.sp,
+        letterSpacing = 0.5.sp
     )
 )

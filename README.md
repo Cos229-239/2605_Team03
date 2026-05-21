@@ -4,8 +4,6 @@
 * **Team Name:** Night Owl Crew (Cycle 2605)
 * **Team Members:** 
 * Kenneth William Hanks
-* Alec Duncan
-* Bailey Kimmel
 * Jared Delgato
 ---
 

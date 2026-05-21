@@ -48,7 +48,13 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
                 items.forEachIndexed { index, item ->
                     NavigationBarItem(
                         icon = { Icon(icons[index], contentDescription = item) },
-                        label = { Text(item, fontSize = 10.sp) },
+                        label = { 
+                            Text(
+                                text = item.uppercase(), 
+                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 9.sp // Slightly smaller for nav bars
+                            ) 
+                        },
                         selected = selectedItem == index,
                         onClick = { selectedItem = index },
                         colors = NavigationBarItemDefaults.colors(
@@ -88,8 +94,8 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Screen Coming Soon",
-                            style = MaterialTheme.typography.bodyLarge,
+                            text = "Screen Coming Soon".uppercase(),
+                            style = MaterialTheme.typography.headlineMedium,
                             color = Color.Gray
                         )
                     }
@@ -104,25 +110,25 @@ fun PetScreenContent() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp), // Cushioned horizontal padding
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "MY PET",
+            text = "MY PET".uppercase(),
             style = MaterialTheme.typography.displayLarge,
-            fontSize = 24.sp,
             color = Color.Black
         )
         
-        Spacer(modifier = Modifier.height(24.dp))
+        // Extra spacer for pixel font vertical breathing room
+        Spacer(modifier = Modifier.height(32.dp))
         
         PetHeroContainer()
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         
         Text(
-            text = "Stats & Customization coming soon!",
-            style = MaterialTheme.typography.labelMedium,
+            text = "Stats & Customization coming soon!".uppercase(),
+            style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray
         )
     }
@@ -159,7 +165,12 @@ fun PetHeroContainer() {
                     modifier = Modifier.size(12.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("1", color = Color.White, fontSize = 12.sp)
+                // Numeric badge - using clean sans-serif for readability
+                Text(
+                    text = "1", 
+                    color = Color.White, 
+                    style = MaterialTheme.typography.labelSmall
+                )
             }
         }
     }
@@ -174,23 +185,22 @@ fun DashboardContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 16.dp) // Cushioned horizontal padding
     ) {
         // HEADER
         Text(
-            text = "BUDDY",
+            text = "BUDDY".uppercase(),
             style = MaterialTheme.typography.displayLarge,
-            fontSize = 24.sp,
             color = Color.Black
         )
+        // High-density metadata - pinned to clean sans-serif
         Text(
             text = "Level 5 • Baby Stage",
             style = MaterialTheme.typography.labelMedium,
-            color = Color.Gray,
-            fontSize = 14.sp
+            color = Color.Gray
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // TOP HAPPINESS BAR
         Card(
@@ -213,20 +223,18 @@ fun DashboardContent(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "HAPPINESS",
+                            text = "HAPPINESS".uppercase(),
                             color = Color.Gray,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
                     Text(
-                        "85%",
+                        text = "85%",
                         color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.labelMedium
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 LinearProgressIndicator(
                     progress = { 0.85f },
                     modifier = Modifier
@@ -239,22 +247,20 @@ fun DashboardContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // BUDDY WINDOW
         PetHeroContainer()
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // DASHBOARD SECTION
         Text(
-            text = "DASHBOARD",
-            style = MaterialTheme.typography.labelMedium,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.ExtraBold,
+            text = "DASHBOARD".uppercase(),
+            style = MaterialTheme.typography.headlineMedium,
             color = Color.Black
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // STATS GRID
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -300,7 +306,7 @@ fun DashboardContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // TODAY'S ACTIVITY
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -312,10 +318,9 @@ fun DashboardContent(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "TODAY'S ACTIVITY",
-                style = MaterialTheme.typography.labelMedium,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
+                text = "TODAY'S ACTIVITY".uppercase(),
+                style = MaterialTheme.typography.headlineMedium,
+                fontSize = 14.sp, // Slightly forced override for width management
                 color = Color.Black
             )
         }
@@ -392,21 +397,21 @@ fun ActivityLogItem(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Description
+            // Description - Pinned to clean sans-serif for accessibility
             Text(
                 text = activity.description,
                 color = Color.White.copy(alpha = contentAlpha),
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 textDecoration = if (activity.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
                 modifier = Modifier.weight(1f)
             )
 
-            // Time
+            // Time - Pinned to clean sans-serif for accessibility
             Text(
                 text = activity.time,
                 color = Color.Gray,
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -462,15 +467,13 @@ fun NewStatCard(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = label,
-                fontSize = 10.sp,
+                text = label.uppercase(),
                 color = Color.Gray,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.labelSmall
             )
             Text(
-                text = value,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.ExtraBold,
+                text = value.uppercase(),
+                style = MaterialTheme.typography.headlineMedium,
                 color = Color.Black
             )
         }

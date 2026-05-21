@@ -301,7 +301,7 @@ private fun ExpandableCategorySection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { expanded = !expanded },
-            color = MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.secondary,
             shape = MaterialTheme.shapes.medium
         ) {
             Row(
@@ -314,7 +314,7 @@ private fun ExpandableCategorySection(
                 Text(
                     text = categoryTitle,
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
                 Icon(
