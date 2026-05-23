@@ -17,3 +17,13 @@ val CardRedBg = Color(0xFFFFEBEE)
 val CardYellowBg = Color(0xFFFFFDE7)
 val CardBlueBg = Color(0xFFE3F2FD)
 val CardGreenBg = Color(0xFFE8F5E9)
+
+// Cyberpunk Theme Colors
+val cpVoid = Color(0xFF050510)         // True black/blue background
+val cpMainframe = Color(0xFF0D0D17)     // Slightly lighter for cards
+val cpNeonCyan = Color(0xFF00F0FF)      // Primary interaction
+val cpDimCyan = Color(0xFF00B2BE)       // Readable body text
+val cpNeonPink = Color(0xFFFF00FF)      // Accent/Critical alerts
+val cpCorpoRed = Color(0xFFFF003C)      // Danger/Errors
+val cpCyberYellow = Color(0xFFFCEE0A)   // Warning/Level stats
+val cpGlitchBlue = Color(0xFF711CFF)    // Deep digital accent

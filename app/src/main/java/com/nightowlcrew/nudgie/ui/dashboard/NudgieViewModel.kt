@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK }
+
 /**
  * UI State for the Dashboard screen.
  */
@@ -21,6 +23,7 @@ data class DashboardUiState(
     val activities: List<ActivityItem> = emptyList(),
     val currentScreenTimeMillis: Long = 0L,
     val screenTimeGoalMillis: Long = 14400000L, // Default 4 hours (4 * 3600 * 1000)
+    val currentTheme: AppTheme = AppTheme.DEFAULT,
     val isLoading: Boolean = true
 )
 
@@ -44,7 +47,7 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
                 repository.getAllHabitsWithLogs(),
                 repository.getScreenTimeForDate(today)
             ) { activities, screenTime ->
-                DashboardUiState(
+                _uiState.value.copy(
                     activities = activities,
                     currentScreenTimeMillis = screenTime?.actualDurationMillis ?: 0L,
                     screenTimeGoalMillis = screenTime?.targetLimitMillis ?: 14400000L,
@@ -54,6 +57,13 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
                 _uiState.value = updatedState
             }
         }
+    }
+
+    /**
+     * Updates the current app theme.
+     */
+    fun updateTheme(newTheme: AppTheme) {
+        _uiState.value = _uiState.value.copy(currentTheme = newTheme)
     }
 
     /**

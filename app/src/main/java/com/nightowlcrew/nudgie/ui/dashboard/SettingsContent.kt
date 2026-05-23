@@ -43,11 +43,13 @@ fun SettingsScreen(
     SettingsContent(
         activities = uiState.activities,
         screenTimeGoalMillis = uiState.screenTimeGoalMillis,
+        currentTheme = uiState.currentTheme,
         onAddHabit = { title, category, frequency -> 
             viewModel.addNewHabit(title, category.name, frequency)
         },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
-        onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) }
+        onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
+        onUpdateTheme = { theme -> viewModel.updateTheme(theme) }
     )
 }
 
@@ -77,9 +79,11 @@ val HABIT_TEMPLATES = mapOf(
 fun SettingsContent(
     activities: List<ActivityItem>,
     screenTimeGoalMillis: Long,
+    currentTheme: AppTheme,
     onAddHabit: (String, CozyCategory, Int) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
+    onUpdateTheme: (AppTheme) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -118,6 +122,70 @@ fun SettingsContent(
             usageHours = currentGoalHours.toFloat(),
             onUsageChange = { newHours -> onUpdateScreenTimeGoal(newHours.toInt()) }
         )
+
+        ThemeSelectionCard(
+            currentTheme = currentTheme,
+            onUpdateTheme = onUpdateTheme
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ThemeSelectionCard(
+    currentTheme: AppTheme,
+    onUpdateTheme: (AppTheme) -> Unit
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "App Theme",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            ExposedDropdownMenuBox(
+                expanded = isExpanded,
+                onExpandedChange = { isExpanded = !isExpanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = currentTheme.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Select Theme") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
+                    modifier = Modifier
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                        .fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = isExpanded,
+                    onDismissRequest = { isExpanded = false },
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                ) {
+                    AppTheme.entries.forEach { theme ->
+                        DropdownMenuItem(
+                            text = { Text(theme.name) },
+                            onClick = {
+                                onUpdateTheme(theme)
+                                isExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -534,9 +602,11 @@ fun SettingsContentPreview() {
             SettingsContent(
                 activities = mockActivities,
                 screenTimeGoalMillis = 7200000L,
+                currentTheme = AppTheme.DEFAULT,
                 onAddHabit = { _, _, _ -> },
                 onDeleteHabit = { },
-                onUpdateScreenTimeGoal = { }
+                onUpdateScreenTimeGoal = { },
+                onUpdateTheme = { }
             )
         }
     }

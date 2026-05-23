@@ -120,7 +120,7 @@ fun PetScreenContent() {
         Text(
             text = "MY PET".uppercase(),
             style = MaterialTheme.typography.displayLarge,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onBackground
         )
         
         // Extra spacer for pixel font vertical breathing room
@@ -190,13 +190,13 @@ fun PetHeroContainer() {
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
-            .background(Color(0xFFD1D5DB), RoundedCornerShape(24.dp))
-            .border(4.dp, DarkBackground, RoundedCornerShape(24.dp)),
+            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.large)
+            .border(4.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
         contentAlignment = Alignment.Center
     ) {
         // Placeholder for Pixel Art Pet
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("(◕‿◕)", fontSize = 60.sp, color = DarkBackground)
+            Text("(◕‿◕)", fontSize = 60.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         // Badge
@@ -204,21 +204,21 @@ fun PetHeroContainer() {
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
-                .background(DarkBackground, RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Filled.EmojiEvents,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(12.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 // Numeric badge - using clean sans-serif for readability
                 Text(
                     text = "1", 
-                    color = Color.White, 
+                    color = MaterialTheme.colorScheme.onPrimary, 
                     style = MaterialTheme.typography.labelSmall
                 )
             }
@@ -241,13 +241,13 @@ fun DashboardContent(
         Text(
             text = "Nudgie".uppercase(),
             style = MaterialTheme.typography.displayLarge,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onBackground
         )
         // High-density metadata - pinned to clean sans-serif
         Text(
             text = "Level 5 • Baby Stage",
             style = MaterialTheme.typography.labelMedium,
-            color = Color.Gray
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -255,9 +255,9 @@ fun DashboardContent(
         // TOP HAPPINESS BAR
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
             ),
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.medium,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -270,7 +270,7 @@ fun DashboardContent(
                         Icon(
                             Icons.Filled.Favorite,
                             contentDescription = null,
-                            tint = Color.Red,
+                            tint = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -283,7 +283,7 @@ fun DashboardContent(
                     }
                     Text(
                         text = "85%",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -295,8 +295,8 @@ fun DashboardContent(
                         .fillMaxWidth()
                         .height(10.dp)
                         .clip(CircleShape),
-                    color = Color.Red,
-                    trackColor = Color.Red.copy(alpha = 0.1f)
+                    color = MaterialTheme.colorScheme.tertiary,
+                    trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)
                 )
             }
         }
@@ -360,7 +360,7 @@ fun DashboardContent(
             Icon(
                 Icons.Filled.Schedule,
                 contentDescription = null,
-                tint = Color.Black,
+                tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -368,7 +368,7 @@ fun DashboardContent(
                 text = "TODAY'S Habits".uppercase(),
                 style = MaterialTheme.typography.headlineMedium,
                 fontSize = 14.sp, // Slightly forced override for width management
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -491,12 +491,12 @@ fun ActivityLogItem(
                     Box(
                         modifier = Modifier
                             .size(28.dp)
-                            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                            .border(1.dp, Color.Gray.copy(alpha = 0.5f), RoundedCornerShape(8.dp)),
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), MaterialTheme.shapes.small)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small),
                         contentAlignment = Alignment.Center
                     ) {
                         if (activity.isCompleted) {
-                            Box(modifier = Modifier.size(12.dp).background(Color.Black, CircleShape))
+                            Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
                         }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -506,10 +506,10 @@ fun ActivityLogItem(
                     Box(
                         modifier = Modifier
                             .size(28.dp)
-                            .background(Color.Black.copy(alpha = 0.05f), CircleShape),
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("•", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Text("•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                 }
@@ -533,7 +533,7 @@ fun ActivityLogItem(
                 // Time
                 Text(
                     text = activity.time,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -553,13 +553,13 @@ fun ActivityLogItem(
                             modifier = Modifier
                                 .size(26.dp)
                                 .background(
-                                    if (isChecked) Color.Black.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.2f), 
-                                    RoundedCornerShape(6.dp)
+                                    if (isChecked) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), 
+                                    MaterialTheme.shapes.small
                                 )
                                 .border(
                                     1.dp, 
-                                    if (isChecked) Color.Black else Color.Gray.copy(alpha = 0.5f), 
-                                    RoundedCornerShape(6.dp)
+                                    if (isChecked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, 
+                                    MaterialTheme.shapes.small
                                 )
                                 .clickable {
                                     // Clicking an unchecked slot adds a log
@@ -570,7 +570,7 @@ fun ActivityLogItem(
                             contentAlignment = Alignment.Center
                         ) {
                             if (isChecked) {
-                                Box(modifier = Modifier.size(12.dp).background(Color.Black, CircleShape))
+                                Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
                             }
                         }
                     }
@@ -610,9 +610,9 @@ fun NewStatCard(
 ) {
     Card(
         modifier = modifier.height(110.dp),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(2.dp, borderColor),
-        colors = CardDefaults.cardColors(containerColor = bgColor)
+        shape = MaterialTheme.shapes.medium,
+        border = BorderStroke(2.dp, if (MaterialTheme.colorScheme.outline != Color.Unspecified) MaterialTheme.colorScheme.outline else borderColor),
+        colors = CardDefaults.cardColors(containerColor = if (MaterialTheme.colorScheme.surfaceVariant != Color.Unspecified) MaterialTheme.colorScheme.surfaceVariant else bgColor)
     ) {
         Column(
             modifier = Modifier
@@ -630,13 +630,13 @@ fun NewStatCard(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = label.uppercase(),
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 style = MaterialTheme.typography.labelSmall
             )
             Text(
                 text = value.uppercase(),
                 style = MaterialTheme.typography.headlineMedium,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
