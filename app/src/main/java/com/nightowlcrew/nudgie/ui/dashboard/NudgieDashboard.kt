@@ -83,11 +83,12 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
                 0 -> {
                     DashboardContent(
                         activities = uiState.activities,
+                        currentTheme = uiState.currentTheme,
                         onToggleHabit = { viewModel.toggleHabitCompletion(it) }
                     )
                 }
                 1 -> {
-                    PetScreenContent()
+                    PetScreenContent(currentTheme = uiState.currentTheme)
                 }
                 4 -> {
                     SettingsScreen(viewModel = viewModel)
@@ -110,7 +111,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
 }
 
 @Composable
-fun PetScreenContent() {
+fun PetScreenContent(currentTheme: AppTheme = AppTheme.DEFAULT) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -126,7 +127,7 @@ fun PetScreenContent() {
         // Extra spacer for pixel font vertical breathing room
         Spacer(modifier = Modifier.height(32.dp))
         
-        PetHeroContainer()
+        PetHeroContainer(currentTheme = currentTheme)
         
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -185,7 +186,7 @@ fun PetScreenContent() {
 }
 
 @Composable
-fun PetHeroContainer() {
+fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -210,7 +211,7 @@ fun PetHeroContainer() {
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        .background(DarkBackground, CircleShape)
                 ) {
                     Box(
                         modifier = Modifier
@@ -220,50 +221,24 @@ fun PetHeroContainer() {
                     )
                 }
                 
-                // Right Eye with Badge
+                // Right Eye
                 Box(
                     modifier = Modifier.size(36.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(MaterialTheme.colorScheme.primary, CircleShape)
+                            .background(DarkBackground, CircleShape)
                     )
-                    
-                    // Star Badge pinned to eye (as seen in screenshot)
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 8.dp, y = (-4).dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Filled.Star,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(8.dp)
-                            )
-                            Text(
-                                "1",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontSize = 8.sp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
-                    }
                 }
             }
             
-            // Smile
+            // Smile / Face
+            val faceText = if (currentTheme == AppTheme.GOTH) "=^..^=" else "v"
             Text(
-                "v",
+                text = faceText,
                 modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-4).dp),
-                color = MaterialTheme.colorScheme.primary,
+                color = DarkBackground,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -275,6 +250,7 @@ fun PetHeroContainer() {
 @Composable
 fun DashboardContent(
     activities: List<ActivityItem>,
+    currentTheme: AppTheme = AppTheme.DEFAULT,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
     Column(
@@ -365,7 +341,7 @@ fun DashboardContent(
                 .padding(vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {
-            PetHeroContainer()
+            PetHeroContainer(currentTheme = currentTheme)
 
             // Top Left - Happiness
             PetCornerStatBadge(
