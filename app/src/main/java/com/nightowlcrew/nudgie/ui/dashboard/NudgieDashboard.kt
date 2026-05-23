@@ -187,57 +187,33 @@ fun PetScreenContent(currentTheme: AppTheme = AppTheme.DEFAULT) {
 
 @Composable
 fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(180.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), MaterialTheme.shapes.large)
-            .border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
-        contentAlignment = Alignment.Center
-    ) {
-        // CYBER ROBOT FACE (matching screenshot)
+    if (currentTheme == AppTheme.DEFAULT) {
+        // ORIGINAL DEFAULT LOOK
         Box(
             modifier = Modifier
-                .size(width = 140.dp, height = 70.dp)
-                .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp))
-                .padding(8.dp)
+                .fillMaxWidth()
+                .height(220.dp)
+                .background(Color(0xFFD1D5DB), RoundedCornerShape(24.dp))
+                .border(4.dp, DarkBackground, RoundedCornerShape(24.dp)),
+            contentAlignment = Alignment.Center
         ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Left Eye
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(DarkBackground, CircleShape)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(18.dp)
-                            .align(Alignment.CenterStart)
-                            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                    )
-                }
-                
-                // Right Eye
-                Box(
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(DarkBackground, CircleShape)
-                    )
-                }
-            }
-            
-            // Smile / Face
-            val faceText = if (currentTheme == AppTheme.GOTH) "=^..^=" else "v"
+            val faceText = if (currentTheme == AppTheme.GOTH) "=^..^=" else "(◕‿◕)"
+            Text(faceText, fontSize = 60.sp, color = DarkBackground)
+        }
+    } else {
+        // THEMED WINDOW (Cyberpunk / Steampunk / Goth)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), MaterialTheme.shapes.large)
+                .border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
+            contentAlignment = Alignment.Center
+        ) {
+            val faceText = if (currentTheme == AppTheme.GOTH) "=^..^=" else "(◕‿◕)"
             Text(
                 text = faceText,
-                modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-4).dp),
+                fontSize = 50.sp,
                 color = DarkBackground,
                 fontWeight = FontWeight.Bold
             )
@@ -687,9 +663,9 @@ private fun PetCornerStatBadge(
 ) {
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         shape = CircleShape,
-        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.3f))
+        border = BorderStroke(1.dp, accentColor)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -706,7 +682,7 @@ private fun PetCornerStatBadge(
                 text = label.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.White.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 8.sp
             )
             Text(

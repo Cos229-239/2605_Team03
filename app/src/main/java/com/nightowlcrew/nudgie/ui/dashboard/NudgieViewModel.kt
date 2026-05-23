@@ -31,7 +31,10 @@ data class DashboardUiState(
  * ViewModel for managing Dashboard UI state and interactions.
  * Bridges the UI with the Repository layer.
  */
-class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
+class NudgieViewModel(
+    private val repository: HabitRepository,
+    private val sharedPreferences: android.content.SharedPreferences
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
@@ -40,6 +43,15 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
         get() = uiState.value.currentScreenTimeMillis > uiState.value.screenTimeGoalMillis
 
     init {
+        // Load persisted theme immediately
+        val savedThemeName = sharedPreferences.getString("app_theme", AppTheme.DEFAULT.name)
+        val initialTheme = try { 
+            AppTheme.valueOf(savedThemeName ?: AppTheme.DEFAULT.name) 
+        } catch (e: Exception) { 
+            AppTheme.DEFAULT 
+        }
+        _uiState.value = _uiState.value.copy(currentTheme = initialTheme)
+
         viewModelScope.launch {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             
@@ -60,10 +72,11 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
     }
 
     /**
-     * Updates the current app theme.
+     * Updates the current app theme and persists the choice.
      */
     fun updateTheme(newTheme: AppTheme) {
         _uiState.value = _uiState.value.copy(currentTheme = newTheme)
+        sharedPreferences.edit().putString("app_theme", newTheme.name).apply()
     }
 
     /**
@@ -152,8 +165,9 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
                     application.database.habitDao(),
                     application.database.screenTimeDao()
                 )
+                val sharedPrefs = application.getSharedPreferences("nudgie_prefs", android.content.Context.MODE_PRIVATE)
 
-                return NudgieViewModel(repository) as T
+                return NudgieViewModel(repository, sharedPrefs) as T
             }
         }
     }
