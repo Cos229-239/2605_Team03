@@ -26,6 +26,7 @@ val cpDimCyan = Color(0xFF00B2BE)       // Readable body text
 val cpNeonPink = Color(0xFFFF00FF)      // Accent/Critical alerts
 val cpCorpoRed = Color(0xFFFF003C)      // Danger/Errors
 val cpCyberYellow = Color(0xFFFCEE0A)   // Warning/Level stats
+val cpNeonGreen = Color(0xFF00FF00)     // Success/Age stats
 val cpGlitchBlue = Color(0xFF711CFF)    // Deep digital accent
 
 // Steampunk Theme Colors
@@ -34,3 +35,10 @@ val spIron = Color(0xFF2E221F)         // Surfaces/Cards
 val spParchment = Color(0xFFD4B886)    // Body text/Readability
 val spCopper = Color(0xFFB85D19)       // Secondary accent
 val spBrass = Color(0xFFC5A059)        // Primary interaction
+
+// Goth Theme Colors
+val gothAbyss = Color(0xFF050505)      // Pitch black background
+val gothObsidian = Color(0xFF16161A)   // Very dark gray for surfaces
+val gothBloodRed = Color(0xFF8A0303)    // Deep, dark red
+val gothNeonPink = Color(0xFFFF1493)    // High-contrast hot pink
+val gothTombstone = Color(0xFFD3D3D3)   // Pale silver/gray text

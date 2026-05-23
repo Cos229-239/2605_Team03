@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK }
+enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK, GOTH }
 
 /**
  * UI State for the Dashboard screen.

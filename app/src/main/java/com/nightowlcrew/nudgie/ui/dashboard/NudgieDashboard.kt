@@ -46,8 +46,8 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
     Scaffold(
         bottomBar = {
             NavigationBar(
-                containerColor = Color(0xFFF3F4F6),
-                tonalElevation = 0.dp
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
             ) {
                 items.forEachIndexed { index, item ->
                     NavigationBarItem(
@@ -56,17 +56,17 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
                             Text(
                                 text = item.uppercase(), 
                                 style = MaterialTheme.typography.labelSmall,
-                                fontSize = 9.sp // Slightly smaller for nav bars
+                                fontSize = 9.sp 
                             ) 
                         },
                         selected = selectedItem == index,
                         onClick = { selectedItem = index },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.White,
-                            selectedTextColor = Color.Black,
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray,
-                            indicatorColor = DarkBackground
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            indicatorColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     )
                 }
@@ -74,7 +74,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
         }
     ) { innerPadding ->
         Surface(
-            color = Color.White,
+            color = MaterialTheme.colorScheme.background,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
@@ -189,42 +189,88 @@ fun PetHeroContainer() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.large)
-            .border(4.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
+            .height(180.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), MaterialTheme.shapes.large)
+            .border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
         contentAlignment = Alignment.Center
     ) {
-        // Placeholder for Pixel Art Pet
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("(◕‿◕)", fontSize = 60.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-
-        // Badge
+        // CYBER ROBOT FACE (matching screenshot)
         Box(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .size(width = 140.dp, height = 70.dp)
+                .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp))
+                .padding(8.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Filled.EmojiEvents,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(12.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                // Numeric badge - using clean sans-serif for readability
-                Text(
-                    text = "1", 
-                    color = MaterialTheme.colorScheme.onPrimary, 
-                    style = MaterialTheme.typography.labelSmall
-                )
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left Eye
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(18.dp)
+                            .align(Alignment.CenterStart)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                    )
+                }
+                
+                // Right Eye with Badge
+                Box(
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    )
+                    
+                    // Star Badge pinned to eye (as seen in screenshot)
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 8.dp, y = (-4).dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.Star,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(8.dp)
+                            )
+                            Text(
+                                "1",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 8.sp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                }
             }
+            
+            // Smile
+            Text(
+                "v",
+                modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-4).dp),
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
+
+
 
 @Composable
 fun DashboardContent(
@@ -239,8 +285,11 @@ fun DashboardContent(
     ) {
         // HEADER
         Text(
-            text = "Nudgie".uppercase(),
-            style = MaterialTheme.typography.displayLarge,
+            text = "NUDGIE",
+            style = MaterialTheme.typography.displayLarge.copy(
+                fontSize = 44.sp,
+                lineHeight = 52.sp
+            ),
             color = MaterialTheme.colorScheme.onBackground
         )
         // High-density metadata - pinned to clean sans-serif
@@ -277,14 +326,20 @@ fun DashboardContent(
                         Text(
                             text = "HAPPINESS".uppercase(),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontFamily = PressStart2P,
+                                fontSize = 10.sp
+                            ),
                             fontWeight = FontWeight.Bold
                         )
                     }
                     Text(
                         text = "85%",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = PressStart2P,
+                            fontSize = 10.sp
+                        ),
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -307,7 +362,7 @@ fun DashboardContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp),
+                .padding(vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {
             PetHeroContainer()
@@ -316,40 +371,44 @@ fun DashboardContent(
             PetCornerStatBadge(
                 label = "Happiness",
                 value = "85%",
-                accentColor = Color.Red,
+                icon = Icons.Filled.Favorite,
+                accentColor = Color(0xFFFF003C), // Corpo Red
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(8.dp)
+                    .offset(x = (-8).dp, y = (-12).dp)
             )
 
             // Top Right - Energy
             PetCornerStatBadge(
                 label = "Energy",
                 value = "62%",
-                accentColor = Color(0xFFFFC107),
+                icon = Icons.Filled.FlashOn,
+                accentColor = Color(0xFFFCEE0A), // Cyber Yellow
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
+                    .offset(x = 8.dp, y = (-12).dp)
             )
 
             // Bottom Left - Age
             PetCornerStatBadge(
                 label = "Age",
                 value = "5 Days",
-                accentColor = Color.Green,
+                icon = Icons.Filled.HourglassBottom,
+                accentColor = cpNeonGreen,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(8.dp)
+                    .offset(x = (-8).dp, y = 12.dp)
             )
 
             // Bottom Right - Level
             PetCornerStatBadge(
                 label = "Level",
                 value = "5",
-                accentColor = Color.Blue,
+                icon = Icons.Filled.Star,
+                accentColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(8.dp)
+                    .offset(x = 8.dp, y = 12.dp)
             )
         }
 
@@ -646,30 +705,40 @@ fun NewStatCard(
 private fun PetCornerStatBadge(
     label: String,
     value: String,
+    icon: ImageVector,
     modifier: Modifier = Modifier,
     accentColor: Color = Color.Black
 ) {
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 2.dp,
-        shadowElevation = 1.dp
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+        shape = CircleShape,
+        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.3f))
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = accentColor,
+                modifier = Modifier.size(12.dp)
+            )
             Text(
                 text = label.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.Gray,
+                color = Color.White.copy(alpha = 0.7f),
                 fontSize = 8.sp
             )
             Text(
                 text = value.uppercase(),
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontFamily = PressStart2P,
+                    fontSize = 8.sp
+                ),
                 fontWeight = FontWeight.Bold,
                 color = accentColor
             )

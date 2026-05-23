@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.dp
 import com.nightowlcrew.nudgie.ui.dashboard.AppTheme
 
 val CyberpunkShapes = Shapes(
-    small = CutCornerShape(4.dp),
-    medium = CutCornerShape(8.dp),
-    large = CutCornerShape(12.dp)
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(24.dp)
 )
 
 val SteampunkShapes = Shapes(
@@ -29,19 +29,25 @@ val SteampunkShapes = Shapes(
     large = RoundedCornerShape(32.dp)
 )
 
+val GothShapes = Shapes(
+    small = RoundedCornerShape(0.dp),
+    medium = RoundedCornerShape(0.dp),
+    large = RoundedCornerShape(0.dp)
+)
+
 private val CyberpunkColorScheme = darkColorScheme(
     primary = cpNeonCyan,
     secondary = cpNeonPink,
-    tertiary = cpCyberYellow,
+    tertiary = cpNeonCyan, // Progress bars and key accents
     background = cpVoid,
     surface = cpMainframe,
     error = cpCorpoRed,
     onPrimary = Color.Black,
     onSecondary = Color.Black,
     onTertiary = Color.Black,
-    onBackground = cpDimCyan,     // Slightly dimmed for better reading
-    onSurface = cpDimCyan,        // Slightly dimmed for better reading
-    surfaceVariant = cpGlitchBlue.copy(alpha = 0.2f),
+    onBackground = cpNeonCyan,    // High visibility headers
+    onSurface = cpNeonCyan,       // High visibility interactive text
+    surfaceVariant = Color(0xFF1A1A2E), // Darker cards for contrast
     onSurfaceVariant = cpNeonCyan,
     outline = cpNeonCyan.copy(alpha = 0.5f)
 )
@@ -60,6 +66,22 @@ private val SteampunkColorScheme = darkColorScheme(
     surfaceVariant = spBrass.copy(alpha = 0.1f),
     onSurfaceVariant = spBrass,
     outline = spCopper
+)
+
+private val GothColorScheme = darkColorScheme(
+    primary = gothBloodRed,
+    secondary = gothNeonPink,
+    tertiary = gothNeonPink,
+    background = gothAbyss,
+    surface = gothObsidian,
+    onPrimary = Color.White,
+    onSecondary = Color.Black,
+    onTertiary = Color.Black,
+    onBackground = gothTombstone,
+    onSurface = gothTombstone,
+    surfaceVariant = gothBloodRed.copy(alpha = 0.2f),
+    onSurfaceVariant = gothNeonPink,
+    outline = gothBloodRed
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -88,6 +110,7 @@ fun NudgieTheme(
     val colorScheme = when {
         appTheme == AppTheme.CYBERPUNK -> CyberpunkColorScheme
         appTheme == AppTheme.STEAMPUNK -> SteampunkColorScheme
+        appTheme == AppTheme.GOTH -> GothColorScheme
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -99,6 +122,7 @@ fun NudgieTheme(
     val shapes = when (appTheme) {
         AppTheme.CYBERPUNK -> CyberpunkShapes
         AppTheme.STEAMPUNK -> SteampunkShapes
+        AppTheme.GOTH -> GothShapes
         else -> MaterialTheme.shapes
     }
 
