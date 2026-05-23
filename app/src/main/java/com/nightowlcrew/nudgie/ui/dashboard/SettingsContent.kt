@@ -313,7 +313,7 @@ private fun ExpandableCategorySection(
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
             shape = MaterialTheme.shapes.medium
         ) {
-            Row(
+                Row(
                 modifier = Modifier
                     .padding(vertical = 12.dp, horizontal = 16.dp)
                     .fillMaxWidth(),

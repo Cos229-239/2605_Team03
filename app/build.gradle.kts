@@ -14,8 +14,8 @@ android {
 
     defaultConfig {
         applicationId = "com.nightowlcrew.nudgie"
-        minSdk = 26
-        targetSdk = 36
+        minSdk = 26 //oreo
+        targetSdk = 36 //baklava
 
         versionCode = 1
         versionName = "1.0"

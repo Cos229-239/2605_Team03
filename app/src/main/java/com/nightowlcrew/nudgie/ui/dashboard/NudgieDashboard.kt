@@ -129,9 +129,55 @@ fun PetScreenContent() {
         PetHeroContainer()
         
         Spacer(modifier = Modifier.height(32.dp))
+
+        // STATS GRID
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NewStatCard(
+                    label = "HAPPINESS",
+                    value = "85%",
+                    icon = Icons.Filled.Favorite,
+                    iconColor = Color.Red,
+                    bgColor = CardRedBg,
+                    borderColor = HeartRed,
+                    modifier = Modifier.weight(1f)
+                )
+                NewStatCard(
+                    label = "ENERGY",
+                    value = "62%",
+                    icon = Icons.Filled.FlashOn,
+                    iconColor = Color(0xFFFFC107),
+                    bgColor = CardYellowBg,
+                    borderColor = ElectricYellow,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NewStatCard(
+                    label = "LEVEL",
+                    value = "5",
+                    icon = Icons.Filled.Star,
+                    iconColor = Color.Blue,
+                    bgColor = CardBlueBg,
+                    borderColor = LevelUpBlue,
+                    modifier = Modifier.weight(1f)
+                )
+                NewStatCard(
+                    label = "AGE",
+                    value = "5 Days",
+                    icon = Icons.Filled.CalendarToday,
+                    iconColor = Color.Green,
+                    bgColor = CardGreenBg,
+                    borderColor = SuccessGreen,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
         
         Text(
-            text = "Stats & Customization coming soon!".uppercase(),
+            text = "Customization coming soon!".uppercase(),
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray
         )
@@ -193,7 +239,7 @@ fun DashboardContent(
     ) {
         // HEADER
         Text(
-            text = "BUDDY".uppercase(),
+            text = "Nudgie".uppercase(),
             style = MaterialTheme.typography.displayLarge,
             color = Color.Black
         )
@@ -257,61 +303,54 @@ fun DashboardContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // BUDDY WINDOW
-        PetHeroContainer()
+        // BUDDY WINDOW WITH FLOATING STATS
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            PetHeroContainer()
 
-        Spacer(modifier = Modifier.height(32.dp))
+            // Top Left - Happiness
+            PetCornerStatBadge(
+                label = "Happiness",
+                value = "85%",
+                accentColor = Color.Red,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(8.dp)
+            )
 
-        // DASHBOARD SECTION
-        Text(
-            text = "DASHBOARD".uppercase(),
-            style = MaterialTheme.typography.headlineMedium,
-            color = Color.Black
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+            // Top Right - Energy
+            PetCornerStatBadge(
+                label = "Energy",
+                value = "62%",
+                accentColor = Color(0xFFFFC107),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            )
 
-        // STATS GRID
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                NewStatCard(
-                    label = "HAPPINESS",
-                    value = "85%",
-                    icon = Icons.Filled.Favorite,
-                    iconColor = Color.Red,
-                    bgColor = CardRedBg,
-                    borderColor = HeartRed,
-                    modifier = Modifier.weight(1f)
-                )
-                NewStatCard(
-                    label = "ENERGY",
-                    value = "62%",
-                    icon = Icons.Filled.FlashOn,
-                    iconColor = Color(0xFFFFC107),
-                    bgColor = CardYellowBg,
-                    borderColor = ElectricYellow,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                NewStatCard(
-                    label = "LEVEL",
-                    value = "5",
-                    icon = Icons.Filled.Star,
-                    iconColor = Color.Blue,
-                    bgColor = CardBlueBg,
-                    borderColor = LevelUpBlue,
-                    modifier = Modifier.weight(1f)
-                )
-                NewStatCard(
-                    label = "AGE",
-                    value = "5 Days",
-                    icon = Icons.Filled.CalendarToday,
-                    iconColor = Color.Green,
-                    bgColor = CardGreenBg,
-                    borderColor = SuccessGreen,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            // Bottom Left - Age
+            PetCornerStatBadge(
+                label = "Age",
+                value = "5 Days",
+                accentColor = Color.Green,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp)
+            )
+
+            // Bottom Right - Level
+            PetCornerStatBadge(
+                label = "Level",
+                value = "5",
+                accentColor = Color.Blue,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
+            )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -326,7 +365,7 @@ fun DashboardContent(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "TODAY'S ACTIVITY".uppercase(),
+                text = "TODAY'S Habits".uppercase(),
                 style = MaterialTheme.typography.headlineMedium,
                 fontSize = 14.sp, // Slightly forced override for width management
                 color = Color.Black
@@ -598,6 +637,41 @@ fun NewStatCard(
                 text = value.uppercase(),
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.Black
+            )
+        }
+    }
+}
+
+@Composable
+private fun PetCornerStatBadge(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    accentColor: Color = Color.Black
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 2.dp,
+        shadowElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.Gray,
+                fontSize = 8.sp
+            )
+            Text(
+                text = value.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = accentColor
             )
         }
     }
