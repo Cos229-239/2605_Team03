@@ -5,6 +5,7 @@
 * **Team Members:** 
 * Kenneth William Hanks
 * Jared Delgato
+* Bailey Kimmel
 ---
 
 ## Project Overview & Intent
