@@ -27,3 +27,10 @@ val cpNeonPink = Color(0xFFFF00FF)      // Accent/Critical alerts
 val cpCorpoRed = Color(0xFFFF003C)      // Danger/Errors
 val cpCyberYellow = Color(0xFFFCEE0A)   // Warning/Level stats
 val cpGlitchBlue = Color(0xFF711CFF)    // Deep digital accent
+
+// Steampunk Theme Colors
+val spLeather = Color(0xFF1A1412)      // Background
+val spIron = Color(0xFF2E221F)         // Surfaces/Cards
+val spParchment = Color(0xFFD4B886)    // Body text/Readability
+val spCopper = Color(0xFFB85D19)       // Secondary accent
+val spBrass = Color(0xFFC5A059)        // Primary interaction
