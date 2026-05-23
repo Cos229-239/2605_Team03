@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "nightly_report_kickoff": false,
+  "nightly_report_kickoff": true,
   "include": {
     "title_team": true,
     "title_action": true,
@@ -70,6 +70,23 @@
   "nightly_branches": {
     "main": false,
     "gh-pages": false,
+    "Alec's-chore": true,
+    "BaileyPersonal": true,
+    "dev": false,
+    "jared-personal": true,
+    "jaredpersonal": true,
+    "kenneth-personal/chore/setup-room-dependencies": true,
+    "kenneth-personal/feature/implement-repository-viewmodel": true,
+    "kenneth-personal/feature/implement-room-daos": true,
+    "kenneth-personal/feature/screentime": true,
+    "kenneth-personal/feature/settings": true,
+    "kennethpersonal": true,
+    "master": false,
+    "PatrickPersonal": false
+  },
+  "weekly_branches": {
+    "main": false,
+    "gh-pages": false,
     "Alec's-chore": false,
     "BaileyPersonal": false,
     "dev": false,
@@ -82,23 +99,6 @@
     "kenneth-personal/feature/settings": false,
     "kennethpersonal": false,
     "master": false,
-    "PatrickPersonal": false
-  },
-  "weekly_branches": {
-    "main": false,
-    "gh-pages": false,
-    "Alec's-chore": true,
-    "BaileyPersonal": true,
-    "dev": true,
-    "jared-personal": true,
-    "jaredpersonal": true,
-    "kenneth-personal/chore/setup-room-dependencies": true,
-    "kenneth-personal/feature/implement-repository-viewmodel": true,
-    "kenneth-personal/feature/implement-room-daos": true,
-    "kenneth-personal/feature/screentime": true,
-    "kenneth-personal/feature/settings": true,
-    "kennethpersonal": true,
-    "master": true,
     "PatrickPersonal": false
   },
   "version": 1
