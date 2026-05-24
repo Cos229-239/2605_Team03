@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.data.ActivityItem
+import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -336,6 +337,7 @@ fun DashboardContent(
                 label = "Happiness",
                 value = "85%",
                 icon = Icons.Filled.Favorite,
+                currentTheme = currentTheme,
                 accentColor = Color(0xFFFF003C), // Corpo Red
                 modifier = Modifier
                     .align(Alignment.TopStart)
@@ -347,6 +349,7 @@ fun DashboardContent(
                 label = "Energy",
                 value = "62%",
                 icon = Icons.Filled.FlashOn,
+                currentTheme = currentTheme,
                 accentColor = Color(0xFFFCEE0A), // Cyber Yellow
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -358,6 +361,7 @@ fun DashboardContent(
                 label = "Age",
                 value = "5 Days",
                 icon = Icons.Filled.HourglassBottom,
+                currentTheme = currentTheme,
                 accentColor = cpNeonGreen,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -369,6 +373,7 @@ fun DashboardContent(
                 label = "Level",
                 value = "5",
                 icon = Icons.Filled.Star,
+                currentTheme = currentTheme,
                 accentColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -670,6 +675,7 @@ private fun PetCornerStatBadge(
     label: String,
     value: String,
     icon: ImageVector,
+    currentTheme: AppTheme,
     modifier: Modifier = Modifier,
     accentColor: Color = Color.Black
 ) {

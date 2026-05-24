@@ -86,27 +86,21 @@ class NudgieViewModel(
      * Prepopulates the database with a set of default "stock" habits on first run.
      */
     private fun prepopulateDefaultHabits() {
-        val alreadyAdded = sharedPreferences.getBoolean("default_habits_added", false)
+        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v2_added", false)
         if (!alreadyAdded) {
             viewModelScope.launch {
-                val defaults = listOf(
-                    Triple("💧 Drink 8 Cups of water", "BODY_VITALITY", 8),
-                    Triple("🧘 Morning stretch", "BODY_VITALITY", 1),
-                    Triple("🌬️ Breathing exercise", "MIND_SPACE", 1),
-                    Triple("🛏️ Make the bed", "DAILY_RHYTHMS", 1),
-                    Triple("🪥 Brush teeth", "SELF_CARE_RITUALS", 2),
-                    Triple("🐾 Feed pets", "CONNECTIONS", 2)
-                )
-                defaults.forEach { (title, category, freq) ->
-                    repository.insertHabit(
-                        HabitEntity(
-                            title = title,
-                            icon = category,
-                            targetFrequencyPerDay = freq
+                HABIT_TEMPLATES.forEach { (category, templates) ->
+                    templates.forEach { template ->
+                        repository.insertHabit(
+                            HabitEntity(
+                                title = template.title,
+                                icon = category.name,
+                                targetFrequencyPerDay = template.defaultFrequency
+                            )
                         )
-                    )
+                    }
                 }
-                sharedPreferences.edit().putBoolean("default_habits_added", true).apply()
+                sharedPreferences.edit().putBoolean("default_habits_v2_added", true).apply()
             }
         }
     }
