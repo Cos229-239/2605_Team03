@@ -431,7 +431,7 @@ private fun ExpandableDashboardSection(
     habits: List<ActivityItem>,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
-    var expanded by rememberSaveable { mutableStateOf(true) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     val rotationState by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "RotationAnimation"

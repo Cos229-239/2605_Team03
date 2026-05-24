@@ -52,6 +52,9 @@ class NudgieViewModel(
         }
         _uiState.value = _uiState.value.copy(currentTheme = initialTheme)
 
+        // Prepopulate default habits if it's the first time
+        prepopulateDefaultHabits()
+
         viewModelScope.launch {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             
@@ -77,6 +80,35 @@ class NudgieViewModel(
     fun updateTheme(newTheme: AppTheme) {
         _uiState.value = _uiState.value.copy(currentTheme = newTheme)
         sharedPreferences.edit().putString("app_theme", newTheme.name).apply()
+    }
+
+    /**
+     * Prepopulates the database with a set of default "stock" habits on first run.
+     */
+    private fun prepopulateDefaultHabits() {
+        val alreadyAdded = sharedPreferences.getBoolean("default_habits_added", false)
+        if (!alreadyAdded) {
+            viewModelScope.launch {
+                val defaults = listOf(
+                    Triple("💧 Drink 8 Cups of water", "BODY_VITALITY", 8),
+                    Triple("🧘 Morning stretch", "BODY_VITALITY", 1),
+                    Triple("🌬️ Breathing exercise", "MIND_SPACE", 1),
+                    Triple("🛏️ Make the bed", "DAILY_RHYTHMS", 1),
+                    Triple("🪥 Brush teeth", "SELF_CARE_RITUALS", 2),
+                    Triple("🐾 Feed pets", "CONNECTIONS", 2)
+                )
+                defaults.forEach { (title, category, freq) ->
+                    repository.insertHabit(
+                        HabitEntity(
+                            title = title,
+                            icon = category,
+                            targetFrequencyPerDay = freq
+                        )
+                    )
+                }
+                sharedPreferences.edit().putBoolean("default_habits_added", true).apply()
+            }
+        }
     }
 
     /**
