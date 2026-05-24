@@ -211,12 +211,7 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
             contentAlignment = Alignment.Center
         ) {
             val faceText = if (currentTheme == AppTheme.GOTH) "=^..^=" else "(◕‿◕)"
-            val faceColor = when (currentTheme) {
-                AppTheme.GOTH -> Color.LightGray
-                AppTheme.CYBERPUNK -> cpNeonCyan
-                AppTheme.STEAMPUNK -> spParchment // Brighter than spBrass for better contrast
-                else -> DarkBackground
-            }
+            val faceColor = if (currentTheme == AppTheme.GOTH) Color.LightGray else DarkBackground
             Text(
                 text = faceText,
                 fontSize = 50.sp,
@@ -331,7 +326,6 @@ fun DashboardContent(
                 value = "85%",
                 icon = Icons.Filled.Favorite,
                 accentColor = Color(0xFFFF003C), // Corpo Red
-                currentTheme = currentTheme,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .offset(x = (-8).dp, y = (-12).dp)
@@ -343,7 +337,6 @@ fun DashboardContent(
                 value = "62%",
                 icon = Icons.Filled.FlashOn,
                 accentColor = Color(0xFFFCEE0A), // Cyber Yellow
-                currentTheme = currentTheme,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .offset(x = 8.dp, y = (-12).dp)
@@ -355,7 +348,6 @@ fun DashboardContent(
                 value = "5 Days",
                 icon = Icons.Filled.HourglassBottom,
                 accentColor = cpNeonGreen,
-                currentTheme = currentTheme,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .offset(x = (-8).dp, y = 12.dp)
@@ -367,7 +359,6 @@ fun DashboardContent(
                 value = "5",
                 icon = Icons.Filled.Star,
                 accentColor = MaterialTheme.colorScheme.primary,
-                currentTheme = currentTheme,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .offset(x = 8.dp, y = 12.dp)
@@ -669,17 +660,8 @@ private fun PetCornerStatBadge(
     value: String,
     icon: ImageVector,
     modifier: Modifier = Modifier,
-    accentColor: Color = Color.Black,
-    currentTheme: AppTheme = AppTheme.DEFAULT
+    accentColor: Color = Color.Black
 ) {
-    val textShadow = if (currentTheme == AppTheme.DEFAULT) {
-        androidx.compose.ui.graphics.Shadow(
-            color = Color.Black.copy(alpha = 0.4f), // Increased opacity for better "stroke" effect
-            offset = androidx.compose.ui.geometry.Offset(2f, 2f),
-            blurRadius = 4f
-        )
-    } else null
-
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -699,7 +681,7 @@ private fun PetCornerStatBadge(
             )
             Text(
                 text = label.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(shadow = textShadow),
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp
@@ -708,8 +690,7 @@ private fun PetCornerStatBadge(
                 text = value.uppercase(),
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontFamily = PressStart2P,
-                    fontSize = 12.sp,
-                    shadow = textShadow
+                    fontSize = 12.sp
                 ),
                 fontWeight = FontWeight.Bold,
                 color = accentColor
