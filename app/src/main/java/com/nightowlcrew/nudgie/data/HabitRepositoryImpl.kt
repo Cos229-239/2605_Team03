@@ -14,15 +14,9 @@ class HabitRepositoryImpl(
     private val screenTimeDao: ScreenTimeDao
 ) : HabitRepository {
 
-    override fun getHabitsForDate(date: String): Flow<List<ActivityItem>> {
+    override fun getAllHabitsWithLogs(): Flow<List<ActivityItem>> {
         return habitDao.getHabitsWithLogs().map { list ->
-            // Check if ANY non-sleeping habit has a log for today (meaning they have awakened)
-            val anyOtherHabitLoggedToday = list.any { habitWithLogs ->
-                val isSleeping = habitWithLogs.habit.title.contains("sleep", ignoreCase = true)
-                !isSleeping && habitWithLogs.logs.any { it.completedDate == date }
-            }
-            
-            list.map { it.toActivityItem(date, anyOtherHabitLoggedToday) }
+            list.map { it.toActivityItem() }
         }
     }
 

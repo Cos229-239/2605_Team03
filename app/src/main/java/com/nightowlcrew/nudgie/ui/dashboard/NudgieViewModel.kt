@@ -52,11 +52,14 @@ class NudgieViewModel(
         }
         _uiState.value = _uiState.value.copy(currentTheme = initialTheme)
 
+        // Prepopulate default habits if it's the first time
+        prepopulateDefaultHabits()
+
         viewModelScope.launch {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             
             combine(
-                repository.getHabitsForDate(today),
+                repository.getAllHabitsWithLogs(),
                 repository.getScreenTimeForDate(today)
             ) { activities, screenTime ->
                 _uiState.value.copy(
@@ -80,17 +83,37 @@ class NudgieViewModel(
     }
 
     /**
+     * Prepopulates the database with a set of default "stock" habits on first run.
+     */
+    private fun prepopulateDefaultHabits() {
+        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v2_added", false)
+        if (!alreadyAdded) {
+            viewModelScope.launch {
+                HABIT_TEMPLATES.forEach { (category, templates) ->
+                    templates.forEach { template ->
+                        repository.insertHabit(
+                            HabitEntity(
+                                title = template.title,
+                                icon = category.name,
+                                targetFrequencyPerDay = template.defaultFrequency
+                            )
+                        )
+                    }
+                }
+                sharedPreferences.edit().putBoolean("default_habits_v2_added", true).apply()
+            }
+        }
+    }
+
+    /**
      * Toggles the completion status of a habit by adding a new log entry.
      */
     fun toggleHabitCompletion(activityItem: ActivityItem) {
         viewModelScope.launch {
-            val now = Date()
-            val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(now)
-            val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now)
+            val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
             val log = HabitLogEntity(
                 habitId = activityItem.id,
                 completedAtTime = currentTime,
-                completedDate = currentDate,
                 isCompleted = !activityItem.isCompleted
             )
             repository.insertLog(log)
@@ -111,13 +134,10 @@ class NudgieViewModel(
             val habitId = repository.insertHabit(habit).toInt()
             
             if (markAsCompleted) {
-                val now = Date()
-                val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(now)
-                val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now)
+                val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
                 val log = HabitLogEntity(
                     habitId = habitId,
                     completedAtTime = currentTime,
-                    completedDate = currentDate,
                     isCompleted = true
                 )
                 repository.insertLog(log)

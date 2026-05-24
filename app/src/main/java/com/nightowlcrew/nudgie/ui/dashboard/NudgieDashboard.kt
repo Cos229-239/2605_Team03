@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.data.ActivityItem
+import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -336,8 +337,8 @@ fun DashboardContent(
                 label = "Happiness",
                 value = "85%",
                 icon = Icons.Filled.Favorite,
-                accentColor = Color(0xFFFF003C), // Corpo Red
                 currentTheme = currentTheme,
+                accentColor = Color(0xFFFF003C), // Corpo Red
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .offset(x = (-8).dp, y = (-12).dp)
@@ -348,8 +349,8 @@ fun DashboardContent(
                 label = "Energy",
                 value = "62%",
                 icon = Icons.Filled.FlashOn,
-                accentColor = Color(0xFFFCEE0A), // Cyber Yellow
                 currentTheme = currentTheme,
+                accentColor = Color(0xFFFCEE0A), // Cyber Yellow
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .offset(x = 8.dp, y = (-12).dp)
@@ -360,8 +361,8 @@ fun DashboardContent(
                 label = "Age",
                 value = "5 Days",
                 icon = Icons.Filled.HourglassBottom,
-                accentColor = cpNeonGreen,
                 currentTheme = currentTheme,
+                accentColor = cpNeonGreen,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .offset(x = (-8).dp, y = 12.dp)
@@ -372,8 +373,8 @@ fun DashboardContent(
                 label = "Level",
                 value = "5",
                 icon = Icons.Filled.Star,
-                accentColor = MaterialTheme.colorScheme.primary,
                 currentTheme = currentTheme,
+                accentColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .offset(x = 8.dp, y = 12.dp)
@@ -435,7 +436,7 @@ private fun ExpandableDashboardSection(
     habits: List<ActivityItem>,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
-    var expanded by rememberSaveable { mutableStateOf(true) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     val rotationState by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "RotationAnimation"
@@ -674,9 +675,9 @@ private fun PetCornerStatBadge(
     label: String,
     value: String,
     icon: ImageVector,
+    currentTheme: AppTheme,
     modifier: Modifier = Modifier,
-    accentColor: Color = Color.Black,
-    currentTheme: AppTheme = AppTheme.DEFAULT
+    accentColor: Color = Color.Black
 ) {
     val textShadow = if (currentTheme == AppTheme.DEFAULT) {
         androidx.compose.ui.graphics.Shadow(
@@ -711,7 +712,7 @@ private fun PetCornerStatBadge(
             )
             Text(
                 text = label.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(shadow = textShadow),
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp
@@ -720,8 +721,7 @@ private fun PetCornerStatBadge(
                 text = value.uppercase(),
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontFamily = PressStart2P,
-                    fontSize = 12.sp,
-                    shadow = textShadow
+                    fontSize = 12.sp
                 ),
                 fontWeight = FontWeight.Bold,
                 color = accentColor

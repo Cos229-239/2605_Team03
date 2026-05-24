@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.data.ActivityItem
+import com.nightowlcrew.nudgie.data.CozyCategory
+import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
 import com.nightowlcrew.nudgie.ui.theme.PressStart2P
 
 /**
@@ -53,28 +55,6 @@ fun SettingsScreen(
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) }
     )
 }
-
-/**
- * The 5 cozy life-balance categories.
- */
-enum class CozyCategory(val displayName: String) {
-    BODY_VITALITY("Body & Vitality"),
-    MIND_SPACE("Mind & Space"),
-    DAILY_RHYTHMS("Daily Rhythms"),
-    SELF_CARE_RITUALS("Self-Care Rituals"),
-    CONNECTIONS("Connections")
-}
-
-/**
- * Static catalog of default habits.
- */
-val HABIT_TEMPLATES = mapOf(
-    CozyCategory.BODY_VITALITY to listOf("💧 Drink 8 Cups of water", "💊 Take vitamins", "🧘 Morning stretch", "🏃 15-min walk"),
-    CozyCategory.MIND_SPACE to listOf("✍️ Evening journaling", "🌬️ Breathing exercise", "🧹 Clear workspace", "📚 Read 5 pages"),
-    CozyCategory.DAILY_RHYTHMS to listOf("🛏️ Make the bed", "🍽️ Wash dishes", "📧 Clear inbox", "📅 Review schedule"),
-    CozyCategory.SELF_CARE_RITUALS to listOf("🧼 Skincare routine", "🪥 Brush teeth", "🚿 Warm shower", "🔌 Unplug 30m before sleep"),
-    CozyCategory.CONNECTIONS to listOf("📱 Check-in text", "📞 Call family", "🐾 Feed pets", "🪴 Water plants")
-)
 
 @Composable
 fun SettingsContent(
@@ -414,27 +394,18 @@ private fun ExpandableCategorySection(
                 val templates = HABIT_TEMPLATES[category] ?: emptyList()
                 
                 // Show templates with +/- toggle
-                templates.forEach { templateTitle ->
-                    val activeHabit = habits.find { it.description == templateTitle }
+                templates.forEach { template ->
+                    val activeHabit = habits.find { it.description == template.title }
                     val isActive = activeHabit != null
                     
                     TemplateOptionRow(
-                        title = templateTitle,
+                        title = template.title,
                         icon = if (isActive) Icons.Default.Remove else Icons.Default.Add,
                         onClick = {
                             if (activeHabit != null) {
                                 onDeleteHabit(activeHabit.id)
                             } else {
-                                // Extract frequency from title if it contains "8 Cups" or similar
-                                // But ignore durations like "15-min" or counts like "5 pages" for single-step habits
-                                val freq = when {
-                                    templateTitle.contains("15-min") || templateTitle.contains("5 pages") -> 1
-                                    else -> {
-                                        val freqMatch = Regex("\\d+").find(templateTitle)
-                                        freqMatch?.value?.toIntOrNull() ?: 1
-                                    }
-                                }
-                                onAddTemplate(templateTitle, freq)
+                                onAddTemplate(template.title, template.defaultFrequency)
                             }
                         }
                     )
@@ -442,7 +413,7 @@ private fun ExpandableCategorySection(
 
                 // Show custom habits (not in templates)
                 val customHabits = habits.filter { habit -> 
-                    templates.none { it == habit.description } 
+                    templates.none { it.title == habit.description }
                 }
                 
                 customHabits.forEach { item ->
