@@ -23,45 +23,45 @@ fun AnimatedKitty(
     // String padding matches lengths exactly to prevent side-to-side character drift
     val frames = listOf(
         """
-|       \      /
-|      | \."./ |
-|     /         \
-|    /  {|} {|}  \   _
-|    \ ==  Y  == /  ( \
-|     ;--._^_.--;    ) )
-|    /    \_/    \  / /
-|    |    ( )    | / /
-|   /|   |   |   |\ /
-|  | |   |   |   | |
-|   \|   |___|   |/
-|    '""'     '""'
+|       \      /         
+|      | \."./ |         
+|     /         \        
+|    /  {|} {|}  \   _   
+|    \ ==  Y  == /  ( \  
+|     ;--._^_.--;    ) ) 
+|    /    \_/    \  / /  
+|    |    ( )    | / /   
+|   /|   |   |   |\ /    
+|  | |   |   |   | |     
+|   \|   |___|   |/      
+|    '""'     '""'       
         """.trimMargin(),
         """
-|       \      /
-|      | \."./ |
-|     /         \
-|    /  {|} {|}  \   _
-|    \ ==  Y  == /  | |
-|     ;--._^_.--;   | |
-|    /    \_/    \  / /
-|    |    ( )    | / /
-|   /|   |   |   |\ /
-|  | |   |   |   | |
-|   \|   |___|   |/
-|    '""'     '""'
+|       \      /         
+|      | \."./ |         
+|     /         \        
+|    /  {|} {|}  \   _   
+|    \ ==  Y  == /  | |  
+|     ;--._^_.--;   | |  
+|    /    \_/    \  / /  
+|    |    ( )    | / /   
+|   /|   |   |   |\ /    
+|  | |   |   |   | |     
+|   \|   |___|   |/      
+|    '""'     '""'       
         """.trimMargin(),
         """
-|       \      /
-|      | \."./ |
-|     /         \
-|    /  {|} {|}  \   _
-|    \ ==  Y  == /  / /
-|     ;--._^_.--;   | |
-|    /    \_/    \  / /
-|    |    ( )    | / /
-|   /|   |   |   |\ /
-|  | |   |   |   | |
-|   \|   |___|   |/
+|       \      /         
+|      | \."./ |         
+|     /         \        
+|    /  {|} {|}  \   _   
+|    \ ==  Y  == /  / /  
+|     ;--._^_.--;   | |  
+|    /    \_/    \  / /  
+|    |    ( )    | / /   
+|   /|   |   |   |\ /    
+|  | |   |   |   | |     
+|   \|   |___|   |/      
 |    '""'     '""'
         """.trimMargin()
     )
@@ -82,7 +82,7 @@ fun AnimatedKitty(
         fontSize = 13.sp,           // Sized up to eliminate excessive background margins
         lineHeight = 15.sp,         // Proportional layout track height
         fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,
+        textAlign = TextAlign.Start,
         color = color,
         softWrap = false
     )

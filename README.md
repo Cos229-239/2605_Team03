@@ -21,6 +21,8 @@ The system utilizes an automated background integration workflow to push build m
 
 ## Accomplished System Architecture
 
+- **Main Navigation Router Integration (Card 6):** Updated the dashboard routing tree inside `NudgieDashboard.kt` to bind index position `4` to the completed `SettingsScreen` wrapper so that the visual configuration screen loads dynamically in place of placeholder strings.
+
 ### 🛠️ Architecture & Data Layer Infrastructure
 * **Room DAO Persistence Layer:** Native Data Access Objects are fully established to govern structured SQL transaction threads securely over the application lifecycle.
 * **Repository Pattern & MVVM Architecture:** Built a clean `HabitRepository` bridge to feed local database events into a central `NudgieViewModel`, exposing safe, Unidirectional Data Flow states (`uiState.activities`) to visual screens.
@@ -38,7 +40,7 @@ The system utilizes an automated background integration workflow to push build m
 ## Current Workspace Roadmap
 
 ### 🗂️ In Progress
-* **Main Navigation Router Integration (Card 6):** Updating the dashboard routing tree inside `NudgieDashboard.kt` to bind index position `4` to the completed `SettingsScreen` wrapper so that the visual configuration screen loads dynamically in place of placeholder strings.
+* **Coming Soon:** Placeholder for upcoming features.
 
 ### 📋 Pending Tasks
 Design the Stateless Learn UI Layout Shell
@@ -49,8 +51,10 @@ Update Router Configuration for index 3
 Integrate Pixel Art App Launcher Icon Configuration (`nudgie.png`)
 Construct Brand Loading Splash Activity Layout Shell (`Nudgie-loadingsplash.jpg`)
 
----
 ### Everything below this was already here.
+
+---
+
 ## Prototype Sandboxes
 * `index.html` - Local browser-based student roster editor landing interface.
 * `roster-v2-sample.json` - High-level sample profile model structure used to reference team properties.# Class Project Template

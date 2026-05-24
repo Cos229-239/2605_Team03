@@ -13,7 +13,7 @@ enum class CozyCategory(val displayName: String) {
 
 data class HabitTemplate(
     val title: String,
-    val defaultFrequency: Int = 1
+    val defaultFrequency: Int = 1,
 )
 
 /**

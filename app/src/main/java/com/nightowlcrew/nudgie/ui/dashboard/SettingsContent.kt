@@ -40,7 +40,7 @@ import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
  */
 @Composable
 fun SettingsScreen(
-    viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)
+    viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -104,7 +104,7 @@ fun SettingsContent(
         DigitalBalanceCard(
             usageHours = currentGoalHours.toFloat(),
             currentTheme = currentTheme,
-            onUsageChange = { newHours -> onUpdateScreenTimeGoal(newHours.toInt()) }
+            onUsageChange = { newHours -> onUpdateScreenTimeGoal(newHours.toInt()) },
         )
 
         ThemeSelectionCard(
@@ -367,35 +367,35 @@ private fun ExpandableCategorySection(
     )
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
-                .clickable { expanded = !expanded },
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            shape = MaterialTheme.shapes.medium
-        ) {
-                Row(
+            Surface(
                 modifier = Modifier
-                    .padding(vertical = 12.dp, horizontal = 16.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .fillMaxWidth()
+                    .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
+                    .clickable { expanded = !expanded },
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                shape = MaterialTheme.shapes.medium,
             ) {
-                Text(
-                    text = categoryTitle,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold
-                )
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (expanded) "Collapse" else "Expand",
-                    modifier = Modifier.rotate(rotationState),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    modifier = Modifier
+                        .padding(vertical = 12.dp, horizontal = 16.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = categoryTitle,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (expanded) "Collapse" else "Expand",
+                        modifier = Modifier.rotate(rotationState),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-        }
 
         AnimatedVisibility(visible = expanded) {
             Column(

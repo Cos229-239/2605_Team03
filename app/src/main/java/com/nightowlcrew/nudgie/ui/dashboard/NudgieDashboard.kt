@@ -50,7 +50,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -69,6 +68,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.ui.theme.CardBlueBg
@@ -86,18 +92,28 @@ import com.nightowlcrew.nudgie.ui.theme.cpNeonGreen
 import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
 import com.nightowlcrew.nudgie.ui.theme.spParchment
 
+sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
+    object Home : Screen("home", "Home", Icons.Filled.Home)
+    object Pet : Screen("pet", "Pet", Icons.Filled.AutoAwesome)
+    object Learn : Screen("learn", "Learn", Icons.AutoMirrored.Filled.MenuBook)
+    object Stats : Screen("stats", "Stats", Icons.AutoMirrored.Filled.ShowChart)
+    object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var selectedItem by remember { mutableIntStateOf(0) }
-    val items = listOf("Home", "Pet", "Learn", "Stats", "Settings")
-    val icons = listOf(
-        Icons.Filled.Home,
-        Icons.Filled.AutoAwesome, // Pet equivalent
-        Icons.AutoMirrored.Filled.MenuBook, // Learn
-        Icons.AutoMirrored.Filled.ShowChart, // Stats
-        Icons.Filled.Settings
+    val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    val screens = listOf(
+        Screen.Home,
+        Screen.Pet,
+        Screen.Learn,
+        Screen.Stats,
+        Screen.Settings,
     )
 
     Scaffold(
@@ -106,18 +122,33 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
                 containerColor = MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp
             ) {
-                items.forEachIndexed { index, item ->
+                screens.forEach { screen ->
+                    val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                     NavigationBarItem(
-                        icon = { Icon(icons[index], contentDescription = item) },
+                        icon = { Icon(screen.icon, contentDescription = screen.label) },
                         label = {
                             Text(
-                                text = item.uppercase(),
+                                text = screen.label.uppercase(),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontSize = 11.sp
                             )
                         },
-                        selected = selectedItem == index,
-                        onClick = { selectedItem = index },
+                        selected = selected,
+                        onClick = {
+                            navController.navigate(screen.route) {
+                                // Pop up to the start destination of the graph to
+                                // avoid building up a large stack of destinations
+                                // on the back stack as users select items
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                // Avoid multiple copies of the same destination when
+                                // reselecting the same item
+                                launchSingleTop = true
+                                // Restore state when reselecting a previously selected item
+                                restoreState = true
+                            }
+                        },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.primary,
                             selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -130,40 +161,42 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
             }
         }
     ) { innerPadding ->
-        Surface(
-            color = MaterialTheme.colorScheme.background,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Home.route,
+            modifier = Modifier.padding(innerPadding)
         ) {
-            when (selectedItem) {
-                0 -> {
-                    DashboardContent(
-                        activities = uiState.activities,
-                        currentTheme = uiState.currentTheme,
-                        onToggleHabit = { viewModel.toggleHabitCompletion(it) }
-                    )
-                }
-                1 -> {
-                    PetScreenContent(currentTheme = uiState.currentTheme)
-                }
-                4 -> {
-                    SettingsScreen(viewModel = viewModel)
-                }
-                else -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Screen Coming Soon".uppercase(),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = Color.Gray
-                        )
-                    }
-                }
+            composable(Screen.Home.route) {
+                DashboardContent(
+                    categorizedActivities = uiState.categorizedActivities,
+                    currentTheme = uiState.currentTheme,
+                    onToggleHabit = { viewModel.toggleHabitCompletion(it) },
+                )
             }
+            composable(Screen.Pet.route) {
+                PetScreenContent(currentTheme = uiState.currentTheme)
+            }
+            composable(Screen.Settings.route) {
+                SettingsScreen(viewModel = viewModel)
+            }
+            // Placeholders for Learn and Stats
+            composable(Screen.Learn.route) { ComingSoonScreen() }
+            composable(Screen.Stats.route) { ComingSoonScreen() }
         }
+    }
+}
+
+@Composable
+fun ComingSoonScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Screen Coming Soon".uppercase(),
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.Gray
+        )
     }
 }
 
@@ -338,9 +371,9 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
 
 @Composable
 fun DashboardContent(
-    activities: List<ActivityItem>,
+    categorizedActivities: Map<CozyCategory, List<ActivityItem>>,
     currentTheme: AppTheme = AppTheme.DEFAULT,
-    onToggleHabit: (ActivityItem) -> Unit
+    onToggleHabit: (ActivityItem) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -508,7 +541,7 @@ fun DashboardContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        CategorizedActivityLog(activities, currentTheme, onToggleHabit)
+        CategorizedActivityLog(categorizedActivities, currentTheme, onToggleHabit)
 
         Spacer(modifier = Modifier.height(80.dp)) // Extra space for scroll
     }
@@ -519,21 +552,18 @@ fun DashboardContent(
  */
 @Composable
 fun CategorizedActivityLog(
-    activities: List<ActivityItem>,
+    categorizedActivities: Map<CozyCategory, List<ActivityItem>>,
     currentTheme: AppTheme,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        CozyCategory.entries.forEach { category ->
-            val filteredActivities = activities.filter { it.icon == category.name }
-            if (filteredActivities.isNotEmpty()) {
-                ExpandableDashboardSection(
-                    categoryTitle = category.displayName,
-                    habits = filteredActivities,
-                    currentTheme = currentTheme,
-                    onToggleHabit = onToggleHabit
-                )
-            }
+        categorizedActivities.forEach { (category, habits) ->
+            ExpandableDashboardSection(
+                categoryTitle = category.displayName,
+                habits = habits,
+                currentTheme = currentTheme,
+                onToggleHabit = onToggleHabit
+            )
         }
     }
 }
@@ -724,15 +754,20 @@ fun ActivityLogItem(
 @Composable
 fun FIGMA_DASHBOARD_PREVIEW() {
     val mockActivities = listOf(
-        ActivityItem(1, "🍖", "Fed Buddy", "08:30", true),
-        ActivityItem(2, "⚽", "Played with ball", "10:15", true),
-        ActivityItem(3, "🎯", "Training session", "12:00", false),
-        ActivityItem(4, "🌳", "Walk outside", "15:00", false),
-        ActivityItem(5, "🍽️", "Evening meal", "18:00", false)
+        ActivityItem(1, "BODY_VITALITY", "Fed Buddy", "08:30", true),
+        ActivityItem(2, "BODY_VITALITY", "Played with ball", "10:15", true),
+        ActivityItem(3, "MIND_SPACE", "Training session", "12:00", false),
+        ActivityItem(4, "DAILY_RHYTHMS", "Walk outside", "15:00", false),
+        ActivityItem(5, "DAILY_RHYTHMS", "Evening meal", "18:00", false)
+    )
+    val mockCategorized = mapOf(
+        CozyCategory.BODY_VITALITY to mockActivities.filter { it.icon == "BODY_VITALITY" },
+        CozyCategory.MIND_SPACE to mockActivities.filter { it.icon == "MIND_SPACE" },
+        CozyCategory.DAILY_RHYTHMS to mockActivities.filter { it.icon == "DAILY_RHYTHMS" }
     )
     NudgieTheme {
         DashboardContent(
-            activities = mockActivities,
+            categorizedActivities = mockCategorized,
             onToggleHabit = {}
         )
     }

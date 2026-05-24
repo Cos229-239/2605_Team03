@@ -89,7 +89,7 @@ fun AnimatedAlien(
         fontSize = 13.sp,              // Slightly scaled up to match the kitty box layout bounds
         lineHeight = 14.sp,            // Balanced spacing matching the 13.sp font grid
         fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,  // Guarantees center alignment within the dashboard card window
+        textAlign = TextAlign.Start,  // Changed from Center to preserve ASCII structure
         color = baseColor,
         softWrap = false
     )

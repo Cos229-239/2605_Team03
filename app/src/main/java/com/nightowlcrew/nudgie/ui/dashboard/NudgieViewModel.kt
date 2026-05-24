@@ -21,6 +21,7 @@ enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK, GOTH }
  */
 data class DashboardUiState(
     val activities: List<ActivityItem> = emptyList(),
+    val categorizedActivities: Map<CozyCategory, List<ActivityItem>> = emptyMap(),
     val currentScreenTimeMillis: Long = 0L,
     val screenTimeGoalMillis: Long = 14400000L, // Default 4 hours (4 * 3600 * 1000)
     val currentTheme: AppTheme = AppTheme.DEFAULT,
@@ -62,8 +63,13 @@ class NudgieViewModel(
                 repository.getAllHabitsWithLogs(),
                 repository.getScreenTimeForDate(today)
             ) { activities, screenTime ->
+                val categorized = CozyCategory.entries.associateWith { category ->
+                    activities.filter { it.icon == category.name }
+                }.filterValues { it.isNotEmpty() }
+
                 _uiState.value.copy(
                     activities = activities,
+                    categorizedActivities = categorized,
                     currentScreenTimeMillis = screenTime?.actualDurationMillis ?: 0L,
                     screenTimeGoalMillis = screenTime?.targetLimitMillis ?: 14400000L,
                     isLoading = false
