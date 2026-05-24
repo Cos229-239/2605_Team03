@@ -320,6 +320,7 @@ fun DashboardContent(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
             ),
             shape = MaterialTheme.shapes.medium,
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -496,7 +497,9 @@ private fun ExpandableDashboardSection(
                 .fillMaxWidth()
                 .clickable { expanded = !expanded },
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            tonalElevation = 2.dp,
+            shadowElevation = 4.dp
         ) {
             Row(
                 modifier = Modifier
@@ -555,7 +558,8 @@ fun ActivityLogItem(
                 }
             },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = itemBgColor)
+        colors = CardDefaults.cardColors(containerColor = itemBgColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -688,7 +692,8 @@ fun NewStatCard(
         modifier = modifier.height(110.dp),
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(2.dp, if (MaterialTheme.colorScheme.outline != Color.Unspecified) MaterialTheme.colorScheme.outline else borderColor),
-        colors = CardDefaults.cardColors(containerColor = if (MaterialTheme.colorScheme.surfaceVariant != Color.Unspecified) MaterialTheme.colorScheme.surfaceVariant else bgColor)
+        colors = CardDefaults.cardColors(containerColor = if (MaterialTheme.colorScheme.surfaceVariant != Color.Unspecified) MaterialTheme.colorScheme.surfaceVariant else bgColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
@@ -745,6 +750,8 @@ private fun PetCornerStatBadge(
         modifier = modifier,
         color = backgroundColor,
         shape = CircleShape,
+        tonalElevation = 2.dp,
+        shadowElevation = 2.dp,
         border = BorderStroke(1.dp, accentColor)
     ) {
         Row(

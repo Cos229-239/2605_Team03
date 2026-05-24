@@ -34,6 +34,7 @@ fun BuddyDialogueBox(
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF1F2937) // Dark canvas backdrop
         ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         border = BorderStroke(2.dp, Color.Gray) // Tactile line framework
     ) {
         Text(
