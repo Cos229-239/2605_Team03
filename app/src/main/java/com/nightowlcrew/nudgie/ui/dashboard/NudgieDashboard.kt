@@ -322,7 +322,7 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
                 .fillMaxWidth()
                 .height(240.dp)
                 .background(
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1.0f),
+                    MaterialTheme.colorScheme.surface,
                     RoundedCornerShape(16.dp)
                 ),
             contentAlignment = Alignment.Center
@@ -355,8 +355,8 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
                         text = steampunkAscii,
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontFamily = FontFamily.Monospace,
-                            lineHeight = 12.sp,
-                            fontSize = 12.sp,
+                            lineHeight = 14.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         ),
                         color = spParchment
@@ -455,7 +455,7 @@ fun DashboardContent(
                         .height(10.dp)
                         .clip(CircleShape),
                     color = MaterialTheme.colorScheme.tertiary,
-                    trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 1f)
+                    trackColor = MaterialTheme.colorScheme.tertiaryContainer
                 )
             }
         }
@@ -587,22 +587,22 @@ private fun ExpandableDashboardSection(
                 .fillMaxWidth()
                 .nudgieCardShadow(currentTheme, 4.dp, RoundedCornerShape(12.dp))
                 .clickable { expanded = !expanded },
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1f),
-            shape = RoundedCornerShape(12.dp)
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(12.dp),
         ) {
             Row(
                 modifier = Modifier
                     .padding(vertical = 14.dp, horizontal = 16.dp)
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = categoryTitle.uppercase(),
                     style = MaterialTheme.typography.headlineMedium.copy(fontFamily = PressStart2P), // Increased size/impact
                     fontSize = 20.sp, // Scaled down for width management
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
@@ -632,10 +632,10 @@ private fun ExpandableDashboardSection(
 fun ActivityLogItem(
     activity: ActivityItem,
     currentTheme: AppTheme,
-    onToggleHabit: (ActivityItem) -> Unit
+    onToggleHabit: (ActivityItem) -> Unit,
 ) {
-    val itemBgColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1f)
-    val contentColor = MaterialTheme.colorScheme.onSurface
+    val itemBgColor = MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     val isCompleted = activity.currentCount >= activity.targetCount
     val contentAlpha = if (isCompleted) 0.8f else 1.0f
 
@@ -827,20 +827,16 @@ private fun PetCornerStatBadge(
     icon: ImageVector,
     currentTheme: AppTheme,
     modifier: Modifier = Modifier,
-    accentColor: Color = Color.Black
+    accentColor: Color = Color.Black,
 ) {
 
-    val backgroundColor = if (currentTheme == AppTheme.GOTH) {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
-    }
+    val backgroundColor = MaterialTheme.colorScheme.surface
 
     Surface(
         modifier = modifier.nudgieCardShadow(currentTheme, 2.dp, CircleShape),
         color = backgroundColor,
         shape = CircleShape,
-        border = BorderStroke(1.dp, accentColor)
+        border = BorderStroke(1.dp, accentColor),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),

@@ -86,6 +86,7 @@ private val CyberpunkColorScheme = darkColorScheme(
     primary = cpNeonCyan,
     secondary = cpNeonPink,
     tertiary = cpNeonCyan, // Progress bars and key accents
+    tertiaryContainer = cpNeonCyan.copy(alpha = 0.2f),
     background = cpVoid,
     surface = cpMainframe,
     error = cpCorpoRed,
@@ -103,6 +104,7 @@ private val SteampunkColorScheme = darkColorScheme(
     primary = spBrass,
     secondary = spCopper,
     tertiary = spParchment,
+    tertiaryContainer = spIron,
     background = spLeather,
     surface = spIron,
     onPrimary = Color.Black,
@@ -110,8 +112,8 @@ private val SteampunkColorScheme = darkColorScheme(
     onTertiary = spLeather,
     onBackground = spParchment,
     onSurface = spParchment,
-    surfaceVariant = spBrass.copy(alpha = 0.1f),
-    onSurfaceVariant = spBrass,
+    surfaceVariant = spBrass.copy(alpha = 0.7f),
+    onSurfaceVariant = spParchmentDark,
     outline = spCopper
 )
 
@@ -119,6 +121,7 @@ private val GothColorScheme = darkColorScheme(
     primary = gothBloodRed,
     secondary = gothNeonPink,
     tertiary = gothNeonPink,
+    tertiaryContainer = gothBloodRed.copy(alpha = 0.2f),
     background = gothAbyss,
     surface = gothObsidian,
     onPrimary = Color.White,
@@ -135,16 +138,24 @@ private val DarkColorScheme = darkColorScheme(
     primary = BrandGold,
     secondary = LevelUpBlue,
     tertiary = LogicPurple,
+    tertiaryContainer = LogicPurple.copy(alpha = 0.2f),
     background = Color(0xFF121212),
-    surface = DarkGreyScale
+    surface = DarkGreyScale,
+    onSurface = Color.White,
+    surfaceVariant = Color(0xFF2C2C2C),
+    onSurfaceVariant = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = BrandGold,
     secondary = LevelUpBlue,
     tertiary = LogicPurple,
+    tertiaryContainer = LogicPurple.copy(alpha = 0.2f),
     background = Color.White,
-    surface = Color.White
+    surface = Color.White,
+    onSurface = Color.Black,
+    surfaceVariant = Color(0xFFF5F5F5),
+    onSurfaceVariant = Color.Black
 )
 
 @Composable

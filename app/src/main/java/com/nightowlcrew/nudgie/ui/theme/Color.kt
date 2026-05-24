@@ -33,6 +33,7 @@ val cpGlitchBlue = Color(0xFF711CFF)    // Deep digital accent
 val spLeather = Color(0xFF1A1412)      // Background
 val spIron = Color(0xFF2E221F)         // Surfaces/Cards
 val spParchment = Color(0xFFD4B886)    // Body text/Readability
+val spParchmentDark = Color(0xFF3E2723) // Dark brown for text on light parchment
 val spCopper = Color(0xFFB85D19)       // Secondary accent
 val spBrass = Color(0xFFC5A059)        // Primary interaction
 
