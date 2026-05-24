@@ -12,8 +12,11 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ScreenTimeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertOrUpdateScreenTime(record: ScreenTimeRecord)
+    suspend fun insertOrUpdateRecord(record: ScreenTimeRecord)
 
-    @Query("SELECT * FROM screen_time_records WHERE dateString = :date LIMIT 1")
-    fun getScreenTimeForDay(date: String): Flow<ScreenTimeRecord?>
+    @Query("SELECT * FROM screen_time_records WHERE date = :date LIMIT 1")
+    fun getRecordForDate(date: String): Flow<ScreenTimeRecord?>
+
+    @Query("SELECT * FROM screen_time_records ORDER BY date DESC")
+    fun getAllRecords(): Flow<List<ScreenTimeRecord>>
 }

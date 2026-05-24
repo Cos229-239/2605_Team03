@@ -3,6 +3,7 @@ package com.nightowlcrew.nudgie.ui.dashboard
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -39,11 +40,13 @@ fun SettingsScreen(
 
     SettingsContent(
         activities = uiState.activities,
+        screenTimeGoalMillis = uiState.screenTimeGoalMillis,
         onAddHabit = { title, category -> 
             viewModel.addNewHabit(title, category.name, 1) 
         },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
-        onToggleHabit = { item -> viewModel.toggleHabitCompletion(item) }
+        onToggleHabit = { item -> viewModel.toggleHabitCompletion(item) },
+        onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) }
     )
 }
 
@@ -72,13 +75,13 @@ val HABIT_TEMPLATES = mapOf(
 @Composable
 fun SettingsContent(
     activities: List<ActivityItem>,
+    screenTimeGoalMillis: Long,
     onAddHabit: (String, CozyCategory) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onToggleHabit: (ActivityItem) -> Unit,
+    onUpdateScreenTimeGoal: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var screenTimeGoal by rememberSaveable { mutableFloatStateOf(2f) }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -110,9 +113,11 @@ fun SettingsContent(
 
         HabitCreatorSection(onAddHabit = onAddHabit)
 
+        val currentGoalHours = (screenTimeGoalMillis / 3600000L).toInt()
+
         DigitalBalanceCard(
-            usageHours = screenTimeGoal,
-            onUsageChange = { screenTimeGoal = it }
+            usageHours = currentGoalHours.toFloat(),
+            onUsageChange = { newHours -> onUpdateScreenTimeGoal(newHours.toInt()) }
         )
     }
 }
@@ -178,7 +183,8 @@ fun HabitCreatorSection(
                         )
                         ExposedDropdownMenu(
                             expanded = isDropdownExpanded,
-                            onDismissRequest = { isDropdownExpanded = false }
+                            onDismissRequest = { isDropdownExpanded = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                         ) {
                             CozyCategory.entries.forEach { category ->
                                 DropdownMenuItem(
@@ -506,9 +512,11 @@ fun SettingsContentPreview() {
         Surface {
             SettingsContent(
                 activities = mockActivities,
+                screenTimeGoalMillis = 7200000L,
                 onAddHabit = { _, _ -> },
                 onDeleteHabit = { },
-                onToggleHabit = { }
+                onToggleHabit = { },
+                onUpdateScreenTimeGoal = { }
             )
         }
     }
