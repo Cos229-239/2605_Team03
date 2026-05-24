@@ -56,7 +56,7 @@ class NudgieViewModel(
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             
             combine(
-                repository.getHabitsForDate(today),
+                repository.getAllHabitsWithLogs(),
                 repository.getScreenTimeForDate(today)
             ) { activities, screenTime ->
                 _uiState.value.copy(
@@ -84,13 +84,10 @@ class NudgieViewModel(
      */
     fun toggleHabitCompletion(activityItem: ActivityItem) {
         viewModelScope.launch {
-            val now = Date()
-            val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(now)
-            val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now)
+            val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
             val log = HabitLogEntity(
                 habitId = activityItem.id,
                 completedAtTime = currentTime,
-                completedDate = currentDate,
                 isCompleted = !activityItem.isCompleted
             )
             repository.insertLog(log)
@@ -111,13 +108,10 @@ class NudgieViewModel(
             val habitId = repository.insertHabit(habit).toInt()
             
             if (markAsCompleted) {
-                val now = Date()
-                val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(now)
-                val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now)
+                val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
                 val log = HabitLogEntity(
                     habitId = habitId,
                     completedAtTime = currentTime,
-                    completedDate = currentDate,
                     isCompleted = true
                 )
                 repository.insertLog(log)
