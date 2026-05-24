@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.data.ActivityItem
+import com.nightowlcrew.nudgie.ui.theme.PressStart2P
 
 /**
  * Stateful container for the Settings screen.
@@ -95,13 +96,13 @@ fun SettingsContent(
     ) {
         Text(
             text = "MANAGEMENT CENTERS",
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineMedium.copy(fontFamily = PressStart2P),
             fontWeight = FontWeight.Bold
         )
 
         Text(
             text = "Active Habits",
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleLarge.copy(fontFamily = PressStart2P),
             fontWeight = FontWeight.SemiBold
         )
 

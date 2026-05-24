@@ -120,7 +120,7 @@ fun PetScreenContent(currentTheme: AppTheme = AppTheme.DEFAULT) {
     ) {
         Text(
             text = "MY PET".uppercase(),
-            style = MaterialTheme.typography.displayLarge,
+            style = MaterialTheme.typography.displayLarge.copy(fontFamily = PressStart2P),
             color = MaterialTheme.colorScheme.onBackground
         )
         
@@ -197,32 +197,34 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
                 .border(4.dp, DarkBackground, RoundedCornerShape(24.dp)),
             contentAlignment = Alignment.Center
         ) {
-            val faceText = if (currentTheme == AppTheme.GOTH) "=^..^=" else "(◕‿◕)"
-            Text(faceText, fontSize = 60.sp, color = DarkBackground)
+            Text("(◕‿◕)", fontSize = 60.sp, color = DarkBackground)
         }
     } else {
         // THEMED WINDOW (Cyberpunk / Steampunk / Goth)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
+                .height(240.dp)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), MaterialTheme.shapes.large)
                 .border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
             contentAlignment = Alignment.Center
         ) {
-            val faceText = if (currentTheme == AppTheme.GOTH) "=^..^=" else "(◕‿◕)"
-            val faceColor = when (currentTheme) {
-                AppTheme.GOTH -> Color.LightGray
-                AppTheme.CYBERPUNK -> cpNeonCyan
-                AppTheme.STEAMPUNK -> spParchment // Brighter than spBrass for better contrast
-                else -> DarkBackground
+            if (currentTheme == AppTheme.GOTH) {
+                AnimatedKitty(color = MaterialTheme.colorScheme.onSurface)
+            } else {
+                val faceText = "(◕‿◕)"
+                val faceColor = when (currentTheme) {
+                    AppTheme.CYBERPUNK -> cpNeonCyan
+                    AppTheme.STEAMPUNK -> spParchment // Brighter than spBrass for better contrast
+                    else -> DarkBackground
+                }
+                Text(
+                    text = faceText,
+                    fontSize = 50.sp,
+                    color = faceColor,
+                    fontWeight = FontWeight.Bold
+                )
             }
-            Text(
-                text = faceText,
-                fontSize = 50.sp,
-                color = faceColor,
-                fontWeight = FontWeight.Bold
-            )
         }
     }
 }
@@ -246,14 +248,18 @@ fun DashboardContent(
             text = "NUDGIE",
             style = MaterialTheme.typography.displayLarge.copy(
                 fontSize = 44.sp,
-                lineHeight = 52.sp
+                lineHeight = 52.sp,
+                fontFamily = PressStart2P
             ),
             color = MaterialTheme.colorScheme.onBackground
         )
-        // High-density metadata - pinned to clean sans-serif
+        // High-density metadata
         Text(
             text = "Level 5 • Baby Stage",
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontFamily = PressStart2P,
+                fontSize = 12.sp
+            ),
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
         )
 
@@ -387,7 +393,7 @@ fun DashboardContent(
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "TODAY'S Habits".uppercase(),
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineMedium.copy(fontFamily = PressStart2P),
                 fontSize = 18.sp, // Slightly forced override for width management
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -452,7 +458,7 @@ private fun ExpandableDashboardSection(
             ) {
                 Text(
                     text = categoryTitle.uppercase(),
-                    style = MaterialTheme.typography.headlineMedium, // Increased size/impact
+                    style = MaterialTheme.typography.headlineMedium.copy(fontFamily = PressStart2P), // Increased size/impact
                     fontSize = 20.sp, // Scaled down for width management
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold
@@ -680,9 +686,15 @@ private fun PetCornerStatBadge(
         )
     } else null
 
+    val backgroundColor = if (currentTheme == AppTheme.GOTH) {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = backgroundColor,
         shape = CircleShape,
         border = BorderStroke(1.dp, accentColor)
     ) {
