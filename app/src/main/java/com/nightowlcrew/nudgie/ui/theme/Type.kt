@@ -45,15 +45,15 @@ val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = PressStart2P,
         fontWeight = FontWeight.Normal,
-        fontSize = 32.sp,
-        lineHeight = 40.sp,
+        fontSize = 36.sp,
+        lineHeight = 44.sp,
         letterSpacing = 0.sp
     ),
     headlineMedium = TextStyle(
         fontFamily = PressStart2P,
         fontWeight = FontWeight.Normal,
-        fontSize = 24.sp,
-        lineHeight = 30.sp,
+        fontSize = 28.sp,
+        lineHeight = 36.sp,
         letterSpacing = 0.sp
     ),
 
@@ -61,15 +61,15 @@ val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = VT323,
         fontWeight = FontWeight.Normal,
-        fontSize = 20.sp,
-        lineHeight = 26.sp,
+        fontSize = 24.sp,
+        lineHeight = 30.sp,
         letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(
         fontFamily = VT323,
         fontWeight = FontWeight.Normal,
-        fontSize = 18.sp,
-        lineHeight = 24.sp,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
         letterSpacing = 0.5.sp
     ),
 
@@ -77,15 +77,22 @@ val Typography = Typography(
     labelMedium = TextStyle(
         fontFamily = FiraSans,
         fontWeight = FontWeight.Bold,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
+        fontSize = 16.sp,
+        lineHeight = 20.sp,
         letterSpacing = 0.5.sp
     ),
     labelSmall = TextStyle(
         fontFamily = FiraSans,
         fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 14.sp,
+        fontSize = 14.sp,
+        lineHeight = 18.sp,
         letterSpacing = 0.5.sp
+    ),
+    titleSmall = TextStyle(
+        fontFamily = FiraSans,
+        fontWeight = FontWeight.Bold,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.1.sp
     )
 )

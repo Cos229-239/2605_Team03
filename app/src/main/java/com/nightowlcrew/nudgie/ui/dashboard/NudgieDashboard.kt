@@ -56,7 +56,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
                             Text(
                                 text = item.uppercase(), 
                                 style = MaterialTheme.typography.labelSmall,
-                                fontSize = 9.sp 
+                                fontSize = 11.sp 
                             ) 
                         },
                         selected = selectedItem == index,
@@ -211,10 +211,11 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
             contentAlignment = Alignment.Center
         ) {
             val faceText = if (currentTheme == AppTheme.GOTH) "=^..^=" else "(◕‿◕)"
+            val faceColor = if (currentTheme == AppTheme.GOTH) Color.LightGray else DarkBackground
             Text(
                 text = faceText,
                 fontSize = 50.sp,
-                color = DarkBackground,
+                color = faceColor,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -280,7 +281,7 @@ fun DashboardContent(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelMedium.copy(
                                 fontFamily = PressStart2P,
-                                fontSize = 10.sp
+                                fontSize = 14.sp
                             ),
                             fontWeight = FontWeight.Bold
                         )
@@ -290,7 +291,7 @@ fun DashboardContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontFamily = PressStart2P,
-                            fontSize = 10.sp
+                            fontSize = 14.sp
                         ),
                         fontWeight = FontWeight.Bold
                     )
@@ -378,7 +379,7 @@ fun DashboardContent(
             Text(
                 text = "TODAY'S Habits".uppercase(),
                 style = MaterialTheme.typography.headlineMedium,
-                fontSize = 14.sp, // Slightly forced override for width management
+                fontSize = 18.sp, // Slightly forced override for width management
                 color = MaterialTheme.colorScheme.onBackground
             )
         }
@@ -443,7 +444,7 @@ private fun ExpandableDashboardSection(
                 Text(
                     text = categoryTitle.uppercase(),
                     style = MaterialTheme.typography.headlineMedium, // Increased size/impact
-                    fontSize = 16.sp, // Scaled down for width management
+                    fontSize = 20.sp, // Scaled down for width management
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold
                 )
@@ -683,13 +684,13 @@ private fun PetCornerStatBadge(
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 8.sp
+                fontSize = 11.sp
             )
             Text(
                 text = value.uppercase(),
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontFamily = PressStart2P,
-                    fontSize = 8.sp
+                    fontSize = 12.sp
                 ),
                 fontWeight = FontWeight.Bold,
                 color = accentColor
