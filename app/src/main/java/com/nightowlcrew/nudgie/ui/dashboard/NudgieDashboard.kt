@@ -204,7 +204,7 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(240.dp)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), MaterialTheme.shapes.large)
                 .border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
             contentAlignment = Alignment.Center
@@ -682,9 +682,15 @@ private fun PetCornerStatBadge(
         )
     } else null
 
+    val backgroundColor = if (currentTheme == AppTheme.GOTH) {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = backgroundColor,
         shape = CircleShape,
         border = BorderStroke(1.dp, accentColor)
     ) {

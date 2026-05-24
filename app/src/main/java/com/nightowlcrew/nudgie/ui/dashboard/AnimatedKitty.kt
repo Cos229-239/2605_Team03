@@ -20,6 +20,7 @@ fun AnimatedKitty(
 ) {
     val frames = listOf(
         """
+            
                \      /
               | \."./ |
              /         \
@@ -78,8 +79,8 @@ fun AnimatedKitty(
         text = frames[currentFrame],
         modifier = modifier,
         fontFamily = FontFamily.Monospace,
-        fontSize = 7.sp,
-        lineHeight = 9.sp,
+        fontSize = 10.sp,
+        lineHeight = 12.sp,
         color = color,
         softWrap = false
     )
