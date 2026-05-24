@@ -1,7 +1,7 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,6 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -121,8 +123,12 @@ fun PetScreenContent(currentTheme: AppTheme = AppTheme.DEFAULT) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "MY PET".uppercase(),
-            style = MaterialTheme.typography.displayLarge.copy(fontFamily = PressStart2P),
+            text = "MY PET",
+            style = MaterialTheme.typography.displayLarge.copy(
+                fontSize = 44.sp,
+                lineHeight = 52.sp,
+                fontFamily = PressStart2P
+            ),
             color = MaterialTheme.colorScheme.onBackground
         )
         
@@ -201,11 +207,46 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
         ) {
             Text(
                 text = """
+|       _..._
+|     .'     '.
+|    /`\     /`\
+|   (_*_|   |_*_)
+|   (     "     )
+|    \         /
+|     \  \_/  /
+|      '.___.'
+                """.trimMargin(),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontFamily = FontFamily.Monospace,
+                    lineHeight = 12.sp,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = DarkBackground
+            )
+        }
+    } else {
+        // THEMED WINDOW (Cyberpunk / Steampunk / Goth / Alien)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp)
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), 
+                    RoundedCornerShape(16.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            when (currentTheme) {
+                AppTheme.GOTH -> AnimatedKitty(color = MaterialTheme.colorScheme.onSurface)
+                AppTheme.CYBERPUNK -> AnimatedAlien(baseColor = LevelUpBlue)
+                AppTheme.STEAMPUNK -> {
+                    val steampunkAscii = """
 |
 |       _..._
 |     .'     '.
 |    /`\     /`\
-|   (_'_|   |_'_)      
+|   (_*_|   |_*_)
 |   (     "     ) |\ |\ /|          __+__
 |    \         /   \\||//          /     \
 |     \  \_/  /  |\|`  /        __/   O   \__
@@ -219,41 +260,19 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
 |    | |     |    
 |    |_|_____|        
 |   (___)_____) 
-                """.trimMargin(),
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = FontFamily.Monospace,
-                    lineHeight = 12.sp,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = DarkBackground
-            )
-        }
-    } else {
-        // THEMED WINDOW (Cyberpunk / Steampunk / Goth)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(240.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1f), MaterialTheme.shapes.large)
-                .border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
-            contentAlignment = Alignment.Center
-        ) {
-            if (currentTheme == AppTheme.GOTH) {
-                AnimatedKitty(color = MaterialTheme.colorScheme.onSurface)
-            } else {
-                val faceText = "(◕‿◕)"
-                val faceColor = when (currentTheme) {
-                    AppTheme.CYBERPUNK -> cpNeonCyan
-                    AppTheme.STEAMPUNK -> spParchment // Brighter than spBrass for better contrast
-                    else -> DarkBackground
+                    """.trimMargin()
+                    Text(
+                        text = steampunkAscii,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            lineHeight = 12.sp,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = spParchment
+                    )
                 }
-                Text(
-                    text = faceText,
-                    fontSize = 50.sp,
-                    color = faceColor,
-                    fontWeight = FontWeight.Bold
-                )
+                else -> { /* Fallback */ }
             }
         }
     }
