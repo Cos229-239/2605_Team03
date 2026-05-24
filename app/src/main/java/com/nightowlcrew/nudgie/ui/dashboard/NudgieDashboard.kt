@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -198,7 +199,35 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
                 .border(4.dp, DarkBackground, RoundedCornerShape(24.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Text("(◕‿◕)", fontSize = 60.sp, color = DarkBackground)
+            Text(
+                text = """
+|       _..._
+|     .'     '.
+|    /`\     /`\
+|   (__|     |__)      
+|   (     "     ) |\ |\ /|
+|    \         /   \\||//
+|     \  \_/  /  |\|`  /
+|      '.___.'   \____/
+|       (___)    (___)
+|     /`     `\  / /
+|    |         \/ /
+|    | |     |\  /
+|    | |     | "`
+|    | |     |
+|    | |     |
+|    |_|_____|
+|   (___)_____)
+|   /    \   |
+                """.trimMargin(),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontFamily = FontFamily.Monospace,
+                    lineHeight = 12.sp,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = DarkBackground
+            )
         }
     } else {
         // THEMED WINDOW (Cyberpunk / Steampunk / Goth)
@@ -206,7 +235,7 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(240.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), MaterialTheme.shapes.large)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1f), MaterialTheme.shapes.large)
                 .border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
             contentAlignment = Alignment.Center
         ) {
