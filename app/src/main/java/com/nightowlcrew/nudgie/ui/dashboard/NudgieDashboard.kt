@@ -197,32 +197,34 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
                 .border(4.dp, DarkBackground, RoundedCornerShape(24.dp)),
             contentAlignment = Alignment.Center
         ) {
-            val faceText = if (currentTheme == AppTheme.GOTH) "=^..^=" else "(◕‿◕)"
-            Text(faceText, fontSize = 60.sp, color = DarkBackground)
+            Text("(◕‿◕)", fontSize = 60.sp, color = DarkBackground)
         }
     } else {
         // THEMED WINDOW (Cyberpunk / Steampunk / Goth)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
+                .height(200.dp)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), MaterialTheme.shapes.large)
                 .border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
             contentAlignment = Alignment.Center
         ) {
-            val faceText = if (currentTheme == AppTheme.GOTH) "=^..^=" else "(◕‿◕)"
-            val faceColor = when (currentTheme) {
-                AppTheme.GOTH -> Color.LightGray
-                AppTheme.CYBERPUNK -> cpNeonCyan
-                AppTheme.STEAMPUNK -> spParchment // Brighter than spBrass for better contrast
-                else -> DarkBackground
+            if (currentTheme == AppTheme.GOTH) {
+                AnimatedKitty(color = MaterialTheme.colorScheme.onSurface)
+            } else {
+                val faceText = "(◕‿◕)"
+                val faceColor = when (currentTheme) {
+                    AppTheme.CYBERPUNK -> cpNeonCyan
+                    AppTheme.STEAMPUNK -> spParchment // Brighter than spBrass for better contrast
+                    else -> DarkBackground
+                }
+                Text(
+                    text = faceText,
+                    fontSize = 50.sp,
+                    color = faceColor,
+                    fontWeight = FontWeight.Bold
+                )
             }
-            Text(
-                text = faceText,
-                fontSize = 50.sp,
-                color = faceColor,
-                fontWeight = FontWeight.Bold
-            )
         }
     }
 }
