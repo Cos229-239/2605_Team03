@@ -204,7 +204,7 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
 |       _..._
 |     .'     '.
 |    /`\     /`\
-|   (__|     |__)      
+|   (_'_|   |_'_)      
 |   (     "     ) |\ |\ /|
 |    \         /   \\||//
 |     \  \_/  /  |\|`  /
