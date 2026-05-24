@@ -120,7 +120,7 @@ fun PetScreenContent(currentTheme: AppTheme = AppTheme.DEFAULT) {
     ) {
         Text(
             text = "MY PET".uppercase(),
-            style = MaterialTheme.typography.displayLarge,
+            style = MaterialTheme.typography.displayLarge.copy(fontFamily = PressStart2P),
             color = MaterialTheme.colorScheme.onBackground
         )
         
@@ -248,14 +248,18 @@ fun DashboardContent(
             text = "NUDGIE",
             style = MaterialTheme.typography.displayLarge.copy(
                 fontSize = 44.sp,
-                lineHeight = 52.sp
+                lineHeight = 52.sp,
+                fontFamily = PressStart2P
             ),
             color = MaterialTheme.colorScheme.onBackground
         )
-        // High-density metadata - pinned to clean sans-serif
+        // High-density metadata
         Text(
             text = "Level 5 • Baby Stage",
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontFamily = PressStart2P,
+                fontSize = 12.sp
+            ),
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
         )
 
@@ -389,7 +393,7 @@ fun DashboardContent(
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "TODAY'S Habits".uppercase(),
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineMedium.copy(fontFamily = PressStart2P),
                 fontSize = 18.sp, // Slightly forced override for width management
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -454,7 +458,7 @@ private fun ExpandableDashboardSection(
             ) {
                 Text(
                     text = categoryTitle.uppercase(),
-                    style = MaterialTheme.typography.headlineMedium, // Increased size/impact
+                    style = MaterialTheme.typography.headlineMedium.copy(fontFamily = PressStart2P), // Increased size/impact
                     fontSize = 20.sp, // Scaled down for width management
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold
