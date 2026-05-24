@@ -30,20 +30,37 @@ class ScreenTimeSyncWorker(
         // 1. Get total screen time for today (midnight to now) from System API
         val totalUsageMillis = getTodayTotalUsageMillis()
 
-        // 2. Fetch or create today's record in Room
+// 2. Fetch or create today's record in Room
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val existingRecord = repository.getScreenTimeForDate(today).firstOrNull()
 
-        val updatedRecord = if (existingRecord != null) {
-            existingRecord.copy(actualDurationMillis = totalUsageMillis)
-        } else {
-            ScreenTimeRecord(
-                date = today,
-                targetLimitMillis = 14400000L,
-                actualDurationMillis = totalUsageMillis,
-                warningNotified = false
+        // --- NEW LOGIC FOR NOTIFICATION ---
+        val prefs = com.nightowlcrew.nudgie.data.PreferencesManager(applicationContext)
+        var hasWarned = existingRecord?.warningNotified ?: false
+
+        val limit = existingRecord?.targetLimitMillis ?: 14400000L
+        val remainingMillis = limit - totalUsageMillis
+
+        if (prefs.notificationsEnabled && !hasWarned && remainingMillis in 1..1800000L) {
+            com.nightowlcrew.nudgie.utils.NotificationUtils.sendNotification(
+                applicationContext,
+                "Screen Time Warning",
+                "You only have 30 minutes of screen time left today!",
+                com.nightowlcrew.nudgie.utils.NotificationUtils.CH_SCREEN,
+                101
             )
+            hasWarned = true
         }
+        // ----------------------------------
+
+        val updatedRecord =
+            existingRecord?.copy(actualDurationMillis = totalUsageMillis, warningNotified = hasWarned)
+                ?: ScreenTimeRecord(
+                    date = today,
+                    targetLimitMillis = 14400000L,
+                    actualDurationMillis = totalUsageMillis,
+                    warningNotified = hasWarned
+                )
 
         // 3. Save to database
         repository.insertOrUpdateScreenTime(updatedRecord)
