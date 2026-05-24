@@ -236,12 +236,3 @@ firestore-debug.log
 # React Native / Xcode env file (REQUIRED for iOS builds)
 !.xcode.env
 !ios/.xcode.env
-
-###############################################################################
-# UNUSED ARTIFACTS (TRACKED LOCALLY ONLY)
-###############################################################################
-
-Documents/
-Branding.pdf
-roster-v2-sample.json
-index.html

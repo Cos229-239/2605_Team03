@@ -6,8 +6,6 @@ import androidx.work.*
 import com.nightowlcrew.nudgie.NudgieApplication
 import com.nightowlcrew.nudgie.data.HabitRepositoryImpl
 import com.nightowlcrew.nudgie.data.ScreenTimeRecord
-import com.nightowlcrew.nudgie.data.PreferencesManager
-import com.nightowlcrew.nudgie.utils.NotificationUtils
 import kotlinx.coroutines.flow.firstOrNull
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,37 +30,18 @@ class ScreenTimeSyncWorker(
         // 1. Get total screen time for today (midnight to now) from System API
         val totalUsageMillis = getTodayTotalUsageMillis()
 
-// 2. Fetch or create today's record in Room
+        // 2. Fetch or create today's record in Room
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val existingRecord = repository.getScreenTimeForDate(today).firstOrNull()
 
-        // --- NEW LOGIC FOR NOTIFICATION ---
-        val prefs = PreferencesManager(applicationContext)
-        var hasWarned = existingRecord?.warningNotified ?: false
-
-        val limit = existingRecord?.targetLimitMillis ?: 14400000L
-        val remainingMillis = limit - totalUsageMillis
-
-        if (prefs.notificationsEnabled && !hasWarned && remainingMillis in 1..1800000L) {
-            NotificationUtils.sendNotification(
-                applicationContext,
-                "Screen Time Warning",
-                "You only have 30 minutes of screen time left today!",
-                NotificationUtils.CH_SCREEN,
-                101
-            )
-            hasWarned = true
-        }
-        // ----------------------------------
-
         val updatedRecord = if (existingRecord != null) {
-            existingRecord.copy(actualDurationMillis = totalUsageMillis, warningNotified = hasWarned)
+            existingRecord.copy(actualDurationMillis = totalUsageMillis)
         } else {
             ScreenTimeRecord(
                 date = today,
                 targetLimitMillis = 14400000L,
                 actualDurationMillis = totalUsageMillis,
-                warningNotified = hasWarned
+                warningNotified = false
             )
         }
 
