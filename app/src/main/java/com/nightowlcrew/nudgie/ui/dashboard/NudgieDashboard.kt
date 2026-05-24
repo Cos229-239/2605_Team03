@@ -149,6 +149,7 @@ fun PetScreenContent(currentTheme: AppTheme = AppTheme.DEFAULT) {
                     iconColor = Color.Red,
                     bgColor = CardRedBg,
                     borderColor = HeartRed,
+                    currentTheme = currentTheme,
                     modifier = Modifier.weight(1f)
                 )
                 NewStatCard(
@@ -158,6 +159,7 @@ fun PetScreenContent(currentTheme: AppTheme = AppTheme.DEFAULT) {
                     iconColor = Color(0xFFFFC107),
                     bgColor = CardYellowBg,
                     borderColor = ElectricYellow,
+                    currentTheme = currentTheme,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -169,6 +171,7 @@ fun PetScreenContent(currentTheme: AppTheme = AppTheme.DEFAULT) {
                     iconColor = Color.Blue,
                     bgColor = CardBlueBg,
                     borderColor = LevelUpBlue,
+                    currentTheme = currentTheme,
                     modifier = Modifier.weight(1f)
                 )
                 NewStatCard(
@@ -178,6 +181,7 @@ fun PetScreenContent(currentTheme: AppTheme = AppTheme.DEFAULT) {
                     iconColor = Color.Green,
                     bgColor = CardGreenBg,
                     borderColor = SuccessGreen,
+                    currentTheme = currentTheme,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -320,8 +324,9 @@ fun DashboardContent(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
             ),
             shape = MaterialTheme.shapes.medium,
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -451,7 +456,7 @@ fun DashboardContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        CategorizedActivityLog(activities, onToggleHabit)
+        CategorizedActivityLog(activities, currentTheme, onToggleHabit)
 
         Spacer(modifier = Modifier.height(80.dp)) // Extra space for scroll
     }
@@ -463,6 +468,7 @@ fun DashboardContent(
 @Composable
 fun CategorizedActivityLog(
     activities: List<ActivityItem>,
+    currentTheme: AppTheme,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -472,6 +478,7 @@ fun CategorizedActivityLog(
                 ExpandableDashboardSection(
                     categoryTitle = category.displayName,
                     habits = filteredActivities,
+                    currentTheme = currentTheme,
                     onToggleHabit = onToggleHabit
                 )
             }
@@ -483,6 +490,7 @@ fun CategorizedActivityLog(
 private fun ExpandableDashboardSection(
     categoryTitle: String,
     habits: List<ActivityItem>,
+    currentTheme: AppTheme,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -495,11 +503,10 @@ private fun ExpandableDashboardSection(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
+                .nudgieCardShadow(currentTheme, 4.dp, RoundedCornerShape(12.dp))
                 .clickable { expanded = !expanded },
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            shape = RoundedCornerShape(12.dp),
-            tonalElevation = 2.dp,
-            shadowElevation = 4.dp
+            shape = RoundedCornerShape(12.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -532,7 +539,7 @@ private fun ExpandableDashboardSection(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 habits.forEach { activity ->
-                    ActivityLogItem(activity, onToggleHabit)
+                    ActivityLogItem(activity, currentTheme, onToggleHabit)
                 }
             }
         }
@@ -542,6 +549,7 @@ private fun ExpandableDashboardSection(
 @Composable
 fun ActivityLogItem(
     activity: ActivityItem,
+    currentTheme: AppTheme,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
     val itemBgColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -552,14 +560,14 @@ fun ActivityLogItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .nudgieCardShadow(currentTheme, 4.dp, RoundedCornerShape(16.dp))
             .clickable { 
                 if (activity.targetCount <= 1) {
                     onToggleHabit(activity) 
                 }
             },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = itemBgColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = CardDefaults.cardColors(containerColor = itemBgColor)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -686,14 +694,16 @@ fun NewStatCard(
     iconColor: Color,
     bgColor: Color,
     borderColor: Color,
+    currentTheme: AppTheme,
     modifier: Modifier
 ) {
     Card(
-        modifier = modifier.height(110.dp),
+        modifier = modifier
+            .height(110.dp)
+            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(2.dp, if (MaterialTheme.colorScheme.outline != Color.Unspecified) MaterialTheme.colorScheme.outline else borderColor),
-        colors = CardDefaults.cardColors(containerColor = if (MaterialTheme.colorScheme.surfaceVariant != Color.Unspecified) MaterialTheme.colorScheme.surfaceVariant else bgColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = CardDefaults.cardColors(containerColor = if (MaterialTheme.colorScheme.surfaceVariant != Color.Unspecified) MaterialTheme.colorScheme.surfaceVariant else bgColor)
     ) {
         Column(
             modifier = Modifier
@@ -747,11 +757,9 @@ private fun PetCornerStatBadge(
     }
 
     Surface(
-        modifier = modifier,
+        modifier = modifier.nudgieCardShadow(currentTheme, 2.dp, CircleShape),
         color = backgroundColor,
         shape = CircleShape,
-        tonalElevation = 2.dp,
-        shadowElevation = 2.dp,
         border = BorderStroke(1.dp, accentColor)
     ) {
         Row(

@@ -15,26 +15,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nightowlcrew.nudgie.ui.theme.NudgieTheme
+import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
 
 /**
  * A reusable pixel-perfect dialogue card for BUDDY's messages.
  * Mimics a classic sharp-cornered handheld game console screen.
  * 
  * @param text The message to display.
+ * @param currentTheme The active app theme.
  */
 @Composable
 fun BuddyDialogueBox(
     text: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currentTheme: AppTheme = AppTheme.DEFAULT
 ) {
     Card(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .nudgieCardShadow(currentTheme, 4.dp, RoundedCornerShape(4.dp)),
         shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF1F2937) // Dark canvas backdrop
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         border = BorderStroke(2.dp, Color.Gray) // Tactile line framework
     ) {
         Text(

@@ -13,7 +13,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
 import com.nightowlcrew.nudgie.ui.dashboard.AppTheme
+
+/**
+ * Custom shadow modifier to support themed shadow colors (e.g. Neon Pink for Cyberpunk).
+ */
+@Composable
+fun Modifier.nudgieCardShadow(
+    theme: AppTheme,
+    elevation: Dp = 4.dp,
+    shape: androidx.compose.ui.graphics.Shape = MaterialTheme.shapes.medium
+): Modifier {
+    return if (theme == AppTheme.CYBERPUNK) {
+        this.shadow(
+            elevation = elevation,
+            shape = shape,
+            ambientColor = cpNeonPink,
+            spotColor = cpNeonPink
+        )
+    } else {
+        // Default shadow for other themes
+        this.graphicsLayer(shadowElevation = elevation.value, shape = shape, clip = false)
+    }
+}
 
 val CyberpunkShapes = Shapes(
     small = RoundedCornerShape(8.dp),

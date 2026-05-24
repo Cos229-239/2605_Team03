@@ -32,6 +32,7 @@ import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
 import com.nightowlcrew.nudgie.ui.theme.PressStart2P
+import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
 
 /**
  * Stateful container for the Settings screen.
@@ -88,6 +89,7 @@ fun SettingsContent(
 
         CategorizedHabitList(
             activities = activities,
+            currentTheme = currentTheme,
             onAddHabit = onAddHabit,
             onDeleteHabit = onDeleteHabit,
             modifier = Modifier
@@ -95,12 +97,13 @@ fun SettingsContent(
                 .heightIn(max = 1000.dp)
         )
 
-        HabitCreatorSection(onAddHabit = onAddHabit)
+        HabitCreatorSection(onAddHabit = onAddHabit, currentTheme = currentTheme)
 
         val currentGoalHours = (screenTimeGoalMillis / 3600000L).toInt()
 
         DigitalBalanceCard(
             usageHours = currentGoalHours.toFloat(),
+            currentTheme = currentTheme,
             onUsageChange = { newHours -> onUpdateScreenTimeGoal(newHours.toInt()) }
         )
 
@@ -120,7 +123,9 @@ fun ThemeSelectionCard(
     var isExpanded by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
@@ -173,7 +178,8 @@ fun ThemeSelectionCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HabitCreatorSection(
-    onAddHabit: (String, CozyCategory, Int) -> Unit
+    onAddHabit: (String, CozyCategory, Int) -> Unit,
+    currentTheme: AppTheme
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     var title by remember { mutableStateOf("") }
@@ -184,7 +190,9 @@ fun HabitCreatorSection(
     var isDropdownExpanded by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
@@ -265,6 +273,7 @@ fun HabitCreatorSection(
                             Surface(
                                 modifier = Modifier
                                     .size(44.dp)
+                                    .nudgieCardShadow(currentTheme, 2.dp, MaterialTheme.shapes.medium)
                                     .clickable { selectedEmoji = emoji },
                                 shape = MaterialTheme.shapes.medium,
                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -317,6 +326,7 @@ fun HabitCreatorSection(
 @Composable
 fun CategorizedHabitList(
     activities: List<ActivityItem>,
+    currentTheme: AppTheme,
     onAddHabit: (String, CozyCategory, Int) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     modifier: Modifier = Modifier
@@ -334,6 +344,7 @@ fun CategorizedHabitList(
                 habits = filteredActivities,
                 onDeleteHabit = onDeleteHabit,
                 category = category,
+                currentTheme = currentTheme,
                 onAddTemplate = { title, frequency -> onAddHabit(title, category, frequency) }
             )
         }
@@ -346,6 +357,7 @@ private fun ExpandableCategorySection(
     habits: List<ActivityItem>,
     onDeleteHabit: (Int) -> Unit,
     category: CozyCategory,
+    currentTheme: AppTheme,
     onAddTemplate: (String, Int) -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -358,6 +370,7 @@ private fun ExpandableCategorySection(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
+                .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
                 .clickable { expanded = !expanded },
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
             shape = MaterialTheme.shapes.medium
@@ -401,6 +414,7 @@ private fun ExpandableCategorySection(
                     TemplateOptionRow(
                         title = template.title,
                         icon = if (isActive) Icons.Default.Remove else Icons.Default.Add,
+                        currentTheme = currentTheme,
                         onClick = {
                             if (activeHabit != null) {
                                 onDeleteHabit(activeHabit.id)
@@ -419,6 +433,7 @@ private fun ExpandableCategorySection(
                 customHabits.forEach { item ->
                     ActivityRow(
                         item = item,
+                        currentTheme = currentTheme,
                         onDelete = { onDeleteHabit(item.id) }
                     )
                 }
@@ -441,12 +456,14 @@ private fun ExpandableCategorySection(
 fun TemplateOptionRow(
     title: String,
     icon: ImageVector,
+    currentTheme: AppTheme,
     onClick: () -> Unit
 ) {
     val contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
@@ -477,11 +494,14 @@ fun TemplateOptionRow(
 @Composable
 fun ActivityRow(
     item: ActivityItem,
+    currentTheme: AppTheme,
     onDelete: () -> Unit
 ) {
     val contentColor = MaterialTheme.colorScheme.onSurface
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
@@ -518,10 +538,13 @@ fun ActivityRow(
 @Composable
 fun DigitalBalanceCard(
     usageHours: Float,
+    currentTheme: AppTheme,
     onUsageChange: (Float) -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
