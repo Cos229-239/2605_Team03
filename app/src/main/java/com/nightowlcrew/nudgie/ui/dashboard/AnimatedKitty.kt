@@ -8,6 +8,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -18,52 +20,50 @@ fun AnimatedKitty(
     modifier: Modifier = Modifier,
     color: Color = Color.White
 ) {
+    // String padding matches lengths exactly to prevent side-to-side character drift
     val frames = listOf(
         """
-            
-               \      /
-              | \."./ |
-             /         \
-            /  {|} {|}  \   _
-            \ ==  Y  == /  ( \
-             ;--._^_.--;    ) )
-            /    \_/    \  / /
-            |    ( )    | / /
-           /|   |   |   |\ /
-          | |   |   |   | |
-           \|   |___|   |/
-            '""'     '""'
-        
-        """.trimIndent(),
+|       \      /
+|      | \."./ |
+|     /         \
+|    /  {|} {|}  \   _
+|    \ ==  Y  == /  ( \
+|     ;--._^_.--;    ) )
+|    /    \_/    \  / /
+|    |    ( )    | / /
+|   /|   |   |   |\ /
+|  | |   |   |   | |
+|   \|   |___|   |/
+|    '""'     '""'
+        """.trimMargin(),
         """
-               \      /
-              | \."./ |
-             /         \
-            /  {|} {|}  \    _
-            \ ==  Y  == /   | |
-             ;--._^_.--;    | |
-            /    \_/    \  / /
-            |    ( )    | / /
-           /|   |   |   |\ /
-          | |   |   |   | |
-           \|   |___|   |/
-            '""'     '""'
-        """.trimIndent(),
+|       \      /
+|      | \."./ |
+|     /         \
+|    /  {|} {|}  \   _
+|    \ ==  Y  == /  | |
+|     ;--._^_.--;   | |
+|    /    \_/    \  / /
+|    |    ( )    | / /
+|   /|   |   |   |\ /
+|  | |   |   |   | |
+|   \|   |___|   |/
+|    '""'     '""'
+        """.trimMargin(),
         """
-               \      /
-              | \."./ |
-             /         \
-            /  {|} {|}  \     _
-            \ ==  Y  == /   / /
-             ;--._^_.--;    | |
-            /    \_/    \  / /
-            |    ( )    | / /
-           /|   |   |   |\ /
-          | |   |   |   | |
-           \|   |___|   |/
-            '""'     '""'
-        """.trimIndent()
-
+|       \      /
+|      | \."./ |
+|     /         \
+|    /  {|} {|}  \   _
+|    \ ==  Y  == /  / /
+|     ;--._^_.--;   | |
+|    /    \_/    \  / /
+|    |    ( )    | / /
+|   /|   |   |   |\ /
+|  | |   |   |   | |
+|   \|   |___|   |/
+|    '""'     '""'
+        """.trimMargin()
     )
 
     var currentFrame by remember { mutableIntStateOf(0) }
@@ -79,8 +79,10 @@ fun AnimatedKitty(
         text = frames[currentFrame],
         modifier = modifier,
         fontFamily = FontFamily.Monospace,
-        fontSize = 10.sp,
-        lineHeight = 12.sp,
+        fontSize = 13.sp,           // Sized up to eliminate excessive background margins
+        lineHeight = 15.sp,         // Proportional layout track height
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
         color = color,
         softWrap = false
     )

@@ -10,6 +10,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.nightowlcrew.nudgie.ui.theme.LevelUpBlue
 import com.nightowlcrew.nudgie.ui.theme.SuccessGreen
@@ -32,7 +33,6 @@ fun AnimatedAlien(
     )
 
     val frame1 = """
-|
 |       _..._
 |     .'     '.
 |    /`\     /`\
@@ -50,8 +50,8 @@ fun AnimatedAlien(
 |    | |     |    
 |    |_|_____|        
 |   (___)_____) 
-    """.trimMargin()
-    
+    """.trimMargin() // Removed leading top newline to tightly center vertically
+
     val frames = listOf(frame1, frame1, frame1)
     val currentFrame = frames[frameIndex % 3]
 
@@ -85,12 +85,12 @@ fun AnimatedAlien(
     Text(
         text = annotatedText,
         modifier = modifier,
-        style = MaterialTheme.typography.bodySmall.copy(
-            fontFamily = FontFamily.Monospace,
-            lineHeight = 12.sp,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
-        ),
-        color = baseColor
+        fontFamily = FontFamily.Monospace,
+        fontSize = 13.sp,              // Slightly scaled up to match the kitty box layout bounds
+        lineHeight = 14.sp,            // Balanced spacing matching the 13.sp font grid
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,  // Guarantees center alignment within the dashboard card window
+        color = baseColor,
+        softWrap = false
     )
 }
