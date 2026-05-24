@@ -63,7 +63,7 @@ private val SteampunkColorScheme = darkColorScheme(
     onTertiary = spLeather,
     onBackground = spParchment,
     onSurface = spParchment,
-    surfaceVariant = spBrass.copy(alpha = 0.1f),
+    surfaceVariant = spIron,      // Opaque background for stats and cards
     onSurfaceVariant = spBrass,
     outline = spCopper
 )

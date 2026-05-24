@@ -425,8 +425,14 @@ private fun ExpandableCategorySection(
                                 onDeleteHabit(activeHabit.id)
                             } else {
                                 // Extract frequency from title if it contains "8 Cups" or similar
-                                val freqMatch = Regex("\\d+").find(templateTitle)
-                                val freq = freqMatch?.value?.toIntOrNull() ?: 1
+                                // But ignore durations like "15-min" or counts like "5 pages" for single-step habits
+                                val freq = when {
+                                    templateTitle.contains("15-min") || templateTitle.contains("5 pages") -> 1
+                                    else -> {
+                                        val freqMatch = Regex("\\d+").find(templateTitle)
+                                        freqMatch?.value?.toIntOrNull() ?: 1
+                                    }
+                                }
                                 onAddTemplate(templateTitle, freq)
                             }
                         }
