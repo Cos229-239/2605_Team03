@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
  * Acts as the abstract data pipeline for the presentation layer.
  */
 interface HabitRepository {
-    fun getAllHabitsWithLogs(): Flow<List<ActivityItem>>
+    fun getHabitsForDate(date: String): Flow<List<ActivityItem>>
     fun getHistoricalLogs(date: String): Flow<List<HabitLogEntity>>
     suspend fun insertHabit(habit: HabitEntity): Long
     suspend fun insertLog(log: HabitLogEntity): Long
