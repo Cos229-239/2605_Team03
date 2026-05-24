@@ -13,23 +13,21 @@ object NotificationUtils {
     private const val CHANNEL_GREETINGS = "daily_greetings"
 
     fun createChannels(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val manager = context.getSystemService(NotificationManager::class.java)
-            
-            val screenTimeChannel = NotificationChannel(
-                CHANNEL_SCREEN_TIME, "Screen Time Alerts", NotificationManager.IMPORTANCE_HIGH
-            ).apply { description = "Alerts for when you are nearing your screen time limit" }
+        val manager = context.getSystemService(NotificationManager::class.java)
 
-            val habitChannel = NotificationChannel(
-                CHANNEL_HABITS, "Habit Reminders", NotificationManager.IMPORTANCE_DEFAULT
-            ).apply { description = "Reminders for habits like drinking water" }
+        val screenTimeChannel = NotificationChannel(
+            CHANNEL_SCREEN_TIME, "Screen Time Alerts", NotificationManager.IMPORTANCE_HIGH
+        ).apply { description = "Alerts for when you are nearing your screen time limit" }
 
-            val greetingChannel = NotificationChannel(
-                CHANNEL_GREETINGS, "Daily Greetings", NotificationManager.IMPORTANCE_LOW
-            ).apply { description = "Morning summary of your tasks" }
+        val habitChannel = NotificationChannel(
+            CHANNEL_HABITS, "Habit Reminders", NotificationManager.IMPORTANCE_DEFAULT
+        ).apply { description = "Reminders for habits like drinking water" }
 
-            manager?.createNotificationChannels(listOf(screenTimeChannel, habitChannel, greetingChannel))
-        }
+        val greetingChannel = NotificationChannel(
+            CHANNEL_GREETINGS, "Daily Greetings", NotificationManager.IMPORTANCE_LOW
+        ).apply { description = "Morning summary of your tasks" }
+
+        manager?.createNotificationChannels(listOf(screenTimeChannel, habitChannel, greetingChannel))
     }
 
     fun sendNotification(context: Context, title: String, message: String, channel: String, notificationId: Int) {
