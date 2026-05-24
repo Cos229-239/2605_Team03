@@ -2,7 +2,6 @@ package com.nightowlcrew.nudgie.ui.dashboard
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,48 +20,48 @@ fun AnimatedKitty(
 ) {
     val frames = listOf(
         """
-              /\_/\
-             ( x.x )
-             / >#< \
-            /       \
-           |         |  ~
-          /   \   /   \ 
-          \___/---\___/
+              /\         /\
+             |  \ . " . /  |
+             /   \     /   \
+            /  { I } { I }  \
+            \==     Y     ==/ ( \
+             ; - .  ^  . - ;   ) )
+             /      _      \  / /
+            /   (     )     \ / /
+            |    -----      |/ /
+            |   |     |     | /
+            |   |     |     |/
+            |   |     |     |
+           /    \ ___ /    \
+          /      \   /      \
+         |        ---        |
+          \____/       \____/
         """.trimIndent(),
         """
-              /\_/\
-             ( x.x )
-             / >#< \
-            /       \
-           |         |  /
-          /   \   /   \ 
-          \___/---\___/
-        """.trimIndent(),
-        """
-              /\_/\
-             ( x.x )
-             / >#< \
-            /       \
-           |         |  |
-          /   \   /   \ 
-          \___/---\___/
-        """.trimIndent(),
-        """
-              /\_/\
-             ( x.x )
-             / >#< \
-            /       \
-           |         |  \
-          /   \   /   \ 
-          \___/---\___/
+              /\         /\
+             |  \ . " . /  |
+             /   \     /   \
+            /  { I } { I }  \
+            \==     Y     ==/  / )
+             ; - .  ^  . - ;  ( (
+             /      _      \   \ \
+            /   (     )     \  / /
+            |    -----      | / /
+            |   |     |     |/ /
+            |   |     |     | /
+            |   |     |     |
+           /    \ ___ /    \
+          /      \   /      \
+         |        ---        |
+          \____/       \____/
         """.trimIndent()
     )
 
-    var currentFrame by remember { mutableStateOf(0) }
+    var currentFrame by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(500)
+            delay(600)
             currentFrame = (currentFrame + 1) % frames.size
         }
     }
@@ -71,9 +70,10 @@ fun AnimatedKitty(
         text = frames[currentFrame],
         modifier = modifier,
         fontFamily = FontFamily.Monospace,
-        fontSize = 12.sp,
-        lineHeight = 14.sp,
-        color = color
+        fontSize = 7.sp,
+        lineHeight = 9.sp,
+        color = color,
+        softWrap = false
     )
 }
 
@@ -84,6 +84,6 @@ fun AnimatedKittyPreview() {
         modifier = Modifier.padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AnimatedKitty(color = Color.Magenta) // Goth vibes
+        AnimatedKitty(color = Color.Magenta)
     }
 }
