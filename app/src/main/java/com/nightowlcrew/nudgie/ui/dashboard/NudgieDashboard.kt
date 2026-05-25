@@ -51,7 +51,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -68,7 +67,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -345,9 +343,7 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
 |     /`     `\  / /                 /|\
 |    |         \/ /                 / | \
 |    | |     |\  /                 /  |  \
-|    | |     | "`         
-|    | |     |
-|    | |     |    
+|    | |     | "`           
 |    |_|_____|        
 |   (___)_____) 
                     """.trimMargin()
