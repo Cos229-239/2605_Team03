@@ -7,10 +7,10 @@ import kotlinx.coroutines.flow.Flow
 interface HabitDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertHabit(habit: HabitEntity)
+    suspend fun insertHabit(habit: HabitEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertHabitLog(log: HabitLogEntity)
+    suspend fun insertHabitLog(log: HabitLogEntity): Long
 
     @Transaction
     @Query("SELECT * FROM habits")
