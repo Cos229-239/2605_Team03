@@ -4,7 +4,7 @@
 * **Team Name:** Night Owl Crew (Cycle 2605)
 * **Team Members:** 
 * Kenneth William Hanks
-* Jared Delgado :) 
+* Jared Delgado 
 ---
 
 ## Project Overview & Intent
