@@ -51,23 +51,159 @@
     "p_footer": true
   },
   "branches": {
-    "main": false,
-    "gh-pages": false,
-    "Alec's-chore": true,
-    "BaileyPersonal": true,
-    "dev": true,
-    "jared-personal": true,
-    "jaredpersonal": true,
-    "kenneth-personal/chore/setup-room-dependencies": true,
-    "kenneth-personal/feature/goth": true,
-    "kenneth-personal/feature/implement-repository-viewmodel": true,
-    "kenneth-personal/feature/implement-room-daos": true,
-    "kenneth-personal/feature/screentime": true,
-    "kenneth-personal/feature/settings": true,
-    "kenneth-personal/feature/themes": true,
-    "kennethpersonal": true,
-    "master": true,
-    "PatrickPersonal": false
+    "main": {
+      "push": false,
+      "nightly": false,
+      "weekly": false,
+      "diverged": false,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "gh-pages": {
+      "push": false,
+      "nightly": false,
+      "weekly": false,
+      "diverged": false,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "Alec's-chore": {
+      "push": true,
+      "nightly": true,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "BaileyPersonal": {
+      "push": true,
+      "nightly": true,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "dev": {
+      "push": true,
+      "nightly": false,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "jared-personal": {
+      "push": true,
+      "nightly": true,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "jaredpersonal": {
+      "push": true,
+      "nightly": true,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "kenneth-personal/chore/setup-room-dependencies": {
+      "push": true,
+      "nightly": true,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "kenneth-personal/feature/goth": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "kenneth-personal/feature/implement-repository-viewmodel": {
+      "push": true,
+      "nightly": true,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "kenneth-personal/feature/implement-room-daos": {
+      "push": true,
+      "nightly": true,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "kenneth-personal/feature/screentime": {
+      "push": true,
+      "nightly": true,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "kenneth-personal/feature/settings": {
+      "push": true,
+      "nightly": true,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "kenneth-personal/feature/themes": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "kennethpersonal": {
+      "push": true,
+      "nightly": true,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "master": {
+      "push": true,
+      "nightly": false,
+      "weekly": false,
+      "diverged": true,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "PatrickPersonal": {
+      "push": false,
+      "nightly": false,
+      "weekly": false,
+      "diverged": false,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    }
   },
   "nightly_branches": {
     "main": false,
