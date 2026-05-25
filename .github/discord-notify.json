@@ -75,8 +75,8 @@
       "weekly": false,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Alec Duncan",
+      "owner_discord_user_id": "818600362599514122"
     },
     "BaileyPersonal": {
       "push": true,
@@ -84,8 +84,8 @@
       "weekly": false,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Bailey Kimmel",
+      "owner_discord_user_id": "1222729338542358549"
     },
     "dev": {
       "push": true,
@@ -102,8 +102,8 @@
       "weekly": false,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Jared Delgado",
+      "owner_discord_user_id": "715371895918297200"
     },
     "jaredpersonal": {
       "push": true,
@@ -111,8 +111,8 @@
       "weekly": false,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Jared Delgado",
+      "owner_discord_user_id": "715371895918297200"
     },
     "kenneth-personal/chore/setup-room-dependencies": {
       "push": true,
@@ -120,8 +120,8 @@
       "weekly": false,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
     },
     "kenneth-personal/feature/goth": {
       "push": true,
@@ -129,8 +129,8 @@
       "weekly": true,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
     },
     "kenneth-personal/feature/implement-repository-viewmodel": {
       "push": true,
@@ -138,8 +138,8 @@
       "weekly": false,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
     },
     "kenneth-personal/feature/implement-room-daos": {
       "push": true,
@@ -147,8 +147,8 @@
       "weekly": false,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
     },
     "kenneth-personal/feature/screentime": {
       "push": true,
@@ -156,8 +156,8 @@
       "weekly": false,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
     },
     "kenneth-personal/feature/settings": {
       "push": true,
@@ -165,8 +165,8 @@
       "weekly": false,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
     },
     "kenneth-personal/feature/themes": {
       "push": true,
@@ -174,8 +174,8 @@
       "weekly": true,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
     },
     "kennethpersonal": {
       "push": true,
@@ -183,8 +183,8 @@
       "weekly": false,
       "diverged": true,
       "mention": false,
-      "owner_name": "",
-      "owner_discord_user_id": ""
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
     },
     "master": {
       "push": true,
