@@ -5,6 +5,7 @@
 * **Team Members:** 
 * Kenneth William Hanks
 * Jared Delgato
+* Alec Duncan
 ---
 
 ## Project Overview & Intent
