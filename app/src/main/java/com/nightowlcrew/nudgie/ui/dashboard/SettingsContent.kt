@@ -68,6 +68,8 @@ fun SettingsContent(
     onUpdateTheme: (AppTheme) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var expandedSection by rememberSaveable { mutableStateOf<String?>(null) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -92,12 +94,21 @@ fun SettingsContent(
             currentTheme = currentTheme,
             onAddHabit = onAddHabit,
             onDeleteHabit = onDeleteHabit,
+            expandedSection = expandedSection,
+            onSectionToggle = { expandedSection = it },
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 1000.dp)
         )
 
-        HabitCreatorSection(onAddHabit = onAddHabit, currentTheme = currentTheme)
+        HabitCreatorSection(
+            onAddHabit = onAddHabit,
+            currentTheme = currentTheme,
+            isExpanded = expandedSection == "creator",
+            onToggleExpand = {
+                expandedSection = if (expandedSection == "creator") null else "creator"
+            }
+        )
 
         val currentGoalHours = (screenTimeGoalMillis / 3600000L).toInt()
 
@@ -109,7 +120,11 @@ fun SettingsContent(
 
         ThemeSelectionCard(
             currentTheme = currentTheme,
-            onUpdateTheme = onUpdateTheme
+            onUpdateTheme = onUpdateTheme,
+            isExpanded = expandedSection == "theme",
+            onToggleExpand = {
+                expandedSection = if (expandedSection == "theme") null else "theme"
+            }
         )
     }
 }
@@ -118,10 +133,10 @@ fun SettingsContent(
 @Composable
 fun ThemeSelectionCard(
     currentTheme: AppTheme,
-    onUpdateTheme: (AppTheme) -> Unit
+    onUpdateTheme: (AppTheme) -> Unit,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -142,7 +157,7 @@ fun ThemeSelectionCard(
 
             ExposedDropdownMenuBox(
                 expanded = isExpanded,
-                onExpandedChange = { isExpanded = !isExpanded },
+                onExpandedChange = { onToggleExpand() },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
@@ -157,7 +172,7 @@ fun ThemeSelectionCard(
                 )
                 ExposedDropdownMenu(
                     expanded = isExpanded,
-                    onDismissRequest = { isExpanded = false },
+                    onDismissRequest = { onToggleExpand() },
                     modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                 ) {
                     AppTheme.entries.forEach { theme ->
@@ -165,7 +180,7 @@ fun ThemeSelectionCard(
                             text = { Text(theme.name) },
                             onClick = {
                                 onUpdateTheme(theme)
-                                isExpanded = false
+                                onToggleExpand()
                             }
                         )
                     }
@@ -179,9 +194,10 @@ fun ThemeSelectionCard(
 @Composable
 fun HabitCreatorSection(
     onAddHabit: (String, CozyCategory, Int) -> Unit,
-    currentTheme: AppTheme
+    currentTheme: AppTheme,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
     var title by remember { mutableStateOf("") }
     var frequency by remember { mutableStateOf("1") }
     var selectedCategory by rememberSaveable { mutableStateOf(CozyCategory.BODY_VITALITY) }
@@ -204,7 +220,7 @@ fun HabitCreatorSection(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { isExpanded = !isExpanded },
+                    .clickable { onToggleExpand() },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -309,7 +325,7 @@ fun HabitCreatorSection(
                                 onAddHabit("$selectedEmoji $title", selectedCategory, f)
                                 title = ""
                                 frequency = "1"
-                                isExpanded = false
+                                onToggleExpand()
                             }
                         },
                         enabled = title.isNotBlank(),
@@ -329,6 +345,8 @@ fun CategorizedHabitList(
     currentTheme: AppTheme,
     onAddHabit: (String, CozyCategory, Int) -> Unit,
     onDeleteHabit: (Int) -> Unit,
+    expandedSection: String?,
+    onSectionToggle: (String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -336,6 +354,7 @@ fun CategorizedHabitList(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         CozyCategory.entries.forEach { category ->
+            val sectionKey = "cat:${category.name}"
             val filteredActivities = activities.filter { 
                 it.icon == category.name 
             }
@@ -345,6 +364,10 @@ fun CategorizedHabitList(
                 onDeleteHabit = onDeleteHabit,
                 category = category,
                 currentTheme = currentTheme,
+                expanded = expandedSection == sectionKey,
+                onToggleExpand = {
+                    onSectionToggle(if (expandedSection == sectionKey) null else sectionKey)
+                },
                 onAddTemplate = { title, frequency -> onAddHabit(title, category, frequency) }
             )
         }
@@ -358,9 +381,10 @@ private fun ExpandableCategorySection(
     onDeleteHabit: (Int) -> Unit,
     category: CozyCategory,
     currentTheme: AppTheme,
+    expanded: Boolean,
+    onToggleExpand: () -> Unit,
     onAddTemplate: (String, Int) -> Unit
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
     val rotationState by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "RotationAnimation"
@@ -371,7 +395,7 @@ private fun ExpandableCategorySection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
-                    .clickable { expanded = !expanded },
+                    .clickable { onToggleExpand() },
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 shape = MaterialTheme.shapes.medium,
             ) {

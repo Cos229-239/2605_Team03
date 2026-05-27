@@ -57,7 +57,7 @@ fun BuddyDialogueBox(
 fun BuddyDialogueBoxPreview() {
     NudgieTheme {
         BuddyDialogueBox(
-            text = "Are you really going to eat that? My data suggests your health bar is low.",
+            text = "Are you really going to throw that away? My data suggests I AM STARVING!!!",
             modifier = Modifier.padding(16.dp)
         )
     }

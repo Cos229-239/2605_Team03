@@ -552,12 +552,18 @@ fun CategorizedActivityLog(
     currentTheme: AppTheme,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
+    var expandedCategory by rememberSaveable { mutableStateOf<CozyCategory?>(null) }
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         categorizedActivities.forEach { (category, habits) ->
             ExpandableDashboardSection(
                 categoryTitle = category.displayName,
                 habits = habits,
                 currentTheme = currentTheme,
+                expanded = expandedCategory == category,
+                onToggleExpand = {
+                    expandedCategory = if (expandedCategory == category) null else category
+                },
                 onToggleHabit = onToggleHabit
             )
         }
@@ -569,9 +575,10 @@ private fun ExpandableDashboardSection(
     categoryTitle: String,
     habits: List<ActivityItem>,
     currentTheme: AppTheme,
+    expanded: Boolean,
+    onToggleExpand: () -> Unit,
     onToggleHabit: (ActivityItem) -> Unit
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
     val rotationState by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "RotationAnimation"
@@ -582,7 +589,7 @@ private fun ExpandableDashboardSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .nudgieCardShadow(currentTheme, 4.dp, RoundedCornerShape(12.dp))
-                .clickable { expanded = !expanded },
+                .clickable { onToggleExpand() },
             color = MaterialTheme.colorScheme.surfaceVariant,
             shape = RoundedCornerShape(12.dp),
         ) {
