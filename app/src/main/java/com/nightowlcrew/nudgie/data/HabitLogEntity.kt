@@ -12,7 +12,7 @@ import androidx.room.PrimaryKey
             entity = HabitEntity::class,
             parentColumns = ["id"],
             childColumns = ["habitId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.SET_NULL
         )
     ],
     indices = [Index(value = ["habitId"])]
@@ -20,7 +20,7 @@ import androidx.room.PrimaryKey
 data class HabitLogEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val habitId: Int,
+    val habitId: Int?,
     val completedAtTime: String,
     val isCompleted: Boolean
 )

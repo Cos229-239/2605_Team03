@@ -14,8 +14,8 @@ android {
 
     defaultConfig {
         applicationId = "com.nightowlcrew.nudgie"
-        minSdk = 26
-        targetSdk = 36
+        minSdk = 26 //oreo
+        targetSdk = 36 //baklava
 
         versionCode = 1
         versionName = "1.0"
@@ -42,21 +42,6 @@ android {
     buildFeatures {
         compose = true
     }
-
-    sourceSets {
-        getByName("debug") {
-            java.srcDirs(
-                "build/generated/ksp/debug/kotlin",
-                "build/generated/ksp/debug/java"
-            )
-        }
-        getByName("release") {
-            java.srcDirs(
-                "build/generated/ksp/release/kotlin",
-                "build/generated/ksp/release/java"
-            )
-        }
-    }
 }
 
 dependencies {
@@ -69,12 +54,18 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.ui.text.google.fonts)
+    implementation(libs.androidx.navigation.compose)
 
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

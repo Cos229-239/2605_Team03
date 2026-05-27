@@ -200,7 +200,7 @@ Kotlin provides several methods for converting between data types. Here's an exa
     val strBol: String = bol.toString() // Convert Boolean to String
 
     val char: Char = 'A'
-    val intChar: Int = char.toInt() // Convert Char to Int // Conversion of Char to Number is deprecated. Use Char.code property instead.
+    val intChar: Int = char.code // Convert Char to Int
 
     val byte: Byte = 127
     val short: Short = byte.toShort() // Convert Byte to Short
@@ -215,10 +215,10 @@ val result= "My name is $name"
 
 ### Character escape <a name="character-escape"></a>
 
-```kotlin
-\n insert new line
-\t inserts a tab
-\r inserts carriage return
+```text
+\n // insert new line
+\t // inserts a tab
+\r // inserts carriage return
 ```
 
 ### Operators <a name="operators"></a>
@@ -294,7 +294,7 @@ Range operator
 
 ### If-else <a name="if-else"></a>
 
-```kotlin
+```text
 if (condition) {
     // Code to execute if condition is true
 } else {
@@ -304,10 +304,10 @@ if (condition) {
 
 ### When <a name="when"></a>
 
-```kotlin
+```text
 when (value) {
     condition1 -> // Code to execute if value matches condition1
-    condition2 -> // Code to execute if value matches condition2
+    condition2 -> { } // Code to execute if value matches condition2
     else -> // Code to execute if value does not match any condition
 }
 ```
@@ -332,7 +332,7 @@ val max = if (a > b) a else b
 ```
 
 ### For loop <a name="for-loop"></a>
-```kotlin
+```text
 for (item in collection) {
     // Code to execute for each item in collection
 }
@@ -408,7 +408,7 @@ throw Exception("Exception...")
 ```
 To catch an exception, use the try...catch expression:
 
-```kotlin
+```text
 try {
     // some code
 } catch (e: SomeException) {
@@ -469,7 +469,7 @@ fun multiply(a: Int, b: Int) = a * b
 Unit-returning functions
 If a function does not return a value, its return type is Unit.
 
-```kotlin
+```text
 fun printHello(): Unit {
   print("Hello")
 }
@@ -1151,14 +1151,9 @@ fun oldMethod() {
 Packages are used to group related classes, functions, and other declarations together. Imports are used to make declarations from other packages accessible within your current file.
 
 ```kotlin
-package com.example.models
+// package com.example.models
 
-class Person(val name: String, val age: Int) {
-    // class implementation
-}
-```
-```kotlin
-import com.example.models.Person
+// import com.example.models.Person
 
 fun main() {
     val person = Person("Ali", 24)
