@@ -280,7 +280,7 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, streak: Int, currency: 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(520.dp) // Elongated height
+            .height(420.dp) // Elongated height
     ) {
         // Edge-to-edge Background Image
         Image(
@@ -415,7 +415,7 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, streak: Int, currency: 
                 Image(
                     painter = painterResource(id = R.drawable.blue_trashpanda),
                     contentDescription = "Your Pet",
-                    modifier = Modifier.size(160.dp), // Enlarged to 160.dp
+                    modifier = Modifier.size(200.dp), // Enlarged to 225.dp
                     contentScale = ContentScale.Fit
                 )
                 Spacer(Modifier.weight(1f))
@@ -427,9 +427,9 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, streak: Int, currency: 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 48.dp) // Narrow the card
+                .padding(horizontal = 55.dp) // Narrow the card
                 .align(Alignment.BottomCenter)
-                .offset(y = 32.dp) // Moved UP to match green arrows (less overlap outside)
+                .offset(y = 50.dp) // Moved UP to match green arrows (less overlap outside)
                 .height(80.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -490,7 +490,7 @@ fun TasksSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 30.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -606,7 +606,7 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
                 Text(
                     task.description, 
                     color = Color.White, 
-                    fontSize = 16.sp, // Increased font size (Orange Line)
+                    fontSize = 20.sp, // Increased font size (Orange Line)
                     fontWeight = FontWeight.SemiBold
                 )
                 
