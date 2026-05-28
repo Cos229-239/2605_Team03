@@ -6,6 +6,9 @@
 !/app/
 !/Documents/
 !/.gitignore
+!/README.md
+!/index.html
+!/roster-v2-sample.json
 
 # Keep essential build files (Recommended for project builds)
 !/build.gradle.kts
@@ -15,9 +18,13 @@
 !/gradlew.bat
 !/gradle/
 
-# Ignore the .idea folder specifically
+# Specific ignores for Android/IDE
 .idea/
+.gradle/
+build/
+*.iml
+local.properties
+.DS_Store
 
 # Presentation script
 Presentation_Script.md
-

@@ -2,19 +2,35 @@ package com.nightowlcrew.nudgie.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.nightowlcrew.nudgie.NudgieApplication
-import com.nightowlcrew.nudgie.data.*
+import com.nightowlcrew.nudgie.data.ActivityItem
+import com.nightowlcrew.nudgie.data.CozyCategory
+import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
+import com.nightowlcrew.nudgie.data.HabitEntity
+import com.nightowlcrew.nudgie.data.HabitLogEntity
+import com.nightowlcrew.nudgie.data.HabitRepository
+import com.nightowlcrew.nudgie.data.HabitRepositoryImpl
+import com.nightowlcrew.nudgie.data.ScreenTimeRecord
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
-enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK, GOTH }
+enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK, GOTH, RETRO_SPACE }
+
+// Data class to hold the pet's current status for the UI
+data class PetStats(
+    val level: Int = 1,
+    val xp: Int = 0,
+    val happiness: Int = 100,
+    val energy: Int = 100
+)
 
 /**
  * UI State for the Dashboard screen.
@@ -24,7 +40,8 @@ data class DashboardUiState(
     val categorizedActivities: Map<CozyCategory, List<ActivityItem>> = emptyMap(),
     val currentScreenTimeMillis: Long = 0L,
     val screenTimeGoalMillis: Long = 14400000L, // Default 4 hours (4 * 3600 * 1000)
-    val currentTheme: AppTheme = AppTheme.DEFAULT,
+    val currentTheme: AppTheme = AppTheme.RETRO_SPACE, // Defaulting to your new design
+    val petStats: PetStats = PetStats(level = 5, xp = 450, happiness = 80, energy = 65), // Mock data matching Figma
     val isLoading: Boolean = true
 )
 
@@ -45,12 +62,13 @@ class NudgieViewModel(
 
     init {
         // Load persisted theme immediately
-        val savedThemeName = sharedPreferences.getString("app_theme", AppTheme.DEFAULT.name)
-        val initialTheme = try { 
-            AppTheme.valueOf(savedThemeName ?: AppTheme.DEFAULT.name) 
-        } catch (e: Exception) { 
-            AppTheme.DEFAULT 
+        val savedThemeName = sharedPreferences.getString("app_theme", AppTheme.RETRO_SPACE.name)
+        val initialTheme = try {
+            AppTheme.valueOf(savedThemeName ?: AppTheme.RETRO_SPACE.name)
+        } catch (e: Exception) {
+            AppTheme.RETRO_SPACE
         }
+
         _uiState.value = _uiState.value.copy(currentTheme = initialTheme)
 
         // Prepopulate default habits if it's the first time
@@ -58,7 +76,7 @@ class NudgieViewModel(
 
         viewModelScope.launch {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-            
+
             combine(
                 repository.getAllHabitsWithLogs(),
                 repository.getScreenTimeForDate(today)
@@ -138,7 +156,7 @@ class NudgieViewModel(
                 targetFrequencyPerDay = frequency
             )
             val habitId = repository.insertHabit(habit).toInt()
-            
+
             if (markAsCompleted) {
                 val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
                 val log = HabitLogEntity(
@@ -177,6 +195,7 @@ class NudgieViewModel(
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val currentRecord = uiState.value
             val limitMillis = hours.toLong() * 3600000L
+
             val record = ScreenTimeRecord(
                 date = today,
                 targetLimitMillis = limitMillis,
@@ -192,13 +211,14 @@ class NudgieViewModel(
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 // Get the Application object from extras
                 val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]) as NudgieApplication
+
                 // Get the repository through our lazy database property
                 val repository = HabitRepositoryImpl(
                     application.database.habitDao(),
                     application.database.screenTimeDao()
                 )
-                val sharedPrefs = application.getSharedPreferences("nudgie_prefs", android.content.Context.MODE_PRIVATE)
 
+                val sharedPrefs = application.getSharedPreferences("nudgie_prefs", android.content.Context.MODE_PRIVATE)
                 return NudgieViewModel(repository, sharedPrefs) as T
             }
         }
