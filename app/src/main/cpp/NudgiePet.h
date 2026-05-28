@@ -4,7 +4,7 @@
 struct NudgieState {
     int happiness = 85;
     int energy = 62;
-    int level = 5;
+    int level = 6;
     int ageDays = 5;
 };
 

@@ -89,6 +89,8 @@ import com.nightowlcrew.nudgie.ui.theme.SuccessGreen
 import com.nightowlcrew.nudgie.ui.theme.cpNeonGreen
 import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
 import com.nightowlcrew.nudgie.ui.theme.spParchment
+import com.nightowlcrew.nudgie.utils.AlarmUtils
+import com.nightowlcrew.nudgie.utils.PermissionUtils
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Filled.Home)
@@ -105,7 +107,9 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-
+    val happiness by viewModel.happiness.collectAsStateWithLifecycle()
+    val energy by viewModel.energy.collectAsStateWithLifecycle()
+    val petLevel by viewModel.petLevel.collectAsStateWithLifecycle()
     val screens = listOf(
         Screen.Home,
         Screen.Pet,
@@ -168,6 +172,9 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
                 DashboardContent(
                     categorizedActivities = uiState.categorizedActivities,
                     currentTheme = uiState.currentTheme,
+                    happiness = happiness,   // <-- ADD THIS
+                    energy = energy,         // <-- ADD THIS
+                    petLevel = petLevel,     // <-- ADD THIS
                     onToggleHabit = { viewModel.toggleHabitCompletion(it) },
                 )
             }
@@ -367,33 +374,26 @@ fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
 
 @Composable
 fun DashboardContent(
-    categorizedActivities: Map<CozyCategory, List<ActivityItem>>,
-    currentTheme: AppTheme = AppTheme.DEFAULT,
-    onToggleHabit: (ActivityItem) -> Unit,
+categorizedActivities: Map<CozyCategory, List<ActivityItem>>,
+currentTheme: AppTheme = AppTheme.DEFAULT,
+happiness: Int, // NEW
+energy: Int,    // NEW
+petLevel: Int,  // NEW
+onToggleHabit: (ActivityItem) -> Unit,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 16.dp) // Cushioned horizontal padding
+            .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         // HEADER
+        Text(text = "NUDGIE", style = MaterialTheme.typography.displayLarge.copy(fontSize = 44.sp, lineHeight = 52.sp, fontFamily = PressStart2P), color = MaterialTheme.colorScheme.onBackground)
+
         Text(
-            text = "NUDGIE",
-            style = MaterialTheme.typography.displayLarge.copy(
-                fontSize = 44.sp,
-                lineHeight = 52.sp,
-                fontFamily = PressStart2P
-            ),
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        // High-density metadata
-        Text(
-            text = "Level 5 • Baby Stage",
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontFamily = PressStart2P,
-                fontSize = 12.sp
-            ),
+            text = "Level $petLevel • Baby Stage", // LIVE DATA
+            style = MaterialTheme.typography.labelMedium.copy(fontFamily = PressStart2P, fontSize = 12.sp),
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
         )
 
@@ -401,55 +401,26 @@ fun DashboardContent(
 
         // TOP HAPPINESS BAR
         Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            ),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = MaterialTheme.shapes.medium,
-            modifier = Modifier
-                .fillMaxWidth()
-                .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
+            modifier = Modifier.fillMaxWidth().nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Filled.Favorite,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(16.dp)
-                        )
+                        Icon(Icons.Filled.Favorite, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "HAPPINESS".uppercase(),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontFamily = PressStart2P,
-                                fontSize = 14.sp
-                            ),
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(text = "HAPPINESS".uppercase(), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium.copy(fontFamily = PressStart2P, fontSize = 14.sp), fontWeight = FontWeight.Bold)
                     }
                     Text(
-                        text = "85%",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = PressStart2P,
-                            fontSize = 14.sp
-                        ),
-                        fontWeight = FontWeight.Bold
+                        text = "$happiness%", // LIVE DATA
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium.copy(fontFamily = PressStart2P, fontSize = 14.sp), fontWeight = FontWeight.Bold
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 LinearProgressIndicator(
-                    progress = { 0.85f },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp)
-                        .clip(CircleShape),
+                    progress = { happiness / 100f }, // LIVE DATA MATH
+                    modifier = Modifier.fillMaxWidth().height(10.dp).clip(CircleShape),
                     color = MaterialTheme.colorScheme.tertiary,
                     trackColor = MaterialTheme.colorScheme.tertiaryContainer
                 )
@@ -457,64 +428,49 @@ fun DashboardContent(
         }
 
         Spacer(modifier = Modifier.height(32.dp))
-
-        // BUDDY WINDOW WITH FLOATING STATS
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            PetHeroContainer(currentTheme = currentTheme)
-
-            // Top Left - Happiness
-            PetCornerStatBadge(
-                label = "Happiness",
-                value = "85%",
-                icon = Icons.Filled.Favorite,
-                currentTheme = currentTheme,
-                accentColor = Color(0xFFFF003C), // Corpo Red
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(x = (-8).dp, y = (-12).dp)
-            )
-
-            // Top Right - Energy
-            PetCornerStatBadge(
-                label = "Energy",
-                value = "62%",
-                icon = Icons.Filled.FlashOn,
-                currentTheme = currentTheme,
-                accentColor = Color(0xFFFCEE0A), // Cyber Yellow
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = 8.dp, y = (-12).dp)
-            )
-
-            // Bottom Left - Age
-            PetCornerStatBadge(
-                label = "Age",
-                value = "5 Days",
-                icon = Icons.Filled.HourglassBottom,
-                currentTheme = currentTheme,
-                accentColor = cpNeonGreen,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .offset(x = (-8).dp, y = 12.dp)
-            )
-
-            // Bottom Right - Level
-            PetCornerStatBadge(
-                label = "Level",
-                value = "5",
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            NewStatCard(
+                label = "LEVEL",
+                value = "$petLevel", // LIVE DATA
                 icon = Icons.Filled.Star,
+                iconColor = Color.Blue,
+                bgColor = CardBlueBg,
+                borderColor = LevelUpBlue,
                 currentTheme = currentTheme,
-                accentColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 8.dp, y = 12.dp)
+                modifier = Modifier.weight(1f)
+            )
+            NewStatCard(
+                label = "AGE",
+                value = "5 Days",
+                icon = Icons.Filled.CalendarToday,
+                iconColor = Color.Green,
+                bgColor = CardGreenBg,
+                borderColor = SuccessGreen,
+                currentTheme = currentTheme,
+                modifier = Modifier.weight(1f)
             )
         }
+        // BUDDY WINDOW WITH FLOATING STATS
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+            PetHeroContainer(currentTheme = currentTheme)
+
+            PetCornerStatBadge(
+                label = "Happiness",
+                value = "$happiness%", // LIVE DATA
+                icon = Icons.Filled.Favorite, currentTheme = currentTheme, accentColor = Color(0xFFFF003C),
+                modifier = Modifier.align(Alignment.TopStart).offset(x = (-8).dp, y = (-12).dp)
+            )
+
+            PetCornerStatBadge(
+                label = "Energy",
+                value = "$energy%", // LIVE DATA
+                icon = Icons.Filled.FlashOn, currentTheme = currentTheme, accentColor = Color(0xFFFCEE0A),
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 8.dp, y = (-12).dp)
+            )
+
+
+        }
+
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -538,6 +494,34 @@ fun DashboardContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         CategorizedActivityLog(categorizedActivities, currentTheme, onToggleHabit)
+
+        Spacer(modifier = Modifier.height(80.dp)) // Extra space for scroll
+
+        androidx.compose.material3.Button(
+            onClick = {
+                // 1. Check exact alarm permissions
+                PermissionUtils.checkAndRequestExactAlarmPermission(context)
+
+                // 2. Set an alarm for exactly 10 seconds from now
+                val triggerTime = System.currentTimeMillis() + 10000
+                AlarmUtils.setExactAlarm(context, triggerTime)
+            },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(
+                text = "TEST ALARM (10 SEC)",
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontFamily = PressStart2P,
+                    fontSize = 12.sp
+                ),
+                color = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(80.dp)) // Extra space for scroll
     }
@@ -764,6 +748,9 @@ fun FIGMA_DASHBOARD_PREVIEW() {
     NudgieTheme {
         DashboardContent(
             categorizedActivities = mockCategorized,
+            happiness = 85,    // <-- ADD THIS
+            energy = 62,       // <-- ADD THIS
+            petLevel = 5,      // <-- ADD THIS
             onToggleHabit = {}
         )
     }
