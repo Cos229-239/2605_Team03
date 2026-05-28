@@ -415,7 +415,7 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, streak: Int, currency: 
                 Image(
                     painter = painterResource(id = R.drawable.blue_trashpanda),
                     contentDescription = "Your Pet",
-                    modifier = Modifier.size(200.dp), // Enlarged to 225.dp
+                    modifier = Modifier.size(225.dp), // Enlarged to 225.dp
                     contentScale = ContentScale.Fit
                 )
                 Spacer(Modifier.weight(1f))
@@ -427,9 +427,9 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, streak: Int, currency: 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 55.dp) // Narrow the card
+                .padding(horizontal = 75.dp) // Narrow the card
                 .align(Alignment.BottomCenter)
-                .offset(y = 50.dp) // Moved UP to match green arrows (less overlap outside)
+                .offset(y = 70.dp) // Moved UP to match green arrows (less overlap outside)
                 .height(80.dp),
             contentAlignment = Alignment.Center
         ) {
