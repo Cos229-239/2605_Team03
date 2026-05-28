@@ -37,4 +37,18 @@ object PermissionUtils {
     fun getUsageAccessSettingsIntent(): Intent {
         return Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
     }
+    fun checkAndRequestExactAlarmPermission(context: Context) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+
+            // Teammate requirement: check canScheduleExactAlarms()
+            if (!alarmManager.canScheduleExactAlarms()) {
+                // Fire intent to Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
+            }
+        }
+    }
 }

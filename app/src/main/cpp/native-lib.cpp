@@ -1,5 +1,5 @@
 #include <jni.h>
-#include "NudgiePet.h"
+#include "../../../../.github/workflows/UI and stats/header/NudgiePet.h"
 
 // Initialize your pet globally (or attach it to a specific memory pointer)
 NudgiePet myBuddy;
