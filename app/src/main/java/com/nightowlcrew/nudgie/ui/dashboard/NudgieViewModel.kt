@@ -14,13 +14,17 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK, GOTH }
+
 /**
  * UI State for the Dashboard screen.
  */
 data class DashboardUiState(
     val activities: List<ActivityItem> = emptyList(),
+    val categorizedActivities: Map<CozyCategory, List<ActivityItem>> = emptyMap(),
     val currentScreenTimeMillis: Long = 0L,
     val screenTimeGoalMillis: Long = 14400000L, // Default 4 hours (4 * 3600 * 1000)
+    val currentTheme: AppTheme = AppTheme.DEFAULT,
     val isLoading: Boolean = true
 )
 
@@ -28,7 +32,10 @@ data class DashboardUiState(
  * ViewModel for managing Dashboard UI state and interactions.
  * Bridges the UI with the Repository layer.
  */
-class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
+class NudgieViewModel(
+    private val repository: HabitRepository,
+    private val sharedPreferences: android.content.SharedPreferences
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
@@ -37,21 +44,69 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
         get() = uiState.value.currentScreenTimeMillis > uiState.value.screenTimeGoalMillis
 
     init {
+        // Load persisted theme immediately
+        val savedThemeName = sharedPreferences.getString("app_theme", AppTheme.DEFAULT.name)
+        val initialTheme = try { 
+            AppTheme.valueOf(savedThemeName ?: AppTheme.DEFAULT.name) 
+        } catch (e: Exception) { 
+            AppTheme.DEFAULT 
+        }
+        _uiState.value = _uiState.value.copy(currentTheme = initialTheme)
+
+        // Prepopulate default habits if it's the first time
+        prepopulateDefaultHabits()
+
         viewModelScope.launch {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             
             combine(
                 repository.getAllHabitsWithLogs(),
-                repository.getScreenTimeForDay(today)
+                repository.getScreenTimeForDate(today)
             ) { activities, screenTime ->
-                DashboardUiState(
+                val categorized = CozyCategory.entries.associateWith { category ->
+                    activities.filter { it.icon == category.name }
+                }.filterValues { it.isNotEmpty() }
+
+                _uiState.value.copy(
                     activities = activities,
+                    categorizedActivities = categorized,
                     currentScreenTimeMillis = screenTime?.actualDurationMillis ?: 0L,
                     screenTimeGoalMillis = screenTime?.targetLimitMillis ?: 14400000L,
                     isLoading = false
                 )
             }.collect { updatedState ->
                 _uiState.value = updatedState
+            }
+        }
+    }
+
+    /**
+     * Updates the current app theme and persists the choice.
+     */
+    fun updateTheme(newTheme: AppTheme) {
+        _uiState.value = _uiState.value.copy(currentTheme = newTheme)
+        sharedPreferences.edit().putString("app_theme", newTheme.name).apply()
+    }
+
+    /**
+     * Prepopulates the database with a set of default "stock" habits on first run.
+     */
+    private fun prepopulateDefaultHabits() {
+        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v2_added", false)
+        if (!alreadyAdded) {
+            viewModelScope.launch {
+                HABIT_TEMPLATES.forEach { (category, templates) ->
+                    templates.forEach { template ->
+                        repository.insertHabit(
+                            HabitEntity(
+                                title = template.title,
+                                icon = category.name,
+                                targetFrequencyPerDay = template.defaultFrequency
+                            )
+                        )
+                    }
+                }
+                sharedPreferences.edit().putBoolean("default_habits_v2_added", true).apply()
             }
         }
     }
@@ -73,15 +128,26 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
 
     /**
      * Adds a new habit to the database.
+     * Optionally marks it as completed for the current day immediately.
      */
-    fun addNewHabit(title: String, icon: String, frequency: Int) {
+    fun addNewHabit(title: String, icon: String, frequency: Int, markAsCompleted: Boolean = false) {
         viewModelScope.launch {
             val habit = HabitEntity(
                 title = title,
                 icon = icon,
                 targetFrequencyPerDay = frequency
             )
-            repository.insertHabit(habit)
+            val habitId = repository.insertHabit(habit).toInt()
+            
+            if (markAsCompleted) {
+                val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+                val log = HabitLogEntity(
+                    habitId = habitId,
+                    completedAtTime = currentTime,
+                    isCompleted = true
+                )
+                repository.insertLog(log)
+            }
         }
     }
 
@@ -131,8 +197,9 @@ class NudgieViewModel(private val repository: HabitRepository) : ViewModel() {
                     application.database.habitDao(),
                     application.database.screenTimeDao()
                 )
+                val sharedPrefs = application.getSharedPreferences("nudgie_prefs", android.content.Context.MODE_PRIVATE)
 
-                return NudgieViewModel(repository) as T
+                return NudgieViewModel(repository, sharedPrefs) as T
             }
         }
     }

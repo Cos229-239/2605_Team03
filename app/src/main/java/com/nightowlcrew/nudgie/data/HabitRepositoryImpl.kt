@@ -1,7 +1,9 @@
 package com.nightowlcrew.nudgie.data
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 /**
  * Concrete implementation of the HabitRepository.
@@ -22,27 +24,25 @@ class HabitRepositoryImpl(
         return habitDao.getLogsByDate(date)
     }
 
-    override suspend fun insertHabit(habit: HabitEntity) {
-        habitDao.insertHabit(habit)
+    override suspend fun insertHabit(habit: HabitEntity): Long {
+        return habitDao.insertHabit(habit)
     }
 
-    override suspend fun insertLog(log: HabitLogEntity) {
-        habitDao.insertHabitLog(log)
+    override suspend fun insertLog(log: HabitLogEntity): Long {
+        return habitDao.insertHabitLog(log)
     }
 
     override suspend fun deleteHabit(habit: HabitEntity) {
         habitDao.deleteHabit(habit)
     }
 
-    override fun getScreenTimeForDay(date: String): Flow<ScreenTimeRecord?> {
+    override fun getScreenTimeForDate(date: String): Flow<ScreenTimeRecord?> {
         return screenTimeDao.getRecordForDate(date)
     }
 
-    override fun getAllScreenTimeRecords(): Flow<List<ScreenTimeRecord>> {
-        return screenTimeDao.getAllRecords()
-    }
-
     override suspend fun insertOrUpdateScreenTime(record: ScreenTimeRecord) {
-        screenTimeDao.insertOrUpdateRecord(record)
+        withContext(Dispatchers.IO) {
+            screenTimeDao.insertOrUpdateRecord(record)
+        }
     }
 }
