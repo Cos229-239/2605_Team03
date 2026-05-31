@@ -256,6 +256,7 @@ fun NudgieDashboardContent(
                     screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     currentTheme = uiState.currentTheme,
                     onAddHabit = onAddHabit,
+                    onDeleteHabit = onDeleteHabit,
                     onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
                     onUpdateTheme = onUpdateTheme,
                     onArchiveHabit = onArchiveHabit,
@@ -543,7 +544,7 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, onUpdatePetName: (Strin
             ) {
                 StatItem("Happiness", "${petStats.happiness}%", statColors.happiness, Icons.Default.Favorite)
                 StatItem("Energy", "${petStats.energy}%", statColors.energy, Icons.Default.FlashOn)
-                StatItem("Level", "${petStats.level}", statColors.level, Icons.Default.Star)
+                StatItem("Level", petStats.level.toString(), statColors.level, Icons.Default.Star)
             }
         }
     }
@@ -758,8 +759,10 @@ fun NudgieDashboardPreview() {
     val sampleUiState = DashboardUiState(
         activities = mockActivities,
         categorizedActivities = categorizedActivities,
+        currentScreenTimeMillis = 3600000L,
+        screenTimeGoalMillis = 14400000L,
         currentTheme = AppTheme.RETRO_SPACE,
-        petStats = PetStats(level = 5, xp = 450, happiness = 80, energy = 65),
+        petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
         isLoading = false
     )
 
@@ -769,7 +772,7 @@ fun NudgieDashboardPreview() {
             uiState = sampleUiState,
             archivedHabits = emptyList(),
             onToggleHabit = {},
-            onAddHabit = { _, _, _ -> },
+            onAddHabit = { _, _, _, _ -> },
             onDeleteHabit = {},
             onUpdateScreenTimeGoal = {},
             onUpdateTheme = {},
