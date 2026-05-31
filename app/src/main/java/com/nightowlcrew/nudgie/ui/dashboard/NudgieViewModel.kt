@@ -60,7 +60,7 @@ class NudgieViewModel(
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
-    val archivedHabits: StateFlow<List<HabitEntity>> = repository.getArchivedCustomHabits()
+    val archivedHabits: StateFlow<List<HabitEntity>> = repository.getArchivedHabits()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -172,12 +172,13 @@ class NudgieViewModel(
      * Adds a new habit to the database.
      * Optionally marks it as completed for the current day immediately.
      */
-    fun addNewHabit(title: String, icon: String, frequency: Int, markAsCompleted: Boolean = false) {
+    fun addNewHabit(title: String, icon: String, frequency: Int, isStock: Boolean = false, markAsCompleted: Boolean = false) {
         viewModelScope.launch {
             val habit = HabitEntity(
                 title = title,
                 icon = icon,
-                targetFrequencyPerDay = frequency
+                targetFrequencyPerDay = frequency,
+                isStock = isStock
             )
             val habitId = repository.insertHabit(habit).toInt()
 

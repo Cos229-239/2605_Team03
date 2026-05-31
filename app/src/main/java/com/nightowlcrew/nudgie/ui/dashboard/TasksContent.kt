@@ -71,8 +71,7 @@ fun TasksContent(
     activities: List<ActivityItem>,
     archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
-    onAddHabit: (String, CozyCategory, Int) -> Unit,
-    onDeleteHabit: (Int) -> Unit,
+    onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
     onArchiveHabit: (HabitEntity) -> Unit,
     onRestoreHabit: (HabitEntity) -> Unit,
 ) {
@@ -197,7 +196,6 @@ fun TasksContent(
                         },
                         onToggleHabit = onToggleHabit,
                         onAddHabit = onAddHabit,
-                        onDeleteHabit = onDeleteHabit,
                         onArchiveHabit = onArchiveHabit,
                         onRestoreHabit = onRestoreHabit
                     )
@@ -208,7 +206,7 @@ fun TasksContent(
                     TaskListItem(
                         task = task,
                         onToggle = { onToggleHabit(task) },
-                        onDelete = { onDeleteHabit(task.id) }
+                        onDelete = { onArchiveHabit(task.toEntity()) }
                     )
                 }
                 
@@ -232,7 +230,7 @@ fun TasksContent(
                         template = template,
                         activeHabit = activeHabit,
                         archivedHabit = archivedHabit,
-                        onAdd = { onAddHabit(template.title, selectedCategory!!, template.defaultFrequency) },
+                        onAdd = { onAddHabit(template.title, selectedCategory!!, template.defaultFrequency, true) },
                         onArchive = { activeHabit?.let { onArchiveHabit(it.toEntity()) } },
                         onRestore = { archivedHabit?.let { onRestoreHabit(it) } }
                     )
@@ -250,8 +248,7 @@ fun ExpandableTaskSection(
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
     onToggleHabit: (ActivityItem) -> Unit,
-    onAddHabit: (String, CozyCategory, Int) -> Unit,
-    onDeleteHabit: (Int) -> Unit,
+    onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
     onArchiveHabit: (HabitEntity) -> Unit,
     onRestoreHabit: (HabitEntity) -> Unit,
 ) {
@@ -302,7 +299,7 @@ fun ExpandableTaskSection(
                     TaskListItem(
                         task = habit,
                         onToggle = { onToggleHabit(habit) },
-                        onDelete = { onDeleteHabit(habit.id) }
+                        onDelete = { onArchiveHabit(habit.toEntity()) }
                     )
                 }
 
@@ -316,7 +313,7 @@ fun ExpandableTaskSection(
                         template = template,
                         activeHabit = activeHabit,
                         archivedHabit = archivedHabit,
-                        onAdd = { onAddHabit(template.title, category, template.defaultFrequency) },
+                        onAdd = { onAddHabit(template.title, category, template.defaultFrequency, true) },
                         onArchive = { activeHabit?.let { onArchiveHabit(it.toEntity()) } },
                         onRestore = { archivedHabit?.let { onRestoreHabit(it) } }
                     )
@@ -487,8 +484,7 @@ fun TasksContentPreview() {
         activities = mockTasks,
         archivedHabits = emptyList(),
         onToggleHabit = {},
-        onAddHabit = { _, _, _ -> },
-        onDeleteHabit = {},
+        onAddHabit = { _, _, _, _ -> },
         onArchiveHabit = {},
         onRestoreHabit = {}
     )

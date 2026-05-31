@@ -36,8 +36,8 @@ class HabitRepositoryImpl(
         habitDao.deleteHabit(habit)
     }
 
-    override fun getArchivedCustomHabits(): Flow<List<HabitEntity>> {
-        return habitDao.getArchivedCustomHabits()
+    override fun getArchivedHabits(): Flow<List<HabitEntity>> {
+        return habitDao.getArchivedHabits()
     }
 
     override suspend fun archiveHabit(habitId: Int, timestamp: Long) {

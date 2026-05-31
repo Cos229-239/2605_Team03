@@ -32,6 +32,7 @@ import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
 import com.nightowlcrew.nudgie.data.HabitEntity
+import com.nightowlcrew.nudgie.data.toEntity
 import com.nightowlcrew.nudgie.ui.theme.PressStart2P
 import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
 
@@ -51,12 +52,13 @@ fun SettingsScreen(
         archivedHabits = archivedHabits,
         screenTimeGoalMillis = uiState.screenTimeGoalMillis,
         currentTheme = uiState.currentTheme,
-        onAddHabit = { title, category, frequency -> 
-            viewModel.addNewHabit(title, category.name, frequency)
+        onAddHabit = { title, category, frequency, isStock -> 
+            viewModel.addNewHabit(title, category.name, frequency, isStock)
         },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
+        onArchiveHabit = { viewModel.archiveHabit(it) },
         onRestoreHabit = { viewModel.restoreHabit(it) }
     )
 }
@@ -67,10 +69,11 @@ fun SettingsContent(
     archivedHabits: List<HabitEntity>,
     screenTimeGoalMillis: Long,
     currentTheme: AppTheme,
-    onAddHabit: (String, CozyCategory, Int) -> Unit,
+    onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
     onUpdateTheme: (AppTheme) -> Unit,
+    onArchiveHabit: (HabitEntity) -> Unit,
     onRestoreHabit: (HabitEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -97,9 +100,12 @@ fun SettingsContent(
 
         CategorizedHabitList(
             activities = activities,
+            archivedHabits = archivedHabits,
             currentTheme = currentTheme,
             onAddHabit = onAddHabit,
             onDeleteHabit = onDeleteHabit,
+            onArchiveHabit = onArchiveHabit,
+            onRestoreHabit = onRestoreHabit,
             expandedSection = expandedSection,
             onSectionToggle = { expandedSection = it },
             modifier = Modifier
@@ -108,7 +114,7 @@ fun SettingsContent(
         )
 
         HabitCreatorSection(
-            onAddHabit = onAddHabit,
+            onAddHabit = { title, category, frequency -> onAddHabit(title, category, frequency, false) },
             archivedHabits = archivedHabits,
             onRestoreHabit = onRestoreHabit,
             currentTheme = currentTheme,
@@ -345,45 +351,48 @@ fun HabitCreatorSection(
                     }
 
                     if (archivedHabits.isNotEmpty()) {
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        Text(
-                            text = "Recently Deleted Custom Habits",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            archivedHabits.forEach { habit ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                                    )
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .padding(8.dp)
-                                            .fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            text = habit.title,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            modifier = Modifier.weight(1f)
+                        val customArchived = archivedHabits.filter { !it.isStock }
+                        if (customArchived.isNotEmpty()) {
+                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+                            Text(
+                                text = "Recently Deleted Custom Habits",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                customArchived.forEach { habit ->
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
                                         )
-                                        IconButton(
-                                            onClick = { onRestoreHabit(habit) },
-                                            modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .padding(8.dp)
+                                                .fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Add,
-                                                contentDescription = "Restore Habit",
-                                                modifier = Modifier.size(20.dp)
+                                            Text(
+                                                text = habit.title,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                modifier = Modifier.weight(1f)
                                             )
+                                            IconButton(
+                                                onClick = { onRestoreHabit(habit) },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Add,
+                                                    contentDescription = "Restore Habit",
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -399,9 +408,12 @@ fun HabitCreatorSection(
 @Composable
 fun CategorizedHabitList(
     activities: List<ActivityItem>,
+    archivedHabits: List<HabitEntity>,
     currentTheme: AppTheme,
-    onAddHabit: (String, CozyCategory, Int) -> Unit,
+    onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
     onDeleteHabit: (Int) -> Unit,
+    onArchiveHabit: (HabitEntity) -> Unit,
+    onRestoreHabit: (HabitEntity) -> Unit,
     expandedSection: String?,
     onSectionToggle: (String?) -> Unit,
     modifier: Modifier = Modifier
@@ -415,17 +427,23 @@ fun CategorizedHabitList(
             val filteredActivities = activities.filter { 
                 it.icon == category.name 
             }
+            val filteredArchived = archivedHabits.filter {
+                it.icon == category.name
+            }
             ExpandableCategorySection(
                 categoryTitle = category.displayName,
                 habits = filteredActivities,
+                archivedHabits = filteredArchived,
                 onDeleteHabit = onDeleteHabit,
+                onArchiveHabit = onArchiveHabit,
+                onRestoreHabit = onRestoreHabit,
                 category = category,
                 currentTheme = currentTheme,
                 expanded = expandedSection == sectionKey,
                 onToggleExpand = {
                     onSectionToggle(if (expandedSection == sectionKey) null else sectionKey)
                 },
-                onAddTemplate = { title, frequency -> onAddHabit(title, category, frequency) }
+                onAddTemplate = { title, frequency, isStock -> onAddHabit(title, category, frequency, isStock) }
             )
         }
     }
@@ -435,12 +453,15 @@ fun CategorizedHabitList(
 private fun ExpandableCategorySection(
     categoryTitle: String,
     habits: List<ActivityItem>,
+    archivedHabits: List<HabitEntity>,
     onDeleteHabit: (Int) -> Unit,
+    onArchiveHabit: (HabitEntity) -> Unit,
+    onRestoreHabit: (HabitEntity) -> Unit,
     category: CozyCategory,
     currentTheme: AppTheme,
     expanded: Boolean,
     onToggleExpand: () -> Unit,
-    onAddTemplate: (String, Int) -> Unit
+    onAddTemplate: (String, Int, Boolean) -> Unit
 ) {
     val rotationState by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
@@ -490,21 +511,23 @@ private fun ExpandableCategorySection(
                 // Show templates with +/- toggle
                 templates.forEach { template ->
                     val activeHabit = habits.find { it.description == template.title }
+                    val archivedHabit = archivedHabits.find { it.title == template.title }
                     val isActive = activeHabit != null
+                    val isArchived = archivedHabit != null
                     
                     TemplateOptionRow(
                         title = template.title,
-                        icon = if (isActive) Icons.Default.Remove else Icons.Default.Add,
+                        icon = if (isActive) Icons.Default.Delete else Icons.Default.Add,
                         currentTheme = currentTheme,
                         onClick = {
-                            if (activeHabit != null) {
-                                onDeleteHabit(activeHabit.id)
-                            } else {
-                                onAddTemplate(template.title, template.defaultFrequency)
-                            }
-                        }
-                    )
+                    when {
+                        isActive -> onArchiveHabit(activeHabit.toEntity())
+                        isArchived -> onRestoreHabit(archivedHabit)
+                        else -> onAddTemplate(template.title, template.defaultFrequency, true)
+                    }
                 }
+            )
+        }
 
                 // Show custom habits (not in templates)
                 val customHabits = habits.filter { habit -> 
@@ -515,7 +538,7 @@ private fun ExpandableCategorySection(
                     ActivityRow(
                         item = item,
                         currentTheme = currentTheme,
-                        onDelete = { onDeleteHabit(item.id) }
+                        onDelete = { onArchiveHabit(item.toEntity()) }
                     )
                 }
 
@@ -566,7 +589,7 @@ fun TemplateOptionRow(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = contentColor
+                tint = if (icon == Icons.Default.Delete) androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.7f) else contentColor
             )
         }
     }
@@ -686,10 +709,11 @@ fun SettingsContentPreview() {
                 archivedHabits = emptyList(),
                 screenTimeGoalMillis = 7200000L,
                 currentTheme = AppTheme.DEFAULT,
-                onAddHabit = { _, _, _ -> },
+                onAddHabit = { _, _, _, _ -> },
                 onDeleteHabit = { },
                 onUpdateScreenTimeGoal = { },
                 onUpdateTheme = { },
+                onArchiveHabit = { },
                 onRestoreHabit = { }
             )
         }

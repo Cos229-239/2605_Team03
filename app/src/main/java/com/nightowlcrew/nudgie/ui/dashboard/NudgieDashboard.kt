@@ -152,7 +152,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
         uiState = uiState,
         archivedHabits = archivedHabits,
         onToggleHabit = { viewModel.toggleHabitCompletion(it) },
-        onAddHabit = { title, category, frequency -> viewModel.addNewHabit(title, category.name, frequency) },
+        onAddHabit = { title, category, frequency, isStock -> viewModel.addNewHabit(title, category.name, frequency, isStock) },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
@@ -168,7 +168,7 @@ fun NudgieDashboardContent(
     uiState: DashboardUiState,
     archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
-    onAddHabit: (String, CozyCategory, Int) -> Unit,
+    onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
     onUpdateTheme: (AppTheme) -> Unit,
@@ -243,7 +243,6 @@ fun NudgieDashboardContent(
                     archivedHabits = archivedHabits,
                     onToggleHabit = onToggleHabit,
                     onAddHabit = onAddHabit,
-                    onDeleteHabit = onDeleteHabit,
                     onArchiveHabit = onArchiveHabit,
                     onRestoreHabit = onRestoreHabit
                 )
@@ -257,9 +256,9 @@ fun NudgieDashboardContent(
                     screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     currentTheme = uiState.currentTheme,
                     onAddHabit = onAddHabit,
-                    onDeleteHabit = onDeleteHabit,
                     onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
                     onUpdateTheme = onUpdateTheme,
+                    onArchiveHabit = onArchiveHabit,
                     onRestoreHabit = onRestoreHabit
                 )
             }
