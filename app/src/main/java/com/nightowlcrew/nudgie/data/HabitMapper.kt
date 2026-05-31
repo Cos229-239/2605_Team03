@@ -20,7 +20,9 @@ fun HabitEntity.toActivityItem(lastLog: HabitLogEntity?, currentCount: Int): Act
         time = lastLog?.completedAtTime ?: "--:--",
         isCompleted = currentCount >= this.targetFrequencyPerDay,
         targetCount = this.targetFrequencyPerDay,
-        currentCount = currentCount
+        currentCount = currentCount,
+        isStock = this.isStock,
+        originalTitle = this.title
     )
 }
 
@@ -32,3 +34,11 @@ fun HabitWithLogs.toActivityItem(): ActivityItem {
     val latestLog = logs.maxByOrNull { it.id } 
     return habit.toActivityItem(latestLog, completedLogs.size)
 }
+
+fun ActivityItem.toEntity() = HabitEntity(
+    id = this.id,
+    title = this.originalTitle,
+    icon = this.icon,
+    targetFrequencyPerDay = this.targetCount,
+    isStock = this.isStock
+)

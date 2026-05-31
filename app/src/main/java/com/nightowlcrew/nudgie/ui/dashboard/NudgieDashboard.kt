@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -41,10 +45,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,12 +55,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,6 +85,7 @@ import androidx.navigation.compose.rememberNavController
 import com.nightowlcrew.nudgie.R
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
+import com.nightowlcrew.nudgie.data.HabitEntity
 import com.nightowlcrew.nudgie.ui.theme.BrandGold
 import com.nightowlcrew.nudgie.ui.theme.ElectricYellow
 import com.nightowlcrew.nudgie.ui.theme.HeartRed
@@ -123,6 +135,7 @@ fun getThemeStatColors(theme: AppTheme): StatColors {
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Filled.Home)
+    object Pet : Screen("pet", "Pet", Icons.Filled.Favorite) // New Pet tab
     object Tasks : Screen("tasks", "Tasks", Icons.Filled.CheckCircle)
     object Stats : Screen("stats", "Stats", Icons.Filled.Star)
     object Profile : Screen("profile", "Profile", Icons.Filled.Person)
@@ -133,14 +146,19 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 @Composable
 fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
     
     NudgieDashboardContent(
         uiState = uiState,
+        archivedHabits = archivedHabits,
         onToggleHabit = { viewModel.toggleHabitCompletion(it) },
         onAddHabit = { title, category, frequency -> viewModel.addNewHabit(title, category.name, frequency) },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
-        onUpdateTheme = { theme -> viewModel.updateTheme(theme) }
+        onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
+        onUpdatePetName = { viewModel.updatePetName(it) },
+        onArchiveHabit = { viewModel.archiveHabit(it) },
+        onRestoreHabit = { viewModel.restoreHabit(it) }
     )
 }
 
@@ -148,11 +166,15 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
 @Composable
 fun NudgieDashboardContent(
     uiState: DashboardUiState,
+    archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
     onAddHabit: (String, CozyCategory, Int) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
-    onUpdateTheme: (AppTheme) -> Unit
+    onUpdateTheme: (AppTheme) -> Unit,
+    onUpdatePetName: (String) -> Unit,
+    onArchiveHabit: (HabitEntity) -> Unit,
+    onRestoreHabit: (HabitEntity) -> Unit
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -160,9 +182,10 @@ fun NudgieDashboardContent(
 
     val screens = listOf(
         Screen.Home,
-        Screen.Tasks,
-        Screen.Stats,
+        Screen.Pet,
         Screen.Profile,
+        Screen.Stats,
+        Screen.Tasks,
     )
 
     Scaffold(
@@ -208,32 +231,36 @@ fun NudgieDashboardContent(
                     currentTheme = uiState.currentTheme,
                     petStats = uiState.petStats,
                     onToggleHabit = onToggleHabit,
+                    onUpdatePetName = onUpdatePetName,
                     streak = 12, // For demo, can be linked to viewModel later
                     currency = 250 // For demo, can be linked to viewModel later
                 )
             }
-            composable(Screen.Tasks.route) { ComingSoonScreen("Tasks") }
-            composable(Screen.Stats.route) { ComingSoonScreen("Stats") }
-            composable(Screen.Profile.route) {
-                SettingsContent(
+            composable(Screen.Pet.route) { ComingSoonScreen("Pet") }
+            composable(Screen.Tasks.route) {
+                TasksContent(
                     activities = uiState.activities,
-                    screenTimeGoalMillis = uiState.screenTimeGoalMillis,
-                    currentTheme = uiState.currentTheme,
+                    archivedHabits = archivedHabits,
+                    onToggleHabit = onToggleHabit,
                     onAddHabit = onAddHabit,
                     onDeleteHabit = onDeleteHabit,
-                    onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
-                    onUpdateTheme = onUpdateTheme
+                    onArchiveHabit = onArchiveHabit,
+                    onRestoreHabit = onRestoreHabit
                 )
             }
+            composable(Screen.Stats.route) { ComingSoonScreen("Stats") }
+            composable(Screen.Profile.route) { ComingSoonScreen("Profile") }
             composable(Screen.Settings.route) {
                 SettingsContent(
                     activities = uiState.activities,
+                    archivedHabits = archivedHabits,
                     screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     currentTheme = uiState.currentTheme,
                     onAddHabit = onAddHabit,
                     onDeleteHabit = onDeleteHabit,
                     onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
-                    onUpdateTheme = onUpdateTheme
+                    onUpdateTheme = onUpdateTheme,
+                    onRestoreHabit = onRestoreHabit
                 )
             }
         }
@@ -253,6 +280,7 @@ fun DashboardContent(
     currentTheme: AppTheme,
     petStats: PetStats,
     onToggleHabit: (ActivityItem) -> Unit,
+    onUpdatePetName: (String) -> Unit,
     streak: Int,
     currency: Int
 ) {
@@ -262,7 +290,7 @@ fun DashboardContent(
             .background(NavyBackground) // Fix white background issue
             .verticalScroll(rememberScrollState())
     ) {
-        PetFrame(petStats = petStats, currentTheme = currentTheme, streak = streak, currency = currency)
+        PetFrame(petStats = petStats, currentTheme = currentTheme, onUpdatePetName = onUpdatePetName, streak = streak, currency = currency)
         Spacer(modifier = Modifier.height(48.dp)) // Move headers down more
         TasksSection(
             categorizedActivities = categorizedActivities,
@@ -274,13 +302,23 @@ fun DashboardContent(
 }
 
 @Composable
-fun PetFrame(petStats: PetStats, currentTheme: AppTheme, streak: Int, currency: Int) {
+fun PetFrame(petStats: PetStats, currentTheme: AppTheme, onUpdatePetName: (String) -> Unit, streak: Int, currency: Int) {
     val statColors = getThemeStatColors(currentTheme)
+    var isEditingName by remember { mutableStateOf(false) }
+    var nameInput by remember { mutableStateOf(petStats.name) }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
+    androidx.compose.runtime.LaunchedEffect(isEditingName) {
+        if (isEditingName) {
+            focusRequester.requestFocus()
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(420.dp) // Elongated height
+            .height(460.dp) // Elongated height
     ) {
         // Edge-to-edge Background Image
         Image(
@@ -288,6 +326,19 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, streak: Int, currency: 
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
+        )
+
+        // Feathering mask to dissolve the bottom edge into NavyBackground
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, NavyBackground)
+                    )
+                )
         )
 
         Column(
@@ -342,17 +393,19 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, streak: Int, currency: 
                 Box(
                     modifier = Modifier
                         .width(320.dp)
-                        .height(180.dp),
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(50.dp)), // Mask corner artifacts from background asset
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.clock_date_alarm),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
+                        contentScale = ContentScale.Fit,
+
                     )
                     Column(
-                        modifier = Modifier.padding(bottom = 12.dp),
+                        modifier = Modifier.padding(bottom = 1.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Row(verticalAlignment = Alignment.Bottom) {
@@ -365,15 +418,62 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, streak: Int, currency: 
 
                 // Pet Name Box centered and overlapping the bottom
                 Surface(
-                    color = SpaceSurface.copy(alpha = 0.9f), // Dark Purple
-                    shape = RoundedCornerShape(0.dp), // 8-bit block
+                    color = SpaceSurface.copy(alpha = 1f), // Dark Purple
+                    shape = RoundedCornerShape(8.dp), // Rounded corners
                     border = BorderStroke(2.dp, NavyOutline),
-                    modifier = Modifier.offset(y = 12.dp) // Overlap effect
+                    modifier = Modifier.offset(y = 10.dp) // Overlap effect
                 ) {
-                    Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Your Pet", color = BrandGold, fontSize = 14.sp, fontWeight = FontWeight.Bold) // Yellow font
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp), // WORD + 16 padding as requested
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (isEditingName) {
+                            BasicTextField(
+                                value = nameInput,
+                                onValueChange = { if (it.length <= 13) nameInput = it },
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    color = BrandGold,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                cursorBrush = SolidColor(BrandGold),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        onUpdatePetName(nameInput)
+                                        isEditingName = false
+                                        focusManager.clearFocus()
+                                    }
+                                ),
+                                modifier = Modifier
+                                    .width(IntrinsicSize.Min) // Expand to fit word
+                                    .focusRequester(focusRequester)
+                            )
+                        } else {
+                            Text(
+                                petStats.name,
+                                color = BrandGold,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                         Spacer(Modifier.width(6.dp))
-                        Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(14.dp), tint = BrandGold)
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Edit",
+                            modifier = Modifier
+                                .size(14.dp)
+                                .clickable {
+                                    if (isEditingName) {
+                                        onUpdatePetName(nameInput)
+                                    } else {
+                                        nameInput = petStats.name
+                                    }
+                                    isEditingName = !isEditingName
+                                },
+                            tint = BrandGold
+                        )
                     }
                 }
             }
@@ -415,34 +515,30 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, streak: Int, currency: 
                 Image(
                     painter = painterResource(id = R.drawable.blue_trashpanda),
                     contentDescription = "Your Pet",
-                    modifier = Modifier.size(200.dp), // Enlarged to 225.dp
+                    modifier = Modifier.size(225.dp), // Enlarged to 225.dp
                     contentScale = ContentScale.Fit
                 )
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.weight(3f))
             }
             Spacer(Modifier.height(32.dp)) // Cushion for overlaid card
         }
 
-        // Stats Box with custom background asset: 1/3 inside the frame, 2/3 outside
-        Box(
+        // Stats Box with solid background: 1/3 inside the frame, 2/3 outside
+        Surface(
+            color = NavySurface,
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(2.dp, NavyOutline),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 55.dp) // Narrow the card
                 .align(Alignment.BottomCenter)
-                .offset(y = 50.dp) // Moved UP to match green arrows (less overlap outside)
-                .height(80.dp),
-            contentAlignment = Alignment.Center
+                .offset(y = 55.dp) // Adjusted offset for more "overlap" look
+                .height(70.dp)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.petstat_background),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillBounds
-            )
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp), // Minimal vertical padding
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 2.dp), // Minimal vertical padding
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -459,10 +555,12 @@ fun StatItem(label: String, value: String, color: Color, icon: ImageVector) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp)) // Restored icon size
-            Spacer(Modifier.width(4.dp))
-            Text(label, color = Color.White, fontSize = 14.sp) // White labels as requested
+            Spacer(Modifier.width(5.dp))
+            Text(label, color = Color.White, fontSize = 16.sp) // White labels as requested
         }
-        Text(value, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 24.sp) // Prominent value, now White and larger
+        Spacer(Modifier.height((-8).dp))
+        Text(value, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 18.sp, modifier = Modifier.offset(y = (-4).dp)) // Prominent value, now White and larger
+        Spacer(Modifier.height(1.dp))
         LinearProgressIndicator(
             progress = { value.replace("%", "").toFloatOrNull()?.div(100f) ?: 1f },
             modifier = Modifier.width(32.dp).height(2.dp).clip(RoundedCornerShape(1.dp)), // Very slim and short bars
@@ -487,6 +585,7 @@ fun TasksSection(
     var selectedCategory by remember { mutableStateOf(activeCategories.first()) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(5.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -497,33 +596,28 @@ fun TasksSection(
             Text(
                 "Today's Tasks",
                 color = LavenderText, // Match mockup
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp // Increased font size (Orange Line)
+                fontWeight = FontWeight.Normal,
+                fontSize = 18.sp // Increased font size (Orange Line)
             )
             Text(
                 "View All",
                 color = LavenderText, // Match mockup
-                fontSize = 16.sp, // Increased font size (Orange Line)
-                fontWeight = FontWeight.SemiBold
+                fontSize = 18.sp, // Increased font size (Orange Line)
+                fontWeight = FontWeight.Normal
+                
             )
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(5.dp))
 
-        SecondaryTabRow(
-            selectedTabIndex = activeCategories.indexOf(selectedCategory),
-            containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.primary,
-            divider = {},
-            indicator = {
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(activeCategories.indexOf(selectedCategory)),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            },
-            modifier = Modifier.padding(horizontal = 16.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             activeCategories.forEach { category ->
+                val isSelected = selectedCategory == category
                 val icon = when (category) {
                     CozyCategory.BODY_VITALITY -> "💪"
                     CozyCategory.MIND_SPACE -> "🧠"
@@ -531,16 +625,30 @@ fun TasksSection(
                     CozyCategory.SELF_CARE_RITUALS -> "✨"
                     CozyCategory.CONNECTIONS -> "🤝"
                 }
-                Tab(
-                    selected = selectedCategory == category,
-                    onClick = { selectedCategory = category },
-                    text = {
-                        Text(
-                            text = icon,
-                            fontSize = 20.sp
-                        )
-                    }
-                )
+                
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                        .background(if (isSelected) NavySurface else Color.Transparent)
+                        .clickable { selectedCategory = category }
+                        .drawBehind {
+                            val strokeWidth = 1.dp.toPx()
+                            val color = NavyOutline
+                            val cornerRadius = 12.dp.toPx()
+
+                            // Full outline for all tabs (including active)
+                            drawRoundRect(
+                                color = color,
+                                cornerRadius = CornerRadius(cornerRadius),
+                                style = Stroke(strokeWidth)
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = icon, fontSize = 20.sp)
+                }
             }
         }
 
@@ -660,11 +768,15 @@ fun NudgieDashboardPreview() {
     NudgieTheme(appTheme = AppTheme.RETRO_SPACE) {
         NudgieDashboardContent(
             uiState = sampleUiState,
+            archivedHabits = emptyList(),
             onToggleHabit = {},
             onAddHabit = { _, _, _ -> },
             onDeleteHabit = {},
             onUpdateScreenTimeGoal = {},
-            onUpdateTheme = {}
+            onUpdateTheme = {},
+            onUpdatePetName = {},
+            onArchiveHabit = {},
+            onRestoreHabit = {}
         )
     }
 }

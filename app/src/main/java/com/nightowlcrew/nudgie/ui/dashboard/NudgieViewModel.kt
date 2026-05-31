@@ -14,9 +14,11 @@ import com.nightowlcrew.nudgie.data.HabitRepository
 import com.nightowlcrew.nudgie.data.HabitRepositoryImpl
 import com.nightowlcrew.nudgie.data.ScreenTimeRecord
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -26,6 +28,7 @@ enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK, GOTH, RETRO_SPACE }
 
 // Data class to hold the pet's current status for the UI
 data class PetStats(
+    val name: String = "Your Pet",
     val level: Int = 1,
     val xp: Int = 0,
     val happiness: Int = 100,
@@ -57,6 +60,13 @@ class NudgieViewModel(
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
+    val archivedHabits: StateFlow<List<HabitEntity>> = repository.getArchivedCustomHabits()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     val isOverScreenTimeLimit: Boolean
         get() = uiState.value.currentScreenTimeMillis > uiState.value.screenTimeGoalMillis
 
@@ -69,7 +79,12 @@ class NudgieViewModel(
             AppTheme.RETRO_SPACE
         }
 
-        _uiState.value = _uiState.value.copy(currentTheme = initialTheme)
+        val savedPetName = sharedPreferences.getString("pet_name", "Your Pet") ?: "Your Pet"
+
+        _uiState.value = _uiState.value.copy(
+            currentTheme = initialTheme,
+            petStats = _uiState.value.petStats.copy(name = savedPetName)
+        )
 
         // Prepopulate default habits if it's the first time
         prepopulateDefaultHabits()
@@ -106,6 +121,14 @@ class NudgieViewModel(
         sharedPreferences.edit().putString("app_theme", newTheme.name).apply()
     }
 
+    fun updatePetName(newName: String) {
+        val limitedName = newName.take(13)
+        _uiState.value = _uiState.value.copy(
+            petStats = _uiState.value.petStats.copy(name = limitedName)
+        )
+        sharedPreferences.edit().putString("pet_name", limitedName).apply()
+    }
+
     /**
      * Prepopulates the database with a set of default "stock" habits on first run.
      */
@@ -119,7 +142,8 @@ class NudgieViewModel(
                             HabitEntity(
                                 title = template.title,
                                 icon = category.name,
-                                targetFrequencyPerDay = template.defaultFrequency
+                                targetFrequencyPerDay = template.defaultFrequency,
+                                isStock = true
                             )
                         )
                     }
@@ -183,6 +207,24 @@ class NudgieViewModel(
                 targetFrequencyPerDay = 0
             )
             repository.deleteHabit(habit)
+        }
+    }
+
+    /**
+     * Soft-deletes a specific habit by archiving it.
+     */
+    fun archiveHabit(habit: HabitEntity) {
+        viewModelScope.launch {
+            repository.archiveHabit(habit.id, System.currentTimeMillis())
+        }
+    }
+
+    /**
+     * Restores a previously archived habit.
+     */
+    fun restoreHabit(habit: HabitEntity) {
+        viewModelScope.launch {
+            repository.restoreHabit(habit.id)
         }
     }
 

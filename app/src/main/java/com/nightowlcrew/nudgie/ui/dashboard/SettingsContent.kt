@@ -31,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
+import com.nightowlcrew.nudgie.data.HabitEntity
 import com.nightowlcrew.nudgie.ui.theme.PressStart2P
 import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
 
@@ -43,9 +44,11 @@ fun SettingsScreen(
     viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
 
     SettingsContent(
         activities = uiState.activities,
+        archivedHabits = archivedHabits,
         screenTimeGoalMillis = uiState.screenTimeGoalMillis,
         currentTheme = uiState.currentTheme,
         onAddHabit = { title, category, frequency -> 
@@ -53,19 +56,22 @@ fun SettingsScreen(
         },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
-        onUpdateTheme = { theme -> viewModel.updateTheme(theme) }
+        onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
+        onRestoreHabit = { viewModel.restoreHabit(it) }
     )
 }
 
 @Composable
 fun SettingsContent(
     activities: List<ActivityItem>,
+    archivedHabits: List<HabitEntity>,
     screenTimeGoalMillis: Long,
     currentTheme: AppTheme,
     onAddHabit: (String, CozyCategory, Int) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
     onUpdateTheme: (AppTheme) -> Unit,
+    onRestoreHabit: (HabitEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expandedSection by rememberSaveable { mutableStateOf<String?>(null) }
@@ -103,6 +109,8 @@ fun SettingsContent(
 
         HabitCreatorSection(
             onAddHabit = onAddHabit,
+            archivedHabits = archivedHabits,
+            onRestoreHabit = onRestoreHabit,
             currentTheme = currentTheme,
             isExpanded = expandedSection == "creator",
             onToggleExpand = {
@@ -194,6 +202,8 @@ fun ThemeSelectionCard(
 @Composable
 fun HabitCreatorSection(
     onAddHabit: (String, CozyCategory, Int) -> Unit,
+    archivedHabits: List<HabitEntity>,
+    onRestoreHabit: (HabitEntity) -> Unit,
     currentTheme: AppTheme,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit
@@ -332,6 +342,53 @@ fun HabitCreatorSection(
                         modifier = Modifier.align(Alignment.End)
                     ) {
                         Text("Save Habit")
+                    }
+
+                    if (archivedHabits.isNotEmpty()) {
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        Text(
+                            text = "Recently Deleted Custom Habits",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            archivedHabits.forEach { habit ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = habit.title,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        IconButton(
+                                            onClick = { onRestoreHabit(habit) },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Add,
+                                                contentDescription = "Restore Habit",
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -626,12 +683,14 @@ fun SettingsContentPreview() {
         Surface {
             SettingsContent(
                 activities = mockActivities,
+                archivedHabits = emptyList(),
                 screenTimeGoalMillis = 7200000L,
                 currentTheme = AppTheme.DEFAULT,
                 onAddHabit = { _, _, _ -> },
                 onDeleteHabit = { },
                 onUpdateScreenTimeGoal = { },
-                onUpdateTheme = { }
+                onUpdateTheme = { },
+                onRestoreHabit = { }
             )
         }
     }

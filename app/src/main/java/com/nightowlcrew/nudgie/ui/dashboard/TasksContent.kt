@@ -1,5 +1,7 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,11 +25,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
@@ -50,6 +56,10 @@ import androidx.compose.ui.unit.sp
 import com.nightowlcrew.nudgie.R
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
+import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
+import com.nightowlcrew.nudgie.data.HabitEntity
+import com.nightowlcrew.nudgie.data.HabitTemplate
+import com.nightowlcrew.nudgie.data.toEntity
 import com.nightowlcrew.nudgie.ui.theme.LavenderText
 import com.nightowlcrew.nudgie.ui.theme.NavyBackground
 import com.nightowlcrew.nudgie.ui.theme.NavyOutline
@@ -59,10 +69,15 @@ import com.nightowlcrew.nudgie.ui.theme.SuccessGreen
 @Composable
 fun TasksContent(
     activities: List<ActivityItem>,
+    archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
-    onAddTask: () -> Unit = {}
+    onAddHabit: (String, CozyCategory, Int) -> Unit,
+    onDeleteHabit: (Int) -> Unit,
+    onArchiveHabit: (HabitEntity) -> Unit,
+    onRestoreHabit: (HabitEntity) -> Unit,
 ) {
     var selectedCategory by remember { mutableStateOf<CozyCategory?>(null) }
+    var expandedCategoryId by remember { mutableStateOf<CozyCategory?>(null) }
     
     val filteredActivities = if (selectedCategory == null) {
         activities
@@ -100,7 +115,7 @@ fun TasksContent(
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Image(
-                    painter = painterResource(id = R.drawable.pethero_dashboard), // Reusing dashboard bg for landscape feel
+                    painter = painterResource(id = R.drawable.pethero_dashboard),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -118,7 +133,7 @@ fun TasksContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "y...", // Placeholder for icon/text in mockup
+                            text = "Daily Progress",
                             color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
@@ -157,38 +172,209 @@ fun TasksContent(
             }
             items(CozyCategory.entries) { category ->
                 CategoryChip(
-                    label = category.displayName.split(" ").first(), // Short name for chip
+                    label = category.displayName.split(" ").first(),
                     isSelected = selectedCategory == category,
                     onClick = { selectedCategory = category }
                 )
             }
         }
 
-        // Task List
+        // Task List with Management Behavior
         LazyColumn(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(filteredActivities) { task ->
-                TaskListItem(task = task, onToggle = { onToggleHabit(task) })
+            if (selectedCategory == null) {
+                // Show categorized view with templates when "All" is selected (similar to old settings)
+                items(CozyCategory.entries) { category ->
+                    ExpandableTaskSection(
+                        category = category,
+                        habits = activities.filter { it.icon == category.name },
+                        archivedHabits = archivedHabits.filter { it.icon == category.name },
+                        isExpanded = expandedCategoryId == category,
+                        onToggleExpand = {
+                            expandedCategoryId = if (expandedCategoryId == category) null else category
+                        },
+                        onToggleHabit = onToggleHabit,
+                        onAddHabit = onAddHabit,
+                        onDeleteHabit = onDeleteHabit,
+                        onArchiveHabit = onArchiveHabit,
+                        onRestoreHabit = onRestoreHabit
+                    )
+                }
+            } else {
+                // Show flat list for specific category
+                items(filteredActivities) { task ->
+                    TaskListItem(
+                        task = task,
+                        onToggle = { onToggleHabit(task) },
+                        onDelete = { onDeleteHabit(task.id) }
+                    )
+                }
+                
+                // Also show templates for this category at the bottom
+                item {
+                    Text(
+                        "Add Suggested Tasks",
+                        color = LavenderText,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+                
+                val templates = HABIT_TEMPLATES[selectedCategory!!] ?: emptyList()
+                items(templates) { template ->
+                    val activeHabit = activities.find { (it.originalTitle == template.title) && (it.icon == selectedCategory!!.name) }
+                    val archivedHabit = archivedHabits.find { (it.title == template.title) && (it.icon == selectedCategory!!.name) }
+
+                    StockTemplateItem(
+                        template = template,
+                        activeHabit = activeHabit,
+                        archivedHabit = archivedHabit,
+                        onAdd = { onAddHabit(template.title, selectedCategory!!, template.defaultFrequency) },
+                        onArchive = { activeHabit?.let { onArchiveHabit(it.toEntity()) } },
+                        onRestore = { archivedHabit?.let { onRestoreHabit(it) } }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpandableTaskSection(
+    category: CozyCategory,
+    habits: List<ActivityItem>,
+    archivedHabits: List<HabitEntity>,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
+    onToggleHabit: (ActivityItem) -> Unit,
+    onAddHabit: (String, CozyCategory, Int) -> Unit,
+    onDeleteHabit: (Int) -> Unit,
+    onArchiveHabit: (HabitEntity) -> Unit,
+    onRestoreHabit: (HabitEntity) -> Unit,
+) {
+    val rotationState by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        label = "RotationAnimation"
+    )
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onToggleExpand() },
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = NavySurface),
+            border = androidx.compose.foundation.BorderStroke(1.dp, NavyOutline)
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = category.displayName,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = LavenderText,
+                    modifier = Modifier.rotate(rotationState)
+                )
             }
         }
 
-        // Add Task Button
-        Button(
-            onClick = onAddTask,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)),
-            shape = RoundedCornerShape(28.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Task", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        AnimatedVisibility(visible = isExpanded) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Active Habits in this category
+                habits.forEach { habit ->
+                    TaskListItem(
+                        task = habit,
+                        onToggle = { onToggleHabit(habit) },
+                        onDelete = { onDeleteHabit(habit.id) }
+                    )
+                }
+
+                // Templates for this category
+                val templates = HABIT_TEMPLATES[category] ?: emptyList()
+                templates.forEach { template ->
+                    val activeHabit = habits.find { it.originalTitle == template.title }
+                    val archivedHabit = archivedHabits.find { it.title == template.title }
+                    
+                    StockTemplateItem(
+                        template = template,
+                        activeHabit = activeHabit,
+                        archivedHabit = archivedHabit,
+                        onAdd = { onAddHabit(template.title, category, template.defaultFrequency) },
+                        onArchive = { activeHabit?.let { onArchiveHabit(it.toEntity()) } },
+                        onRestore = { archivedHabit?.let { onRestoreHabit(it) } }
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun StockTemplateItem(
+    template: HabitTemplate,
+    activeHabit: ActivityItem?,
+    archivedHabit: HabitEntity?,
+    onAdd: () -> Unit,
+    onArchive: () -> Unit,
+    onRestore: () -> Unit
+) {
+    val isActive = activeHabit != null
+    val isArchived = archivedHabit != null
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { 
+                when {
+                    isActive -> onArchive()
+                    isArchived -> onRestore()
+                    else -> onAdd()
+                }
+            },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isActive) NavySurface else NavySurface.copy(alpha = 0.5f)
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, 
+            if (isActive) NavyOutline else NavyOutline.copy(alpha = 0.5f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = template.title,
+                color = if (isActive) Color.White else LavenderText,
+                fontSize = 16.sp
+            )
+            Icon(
+                imageVector = if (isActive) Icons.Default.Delete else Icons.Default.Add,
+                contentDescription = if (isActive) "Archive Task" else "Add Task",
+                tint = if (isActive) Color.Red.copy(alpha = 0.7f) else LavenderText,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
@@ -211,78 +397,64 @@ fun CategoryChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun TaskListItem(task: ActivityItem, onToggle: () -> Unit) {
+fun TaskListItem(task: ActivityItem, onToggle: () -> Unit, onDelete: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onToggle),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = NavySurface),
         border = androidx.compose.foundation.BorderStroke(1.dp, NavyOutline)
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(12.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(NavyBackground.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = if (task.icon.length <= 2) task.icon else "📌", fontSize = 24.sp)
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Title
-            Text(
-                text = task.description,
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f)
-            )
-
-            // Reward
-            Text(
-                text = "20 XP", // Hardcoded for now per mockup
-                color = LavenderText,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(horizontal = 12.dp)
-            )
-
-            // Checkbox
+            // Task Checkbox (Clickable area separate or the whole row?)
             Box(
                 modifier = Modifier
                     .size(28.dp)
                     .clip(CircleShape)
                     .background(if (task.isCompleted) SuccessGreen else Color.Transparent)
-                    .border(
-                        2.dp,
-                        if (task.isCompleted) SuccessGreen else NavyOutline,
-                        CircleShape
-                    ),
+                    .border(2.dp, if (task.isCompleted) SuccessGreen else NavyOutline, CircleShape)
+                    .clickable { onToggle() },
                 contentAlignment = Alignment.Center
             ) {
                 if (task.isCompleted) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
                 }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Task Info
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = task.description,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "20 XP",
+                    color = LavenderText,
+                    fontSize = 12.sp
+                )
+            }
+
+            // Delete Button (New Behavior from Settings)
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete Task",
+                    tint = Color.Red.copy(alpha = 0.7f),
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
 }
 
-// Re-using Surface from Material3
 @Composable
 fun Surface(
     modifier: Modifier = Modifier,
@@ -306,10 +478,18 @@ fun Surface(
 @Composable
 fun TasksContentPreview() {
     val mockTasks = listOf(
-        ActivityItem(id = 1, icon = "📚", description = "Spanish Lesson", isCompleted = true),
-        ActivityItem(id = 2, icon = "🧮", description = "Math Practice", isCompleted = true),
-        ActivityItem(id = 3, icon = "🏋️", description = "Workout", isCompleted = false),
-        ActivityItem(id = 4, icon = "📓", description = "Journal", isCompleted = false)
+        ActivityItem(id = 1, icon = CozyCategory.BODY_VITALITY.name, description = "Spanish Lesson", time = "10:00 AM", isCompleted = true, originalTitle = "Spanish Lesson"),
+        ActivityItem(id = 2, icon = CozyCategory.MIND_SPACE.name, description = "Math Practice", time = "11:00 AM", isCompleted = true, originalTitle = "Math Practice"),
+        ActivityItem(id = 3, icon = CozyCategory.BODY_VITALITY.name, description = "Workout", time = "5:00 PM", isCompleted = false, originalTitle = "Workout"),
+        ActivityItem(id = 4, icon = CozyCategory.MIND_SPACE.name, description = "Journal", time = "9:00 PM", isCompleted = false, originalTitle = "Journal")
     )
-    TasksContent(activities = mockTasks, onToggleHabit = {})
+    TasksContent(
+        activities = mockTasks,
+        archivedHabits = emptyList(),
+        onToggleHabit = {},
+        onAddHabit = { _, _, _ -> },
+        onDeleteHabit = {},
+        onArchiveHabit = {},
+        onRestoreHabit = {}
+    )
 }

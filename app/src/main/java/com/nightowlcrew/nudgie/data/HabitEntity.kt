@@ -10,5 +10,8 @@ data class HabitEntity(
     val title: String,
     val icon: String,
     val targetFrequencyPerDay: Int,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val isArchived: Boolean = false,
+    val archivedAt: Long? = null,
+    val isStock: Boolean = false
 )

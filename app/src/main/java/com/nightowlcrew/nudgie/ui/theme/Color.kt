@@ -73,6 +73,6 @@ val SpaceSuccess = Color(0xFF06D6A0)    // Green for completed tasks
 // Dashboard Specific Polish (Dark Navy Style)
 val NavyBackground = Color(0xFF0F0B21)
 val NavySurface = Color(0xFF1D1B31)
-val NavyOutline = Color(0xFF2E2C4D)
+val NavyOutline = Color(0xFF5A3E8A)
 val LavenderText = Color(0xFFA392C1)
 
