@@ -74,6 +74,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -236,7 +237,7 @@ fun NudgieDashboardContent(
                     currency = 250 // For demo, can be linked to viewModel later
                 )
             }
-            composable(Screen.Pet.route) { ComingSoonScreen("Pet") }
+            composable(Screen.Pet.route) { NudgiePetScreen() }
             composable(Screen.Tasks.route) {
                 TasksContent(
                     activities = uiState.activities,
@@ -271,6 +272,46 @@ fun NudgieDashboardContent(
 fun ComingSoonScreen(title: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(title.uppercase(), style = MaterialTheme.typography.headlineMedium, color = Color.Gray)
+    }
+}
+
+@Composable
+fun NudgiePetScreen() {
+    ConstraintLayout(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        val (background, nudgie) = createRefs()
+
+        Image(
+            painter = painterResource(id = R.drawable.pet_background),
+            contentDescription = null,
+            modifier = Modifier.constrainAs(background) {
+                top.linkTo(parent.top)
+                bottom.linkTo(parent.bottom)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+            },
+            contentScale = ContentScale.Crop
+        )
+
+        Image(
+            painter = painterResource(id = R.drawable.blue_trashpanda),
+            contentDescription = "Nudgie Character",
+            modifier = Modifier
+                .size(280.dp)
+                .constrainAs(nudgie) {
+                    centerTo(parent)
+                },
+            contentScale = ContentScale.Fit
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun NudgiePetScreenPreview() {
+    NudgieTheme {
+        NudgiePetScreen()
     }
 }
 
