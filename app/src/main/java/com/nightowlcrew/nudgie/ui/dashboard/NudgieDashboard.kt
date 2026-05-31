@@ -119,7 +119,7 @@ data class StatColors(
     val happiness: Color,
     val energy: Color,
     val level: Color,
-    val success: Color
+    val success: Color,
 )
 
 // Maps the active app theme to its distinct semantic stat colors
@@ -304,7 +304,7 @@ fun DashboardContent(
 @Composable
 fun PetFrame(petStats: PetStats, currentTheme: AppTheme, onUpdatePetName: (String) -> Unit, streak: Int, currency: Int) {
     val statColors = getThemeStatColors(currentTheme)
-    var isEditingName by remember { mutableStateOf(false) }
+    var isEditingName by remember { mutableStateOf(value = false) }
     var nameInput by remember { mutableStateOf(petStats.name) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current

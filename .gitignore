@@ -20,11 +20,122 @@
 
 # Specific ignores for Android/IDE
 .idea/
+<<<<<<< HEAD
 .gradle/
 build/
+=======
+>>>>>>> ef3e148e640904130ef5ed16ac401e52bdc83e27
 *.iml
 local.properties
 .DS_Store
 
+<<<<<<< HEAD
 # Presentation script
 Presentation_Script.md
+=======
+*.apk
+*.aab
+
+
+###############################################################################
+# IOS / XCODE LOCAL USER FILES
+###############################################################################
+
+ios/.xcode.env.local
+xcuserdata/
+*.xcuserstate
+*.pbxuser
+*.mode1v3
+*.xcscmblueprint
+*.xcworkspace
+
+
+###############################################################################
+# FIREBASE CONFIG / SECRETS
+###############################################################################
+
+google-services.json
+serviceAccountKey.json
+firebase-adminsdk*.json
+firebase-debug.log
+firestore-debug.log
+
+
+###############################################################################
+# OS / COMPILED ARTIFACTS
+###############################################################################
+
+*.dSYM
+*.exe
+*.dll
+
+
+###############################################################################
+# ARCHIVES / COMPRESSED FILES
+###############################################################################
+
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+
+###############################################################################
+# GITHUB / CI OUTPUT
+###############################################################################
+
+.github/workflows/*.log
+
+
+###############################################################################
+# EXCEPTIONS (UN-IGNORE RULES)
+#
+# VERY IMPORTANT:
+# - These rules OVERRIDE earlier ignore rules
+# - They MUST be at the BOTTOM of the file
+#
+# Syntax:
+#   !filename
+#
+# Means:
+#   "Even if this was ignored above, KEEP IT"
+#
+###############################################################################
+
+# Gradle wrapper (REQUIRED for Android builds)
+!gradlew
+!gradlew.bat
+!gradle/
+!gradle/wrapper/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Project documentation
+!README.md
+!docs/**
+
+# GitHub Actions workflows (definitions only)
+!.github/workflows/*.yml
+
+# React Native / Xcode env file (REQUIRED for iOS builds)
+!.xcode.env
+!ios/.xcode.env
+=========
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+>>>>>>>>> Temporary merge branch 2
+>>>>>>> ef3e148e640904130ef5ed16ac401e52bdc83e27

@@ -59,7 +59,7 @@ fun SettingsScreen(
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
         onArchiveHabit = { viewModel.archiveHabit(it) },
-        onRestoreHabit = { viewModel.restoreHabit(it) }
+        onRestoreHabit = { viewModel.restoreHabit(it) },
     )
 }
 
@@ -219,7 +219,7 @@ fun HabitCreatorSection(
     var selectedCategory by rememberSaveable { mutableStateOf(CozyCategory.BODY_VITALITY) }
     var selectedEmoji by rememberSaveable { mutableStateOf("💧") }
     val emojis = listOf("💧", "💊", "🧘", "🪥", "☕", "🏃", "📚", "🧹")
-    var isDropdownExpanded by remember { mutableStateOf(false) }
+    var isDropdownExpanded by remember { mutableStateOf(value = false) }
 
     Card(
         modifier = Modifier
@@ -353,7 +353,7 @@ fun HabitCreatorSection(
                     if (archivedHabits.isNotEmpty()) {
                         val customArchived = archivedHabits.filter { !it.isStock }
                         if (customArchived.isNotEmpty()) {
-                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                             Text(
                                 text = "Recently Deleted Custom Habits",
                                 style = MaterialTheme.typography.titleSmall,

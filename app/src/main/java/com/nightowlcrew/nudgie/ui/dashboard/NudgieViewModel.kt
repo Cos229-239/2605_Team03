@@ -1,5 +1,7 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -54,7 +56,7 @@ data class DashboardUiState(
  */
 class NudgieViewModel(
     private val repository: HabitRepository,
-    private val sharedPreferences: android.content.SharedPreferences
+    private val sharedPreferences: SharedPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -70,41 +72,48 @@ class NudgieViewModel(
     val isOverScreenTimeLimit: Boolean
         get() = uiState.value.currentScreenTimeMillis > uiState.value.screenTimeGoalMillis
 
-    init {
-        // Load persisted theme immediately
-        val savedThemeName = sharedPreferences.getString("app_theme", AppTheme.RETRO_SPACE.name)
-        val initialTheme = try {
-            AppTheme.valueOf(savedThemeName ?: AppTheme.RETRO_SPACE.name)
+    private val _currentTheme = MutableStateFlow(
+        try {
+            AppTheme.valueOf(sharedPreferences.getString("app_theme", AppTheme.RETRO_SPACE.name) ?: AppTheme.RETRO_SPACE.name)
         } catch (e: Exception) {
             AppTheme.RETRO_SPACE
         }
+    )
 
-        val savedPetName = sharedPreferences.getString("pet_name", "Your Pet") ?: "Your Pet"
+    private val _petName = MutableStateFlow(sharedPreferences.getString("pet_name", "Your Pet") ?: "Your Pet")
+    private val _happiness = MutableStateFlow(85)
+    private val _energy = MutableStateFlow(62)
+    private val _petLevel = MutableStateFlow(5)
+    private val _petXP = MutableStateFlow(450)
 
-        _uiState.value = _uiState.value.copy(
-            currentTheme = initialTheme,
-            petStats = _uiState.value.petStats.copy(name = savedPetName)
-        )
-
+    init {
         // Prepopulate default habits if it's the first time
         prepopulateDefaultHabits()
 
         viewModelScope.launch {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
+            val petStatsFlow = combine(_petName, _happiness, _energy, _petLevel, _petXP) { name, h, e, l, xp ->
+                PetStats(name, l, xp, h, e)
+            }
+
             combine(
                 repository.getAllHabitsWithLogs(),
-                repository.getScreenTimeForDate(today)
-            ) { activities, screenTime ->
+                repository.getScreenTimeForDate(today),
+                petStatsFlow,
+                _currentTheme
+            ) { activities, screenTime, petStats, theme ->
                 val categorized = CozyCategory.entries.associateWith { category ->
                     activities.filter { it.icon == category.name }
                 }.filterValues { it.isNotEmpty() }
 
-                _uiState.value.copy(
+                DashboardUiState(
                     activities = activities,
                     categorizedActivities = categorized,
                     currentScreenTimeMillis = screenTime?.actualDurationMillis ?: 0L,
                     screenTimeGoalMillis = screenTime?.targetLimitMillis ?: 14400000L,
+                    petStats = petStats,
+                    currentTheme = theme,
                     isLoading = false
                 )
             }.collect { updatedState ->
@@ -113,25 +122,17 @@ class NudgieViewModel(
         }
     }
 
-    /**
-     * Updates the current app theme and persists the choice.
-     */
     fun updateTheme(newTheme: AppTheme) {
-        _uiState.value = _uiState.value.copy(currentTheme = newTheme)
+        _currentTheme.value = newTheme
         sharedPreferences.edit().putString("app_theme", newTheme.name).apply()
     }
 
     fun updatePetName(newName: String) {
         val limitedName = newName.take(13)
-        _uiState.value = _uiState.value.copy(
-            petStats = _uiState.value.petStats.copy(name = limitedName)
-        )
+        _petName.value = limitedName
         sharedPreferences.edit().putString("pet_name", limitedName).apply()
     }
 
-    /**
-     * Prepopulates the database with a set of default "stock" habits on first run.
-     */
     private fun prepopulateDefaultHabits() {
         val alreadyAdded = sharedPreferences.getBoolean("default_habits_v2_added", false)
         if (!alreadyAdded) {
@@ -153,25 +154,25 @@ class NudgieViewModel(
         }
     }
 
-    /**
-     * Toggles the completion status of a habit by adding a new log entry.
-     */
     fun toggleHabitCompletion(activityItem: ActivityItem) {
         viewModelScope.launch {
             val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            val isCompleting = !activityItem.isCompleted
             val log = HabitLogEntity(
                 habitId = activityItem.id,
                 completedAtTime = currentTime,
-                isCompleted = !activityItem.isCompleted
+                isCompleted = isCompleting
             )
             repository.insertLog(log)
+
+            if (isCompleting) {
+                completeHabit()
+            } else {
+                missedHabit()
+            }
         }
     }
 
-    /**
-     * Adds a new habit to the database.
-     * Optionally marks it as completed for the current day immediately.
-     */
     fun addNewHabit(title: String, icon: String, frequency: Int, isStock: Boolean = false, markAsCompleted: Boolean = false) {
         viewModelScope.launch {
             val habit = HabitEntity(
@@ -190,17 +191,13 @@ class NudgieViewModel(
                     isCompleted = true
                 )
                 repository.insertLog(log)
+                completeHabit()
             }
         }
     }
 
-    /**
-     * Deletes a specific habit.
-     */
     fun deleteHabit(id: Int) {
         viewModelScope.launch {
-            // Note: Since deleteHabit requires a HabitEntity, we create a shallow one with the ID.
-            // Room uses the primary key (@PrimaryKey) for deletion.
             val habit = HabitEntity(
                 id = id,
                 title = "",
@@ -211,28 +208,18 @@ class NudgieViewModel(
         }
     }
 
-    /**
-     * Soft-deletes a specific habit by archiving it.
-     */
     fun archiveHabit(habit: HabitEntity) {
         viewModelScope.launch {
             repository.archiveHabit(habit.id, System.currentTimeMillis())
         }
     }
 
-    /**
-     * Restores a previously archived habit.
-     */
     fun restoreHabit(habit: HabitEntity) {
         viewModelScope.launch {
             repository.restoreHabit(habit.id)
         }
     }
 
-    /**
-     * Updates the screen time goal for the current day using hours.
-     * Conversion: hours * 3,600,000 ms
-     */
     fun updateScreenTimeGoal(hours: Int) {
         viewModelScope.launch {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -248,20 +235,31 @@ class NudgieViewModel(
         }
     }
 
+    fun missedHabit() {
+        val penalty = 15
+        val nonPunishmentFloor = 30
+        _happiness.value = (_happiness.value - penalty).coerceAtLeast(nonPunishmentFloor)
+    }
+
+    private fun completeHabit() {
+        _happiness.value = (_happiness.value + 20).coerceAtMost(100)
+        _petXP.value += 15
+        if (_petXP.value >= 800) {
+            _petLevel.value += 1
+            _petXP.value -= 800
+        }
+    }
+
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                // Get the Application object from extras
                 val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]) as NudgieApplication
-
-                // Get the repository through our lazy database property
                 val repository = HabitRepositoryImpl(
                     application.database.habitDao(),
                     application.database.screenTimeDao()
                 )
-
-                val sharedPrefs = application.getSharedPreferences("nudgie_prefs", android.content.Context.MODE_PRIVATE)
+                val sharedPrefs = application.getSharedPreferences("nudgie_prefs", Context.MODE_PRIVATE)
                 return NudgieViewModel(repository, sharedPrefs) as T
             }
         }

@@ -62,7 +62,13 @@ Construct Brand Loading Splash Activity Layout Shell (`Nudgie-loadingsplash.jpg`
 * `roster-v2-sample.json` - High-level sample profile model structure used to reference team properties.# Class Project Template
 
 Start here. Keep this README updated with your team name, members, and a short plan.
+**Team:** Night Owl Crew
+**Members:**
+- Alec Duncan
 
+
+**Short Plan:**
+Developing "Nudgie," a gamified habit tracker and digital wellbeing application featuring a retro pixel-art mascot to help balance screen time.
 Prototype pages:
 
 - `index.html` - roster editor prototype landing page
