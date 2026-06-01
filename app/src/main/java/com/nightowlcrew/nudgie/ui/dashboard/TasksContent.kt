@@ -1,5 +1,6 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,6 +28,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,6 +42,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -52,6 +58,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +70,8 @@ import com.nightowlcrew.nudgie.R
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.data.HabitEntity
+import com.nightowlcrew.nudgie.data.toActivityItem
+import com.nightowlcrew.nudgie.data.toEntity
 import com.nightowlcrew.nudgie.ui.theme.LavenderText
 import com.nightowlcrew.nudgie.ui.theme.NavyBackground
 import com.nightowlcrew.nudgie.ui.theme.NavyOutline
@@ -72,15 +81,19 @@ import com.nightowlcrew.nudgie.ui.theme.SuccessGreen
 @Composable
 fun TasksContent(
     activities: List<ActivityItem>,
-    @Suppress("UNUSED_PARAMETER") archivedHabits: List<HabitEntity>,
+    archivedHabits: List<HabitEntity>,
+    screenTimeGoalMillis: Long,
     onToggleHabit: (ActivityItem) -> Unit,
     onAddHabit: (String, String, Int, Boolean) -> Unit,
-    @Suppress("UNUSED_PARAMETER") onArchiveHabit: (HabitEntity) -> Unit,
-    @Suppress("UNUSED_PARAMETER") onRestoreHabit: (HabitEntity) -> Unit,
+    onUpdateScreenTimeGoal: (Int) -> Unit,
+    onArchiveHabit: (HabitEntity) -> Unit,
+    onRestoreHabit: (HabitEntity) -> Unit,
+    initialOpenSlider: Boolean = false
 ) {
     val categoryTabs = CozyCategory.entries
     var selectedCategoryTab by remember { mutableStateOf(CozyCategory.BODY_VITALITY) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var isSliderExpanded by remember { mutableStateOf(initialOpenSlider) }
     
     val completedCount = activities.count { it.isCompleted }
     val totalCount = activities.size
@@ -91,6 +104,7 @@ fun TasksContent(
             .fillMaxSize()
             .background(NavyBackground),
     ) {
+        // ... (Header Box remains same)
         // Header Image and Progress Section (Sticky)
         Box(
             modifier = Modifier
@@ -165,6 +179,15 @@ fun TasksContent(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
         ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            DigitalBalanceSliderCard(
+                screenTimeGoalMillis = screenTimeGoalMillis,
+                onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
+                isExpanded = isSliderExpanded,
+                onToggleExpand = { isSliderExpanded = !isSliderExpanded }
+            )
+
             // 5 Tabs (Categories only)
             LazyRow(
                 modifier = Modifier.padding(vertical = 16.dp),
@@ -185,11 +208,21 @@ fun TasksContent(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 val filteredTasks = activities.filter { it.category == selectedCategoryTab.name }
+                val filteredArchived = archivedHabits.filter { it.category == selectedCategoryTab.name }
 
                 items(filteredTasks) { task ->
                     TaskListItem(
                         task = task,
-                        onToggle = { onToggleHabit(task) }
+                        onToggle = { onToggleHabit(task) },
+                        onDelete = { onArchiveHabit(task.toEntity()) }
+                    )
+                }
+                
+                items(filteredArchived) { habit ->
+                    TaskListItem(
+                        task = habit.toActivityItem(null, 0),
+                        isArchived = true,
+                        onRestore = { onRestoreHabit(habit) }
                     )
                 }
                 
@@ -362,6 +395,72 @@ fun AddTaskDialog(
 }
 
 @Composable
+fun DigitalBalanceSliderCard(
+    screenTimeGoalMillis: Long,
+    onUpdateScreenTimeGoal: (Int) -> Unit,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit
+) {
+    val goalHours = (screenTimeGoalMillis / 3600000f)
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggleExpand() },
+        colors = CardDefaults.cardColors(containerColor = NavySurface),
+        border = BorderStroke(1.dp, NavyOutline.copy(alpha = 0.5f)),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "📱", fontSize = 20.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Digital Balance Goal",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
+            
+            AnimatedVisibility(visible = isExpanded) {
+                Column(modifier = Modifier.padding(top = 16.dp)) {
+                    Slider(
+                        value = goalHours,
+                        onValueChange = { onUpdateScreenTimeGoal(it.toInt()) },
+                        valueRange = 1f..12f,
+                        steps = 11,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color(0xFF6200EE),
+                            activeTrackColor = Color(0xFF6200EE),
+                            inactiveTrackColor = Color.White.copy(alpha = 0.2f)
+                        )
+                    )
+                    val displayGoal = if (goalHours >= 12f) "Unlimited ∞" else "${goalHours.toInt()} hours per day"
+                    Text(
+                        text = "Goal: $displayGoal",
+                        color = LavenderText,
+                        fontSize = 14.sp,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun CategoryChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
@@ -385,9 +484,20 @@ fun CategoryChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun TaskListItem(task: ActivityItem, onToggle: () -> Unit) {
+fun TaskListItem(
+    task: ActivityItem,
+    isArchived: Boolean = false,
+    onToggle: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
+    onRestore: (() -> Unit)? = null
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { alpha = if (isArchived) 0.6f else 1f }
+            .clickable {
+                if (isArchived) onRestore?.invoke() else onToggle?.invoke()
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = NavySurface),
         border = BorderStroke(1.dp, NavyOutline.copy(alpha = 0.5f)),
@@ -436,19 +546,39 @@ fun TaskListItem(task: ActivityItem, onToggle: () -> Unit) {
                 )
             }
 
-            // Circular Checkmark
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(if (task.isCompleted) SuccessGreen else Color.Transparent)
-                    .border(2.dp, if (task.isCompleted) SuccessGreen else NavyOutline, CircleShape)
-                    .clickable { onToggle() },
-                contentAlignment = Alignment.Center
-            ) {
-                if (task.isCompleted) {
-                    Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
+            if (!isArchived) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Archive",
+                    tint = Color.Red.copy(alpha = 0.5f),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { onDelete?.invoke() }
+                )
+                
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Circular Checkmark
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(if (task.isCompleted) SuccessGreen else Color.Transparent)
+                        .border(2.dp, if (task.isCompleted) SuccessGreen else NavyOutline, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (task.isCompleted) {
+                        Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                    }
                 }
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Restore",
+                    tint = SuccessGreen,
+                    modifier = Modifier
+                        .size(28.dp)
+                )
             }
         }
     }
@@ -484,8 +614,10 @@ fun TasksContentPreview() {
     TasksContent(
         activities = mockTasks,
         archivedHabits = emptyList(),
+        screenTimeGoalMillis = 14400000L,
         onToggleHabit = {},
         onAddHabit = { _, _, _, _ -> },
+        onUpdateScreenTimeGoal = {},
         onArchiveHabit = {},
         onRestoreHabit = {}
     )

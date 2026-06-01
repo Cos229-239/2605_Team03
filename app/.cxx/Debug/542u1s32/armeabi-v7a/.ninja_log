@@ -1,4 +1,8 @@
 # ninja log v5
-1	553	8019150021844280	CMakeFiles/nudgie-logic.dir/native-lib.cpp.o	c3fd7b0198503fba
-9	566	8019150021971042	CMakeFiles/nudgie-logic.dir/NudgiePet.cpp.o	7d1276c44a2aea9
-566	651	8019150022785254	C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/build/intermediates/cxx/Debug/542u1s32/obj/armeabi-v7a/libnudgie-logic.so	edbab6b9097f5179
+0	1178	8019879875068657	CMakeFiles/nudgie-logic.dir/native-lib.cpp.o	c3fd7b0198503fba
+8	1191	8019879875204029	CMakeFiles/nudgie-logic.dir/NudgiePet.cpp.o	7d1276c44a2aea9
+1191	1461	8019879877870038	C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/build/intermediates/cxx/Debug/542u1s32/obj/armeabi-v7a/libnudgie-logic.so	edbab6b9097f5179
+1	8	0	clean	9cec83cfc8fe91cb
+23	1500	8019897021167973	CMakeFiles/nudgie-logic.dir/NudgiePet.cpp.o	7d1276c44a2aea9
+13	1535	8019897021534570	CMakeFiles/nudgie-logic.dir/native-lib.cpp.o	c3fd7b0198503fba
+1536	1718	8019897023342733	C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/build/intermediates/cxx/Debug/542u1s32/obj/armeabi-v7a/libnudgie-logic.so	edbab6b9097f5179

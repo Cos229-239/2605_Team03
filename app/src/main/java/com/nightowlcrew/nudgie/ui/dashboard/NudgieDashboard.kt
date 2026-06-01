@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,6 +69,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -81,10 +83,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.nightowlcrew.nudgie.R
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
@@ -242,6 +246,9 @@ fun NudgieDashboardContent(
                     onToggleHabit = onToggleHabit,
                     onUpdatePetName = onUpdatePetName,
                     onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
+                    onDigitalBalanceDoubleTap = {
+                        navController.navigate("tasks?openSlider=true")
+                    },
                     streak = 12, // For demo, can be linked to viewModel later
                     currency = 250 // For demo, can be linked to viewModel later
                 )
@@ -252,14 +259,24 @@ fun NudgieDashboardContent(
                     onUpdatePetName = onUpdatePetName
                 )
             }
-            composable(Screen.Tasks.route) {
+            composable(
+                route = "tasks?openSlider={openSlider}",
+                arguments = listOf(navArgument("openSlider") { 
+                    type = NavType.BoolType
+                    defaultValue = false 
+                })
+            ) { backStackEntry ->
+                val openSlider = backStackEntry.arguments?.getBoolean("openSlider") ?: false
                 TasksContent(
                     activities = uiState.activities,
                     archivedHabits = archivedHabits,
+                    screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     onToggleHabit = onToggleHabit,
                     onAddHabit = onAddHabit,
+                    onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
                     onArchiveHabit = onArchiveHabit,
-                    onRestoreHabit = onRestoreHabit
+                    onRestoreHabit = onRestoreHabit,
+                    initialOpenSlider = openSlider
                 )
             }
             composable(Screen.Stats.route) { ComingSoonScreen("Stats") }
@@ -578,6 +595,7 @@ fun DashboardContent(
     onToggleHabit: (ActivityItem) -> Unit,
     onUpdatePetName: (String) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
+    onDigitalBalanceDoubleTap: () -> Unit,
     streak: Int,
     currency: Int
 ) {
@@ -594,6 +612,7 @@ fun DashboardContent(
             screenTimeGoalMillis = screenTimeGoalMillis,
             onUpdatePetName = onUpdatePetName,
             onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
+            onDigitalBalanceDoubleTap = onDigitalBalanceDoubleTap,
             streak = streak,
             currency = currency
         )
@@ -615,6 +634,7 @@ fun PetFrame(
     screenTimeGoalMillis: Long,
     onUpdatePetName: (String) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
+    onDigitalBalanceDoubleTap: () -> Unit,
     streak: Int,
     currency: Int
 ) {
@@ -635,6 +655,7 @@ fun PetFrame(
             .fillMaxWidth()
             .height(510.dp) // Slightly increased to accommodate Digital Balance
     ) {
+        // ... (Header and Streak Logic remains same)
         // ... (rest of the Box content remains largely the same until Level & XP Box)
         // Edge-to-edge Background Image
         Image(
@@ -799,7 +820,7 @@ fun PetFrame(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .padding(vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp) // Closer spacing
             ) {
                 // XP Bar Section
                 Column {
@@ -828,16 +849,15 @@ fun PetFrame(
                 val goalHours = screenTimeGoalMillis / 3600000f
                 val currentHours = currentScreenTimeMillis / 3600000f
                 
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Digital Balance", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("${"%.1f".format(currentHours)}h / ${"%.1f".format(goalHours)}h", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                Column(
+                    modifier = Modifier.pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                onDigitalBalanceDoubleTap()
+                            }
+                        )
                     }
-                    Spacer(Modifier.height(4.dp))
+                ) {
                     LinearProgressIndicator(
                         progress = { (currentHours / goalHours.coerceAtLeast(0.1f)).coerceIn(0f, 1f) },
                         modifier = Modifier
@@ -848,6 +868,15 @@ fun PetFrame(
                         trackColor = Color.White.copy(alpha = 0.3f),
                         strokeCap = StrokeCap.Round
                     )
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Digital Balance", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("${"%.1f".format(currentHours)}h / ${"%.1f".format(goalHours)}h", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                    }
                 }
             }
 
