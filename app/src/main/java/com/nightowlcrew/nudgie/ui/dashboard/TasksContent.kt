@@ -62,11 +62,11 @@ import com.nightowlcrew.nudgie.ui.theme.SuccessGreen
 @Composable
 fun TasksContent(
     activities: List<ActivityItem>,
-    archivedHabits: List<HabitEntity>,
+    @Suppress("UNUSED_PARAMETER") archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
-    onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
-    onArchiveHabit: (HabitEntity) -> Unit,
-    onRestoreHabit: (HabitEntity) -> Unit,
+    @Suppress("UNUSED_PARAMETER") onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
+    @Suppress("UNUSED_PARAMETER") onArchiveHabit: (HabitEntity) -> Unit,
+    @Suppress("UNUSED_PARAMETER") onRestoreHabit: (HabitEntity) -> Unit,
 ) {
     // Categories based on CozyCategory + "All"
     val categoryTabs = listOf("All") + CozyCategory.entries.map { it.displayName.split(" ").first() }
@@ -79,7 +79,7 @@ fun TasksContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(NavyBackground)
+            .background(NavyBackground),
     ) {
         // Header Image and Progress Section (Sticky)
         Box(
@@ -100,8 +100,8 @@ fun TasksContent(
                     .fillMaxSize()
                     .background(
                         brush = Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, NavyBackground.copy(alpha = 0.4f), NavyBackground)
-                        )
+                            colors = listOf(Color.Transparent, NavyBackground.copy(alpha = 0.4f), NavyBackground),
+                        ),
                     )
             )
 
@@ -130,7 +130,7 @@ fun TasksContent(
                         text = "$completedCount / $totalCount Completed",
                         color = Color.White,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
                     )
                 }
                 
@@ -164,8 +164,9 @@ fun TasksContent(
                     CategoryChip(
                         label = tab,
                         isSelected = selectedCategoryTab == tab,
-                        onClick = { selectedCategoryTab = tab }
-                    )
+                    ) {
+                        selectedCategoryTab = tab
+                    }
                 }
             }
 
@@ -177,14 +178,15 @@ fun TasksContent(
                 val filteredTasks = if (selectedCategoryTab == "All") {
                     activities
                 } else {
-                    activities.filter { it.icon == selectedCategoryTab || it.description.contains(selectedCategoryTab, ignoreCase = true) }
+                    activities.filter { (it.icon == selectedCategoryTab) || it.description.contains(selectedCategoryTab, ignoreCase = true) }
                 }
 
                 items(filteredTasks) { task ->
                     TaskListItem(
                         task = task,
-                        onToggle = { onToggleHabit(task) }
-                    )
+                    ) {
+                        onToggleHabit(task)
+                    }
                 }
                 
                 // Extra padding at the bottom so list doesn't get hidden behind button
@@ -201,7 +203,7 @@ fun TasksContent(
         contentAlignment = Alignment.BottomCenter
     ) {
         Button(
-            onClick = { /* TODO */ },
+            onClick = { /* TODO: Implement Add Task functionality */ },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -224,7 +226,7 @@ fun CategoryChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
         shape = RoundedCornerShape(16.dp),
         color = if (isSelected) Color(0xFF2D2D3F) else Color.Transparent,
         border = if (isSelected) null else BorderStroke(1.dp, NavyOutline),
-        modifier = Modifier.height(40.dp)
+        modifier = Modifier.height(40.dp),
     ) {
         Box(
             modifier = Modifier.padding(horizontal = 24.dp),
@@ -246,7 +248,7 @@ fun TaskListItem(task: ActivityItem, onToggle: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = NavySurface),
-        border = BorderStroke(1.dp, NavyOutline.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, NavyOutline.copy(alpha = 0.5f)),
     ) {
         Row(
             modifier = Modifier
@@ -335,6 +337,6 @@ fun TasksContentPreview() {
         onToggleHabit = {},
         onAddHabit = { _, _, _, _ -> },
         onArchiveHabit = {},
-        onRestoreHabit = {}
-    )
+    ) {
+    }
 }
