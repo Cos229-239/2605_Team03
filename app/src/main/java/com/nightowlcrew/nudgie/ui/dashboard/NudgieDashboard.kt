@@ -30,9 +30,11 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
@@ -64,6 +66,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
@@ -74,7 +77,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -96,12 +98,16 @@ import com.nightowlcrew.nudgie.ui.theme.NavyBackground
 import com.nightowlcrew.nudgie.ui.theme.NavyOutline
 import com.nightowlcrew.nudgie.ui.theme.NavySurface
 import com.nightowlcrew.nudgie.ui.theme.NudgieTheme
+import com.nightowlcrew.nudgie.ui.theme.SpaceAccent
 import com.nightowlcrew.nudgie.ui.theme.SpaceEnergy
 import com.nightowlcrew.nudgie.ui.theme.SpaceHappiness
 import com.nightowlcrew.nudgie.ui.theme.SpaceLevel
+import com.nightowlcrew.nudgie.ui.theme.SpaceOutline
+import com.nightowlcrew.nudgie.ui.theme.SpaceSecondaryText
 import com.nightowlcrew.nudgie.ui.theme.SpaceSuccess
 import com.nightowlcrew.nudgie.ui.theme.SpaceSurface
 import com.nightowlcrew.nudgie.ui.theme.SuccessGreen
+import com.nightowlcrew.nudgie.ui.theme.VT323
 import com.nightowlcrew.nudgie.ui.theme.cpStatEnergy
 import com.nightowlcrew.nudgie.ui.theme.cpStatHappiness
 import com.nightowlcrew.nudgie.ui.theme.cpStatLevel
@@ -237,7 +243,12 @@ fun NudgieDashboardContent(
                     currency = 250 // For demo, can be linked to viewModel later
                 )
             }
-            composable(Screen.Pet.route) { NudgiePetScreen() }
+            composable(Screen.Pet.route) {
+                NudgiePetScreen(
+                    petStats = uiState.petStats,
+                    onUpdatePetName = onUpdatePetName
+                )
+            }
             composable(Screen.Tasks.route) {
                 TasksContent(
                     activities = uiState.activities,
@@ -276,42 +287,283 @@ fun ComingSoonScreen(title: String) {
 }
 
 @Composable
-fun NudgiePetScreen() {
-    ConstraintLayout(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        val (background, nudgie) = createRefs()
+fun HeartsRow(happiness: Int, modifier: Modifier = Modifier) {
+    Row(modifier = modifier) {
+        repeat(3) { index ->
+            val isFilled = index < (happiness / 33.4).toInt().coerceAtMost(3)
+            Icon(
+                imageVector = if (isFilled) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                contentDescription = null,
+                tint = if (isFilled) HeartRed else Color.Gray.copy(alpha = 0.5f),
+                modifier = Modifier.size(28.dp)
+            )
+            if (index < 2) Spacer(modifier = Modifier.width(4.dp))
+        }
+    }
+}
 
+@Composable
+fun PetActionButton(
+    label: String,
+    iconRes: Int,
+    onClick: () -> Unit = {}
+) {
+    Surface(
+        color = SpaceSurface.copy(alpha = 0.8f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, SpaceOutline.copy(alpha = 0.5f)),
+        modifier = Modifier
+            .size(width = 85.dp, height = 100.dp)
+            .clickable { onClick() }
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Image(
+                painter = painterResource(id = iconRes),
+                contentDescription = label,
+                modifier = Modifier.size(45.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = label,
+                style = TextStyle(
+                    fontFamily = VT323,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun PetActionButtons(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        PetActionButton("Customize", R.drawable.zustomize)
+        PetActionButton("Food", R.drawable.feed)
+        PetActionButton("Play", R.drawable.play)
+        PetActionButton("Bath", R.drawable.bath)
+    }
+}
+
+@Composable
+fun NudgiePetScreen(
+    petStats: PetStats,
+    onUpdatePetName: (String) -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.pet_background),
             contentDescription = null,
-            modifier = Modifier.constrainAs(background) {
-                top.linkTo(parent.top)
-                bottom.linkTo(parent.bottom)
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-            },
+            modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
 
-        Image(
-            painter = painterResource(id = R.drawable.blue_trashpanda),
-            contentDescription = "Nudgie Character",
+        Column(
             modifier = Modifier
-                .size(280.dp)
-                .constrainAs(nudgie) {
-                    centerTo(parent)
-                },
-            contentScale = ContentScale.Fit
-        )
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(bottom = 32.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Your Nudgie",
+                    style = TextStyle(
+                        fontFamily = VT323,
+                        fontSize = 32.sp,
+                        color = Color.White
+                    )
+                )
+                HeartsRow(happiness = petStats.happiness)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Pet Info Card
+            NudgieTopCard(
+                name = petStats.name,
+                level = petStats.level,
+                currentXp = petStats.xp,
+                maxXp = 800,
+                onUpdateName = onUpdatePetName
+            )
+
+            Spacer(modifier = Modifier.weight(0.8f))
+
+            // Character
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(2f),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.blue_trashpanda),
+                    contentDescription = "Nudgie Character",
+                    modifier = Modifier
+                        .size(280.dp)
+                        .offset(x = (-70).dp, y = 15.dp)
+                        .graphicsLayer { scaleX = -1f }, // Flip horizontally
+                    contentScale = ContentScale.Fit
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(0.5f))
+
+            // Action Buttons
+            PetActionButtons()
+        }
     }
 }
+
+@Composable
+fun NudgieTopCard(
+    name: String,
+    level: Int,
+    currentXp: Int,
+    maxXp: Int,
+    onUpdateName: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var isEditingName by remember { mutableStateOf(false) }
+    var nameInput by remember { mutableStateOf(name) }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
+    Surface(
+        color = NavySurface.copy(alpha = 0.9f),
+        shape = RoundedCornerShape(20.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isEditingName) {
+                    BasicTextField(
+                        value = nameInput,
+                        onValueChange = { if (it.length <= 13) nameInput = it },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            fontFamily = VT323,
+                            fontSize = 32.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        cursorBrush = SolidColor(Color.White),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                onUpdateName(nameInput)
+                                isEditingName = false
+                                focusManager.clearFocus()
+                            }
+                        ),
+                        modifier = Modifier
+                            .width(IntrinsicSize.Min)
+                            .focusRequester(focusRequester)
+                    )
+                } else {
+                    Text(
+                        text = name,
+                        style = TextStyle(
+                            fontFamily = VT323,
+                            fontSize = 32.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit Name",
+                    tint = SpaceSecondaryText,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {
+                            if (isEditingName) {
+                                onUpdateName(nameInput)
+                            } else {
+                                nameInput = name
+                            }
+                            isEditingName = !isEditingName
+                        }
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Level $level",
+                        style = TextStyle(
+                            fontFamily = VT323,
+                            fontSize = 20.sp,
+                            color = Color.White
+                        )
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        imageVector = Icons.Default.Pets,
+                        contentDescription = null,
+                        tint = SpaceAccent,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Text(
+                    text = "$currentXp / $maxXp XP",
+                    style = TextStyle(
+                        fontFamily = VT323,
+                        fontSize = 18.sp,
+                        color = Color.White
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            LinearProgressIndicator(
+                progress = { currentXp.toFloat() / maxXp.toFloat() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+                    .clip(RoundedCornerShape(6.dp)),
+                color = SuccessGreen,
+                trackColor = Color.White.copy(alpha = 0.2f),
+                strokeCap = StrokeCap.Round
+            )
+        }
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable
 fun NudgiePetScreenPreview() {
     NudgieTheme {
-        NudgiePetScreen()
+        NudgiePetScreen(
+            petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
+            onUpdatePetName = {}
+        )
     }
 }
 
