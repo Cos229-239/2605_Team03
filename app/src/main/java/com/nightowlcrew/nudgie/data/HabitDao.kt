@@ -13,8 +13,17 @@ interface HabitDao {
     suspend fun insertHabitLog(log: HabitLogEntity): Long
 
     @Transaction
-    @Query("SELECT * FROM habits")
+    @Query("SELECT * FROM habits WHERE isArchived = 0")
     fun getHabitsWithLogs(): Flow<List<HabitWithLogs>>
+
+    @Query("SELECT * FROM habits WHERE isArchived = 1 ORDER BY archivedAt DESC")
+    fun getArchivedHabits(): Flow<List<HabitEntity>>
+
+    @Query("UPDATE habits SET isArchived = 1, archivedAt = :timestamp WHERE id = :habitId")
+    suspend fun archiveHabit(habitId: Int, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE habits SET isArchived = 0, archivedAt = NULL WHERE id = :habitId")
+    suspend fun restoreHabit(habitId: Int)
 
     /**
      * Queries ALL records from the log table filtered by a specific time/date pattern.

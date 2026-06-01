@@ -1,0 +1,38 @@
+{
+  "buildFiles": [
+    "C:\\Users\\humbo\\OneDrive\\Documents\\GitHub\\2605_Team03\\app\\src\\main\\cpp\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\humbo\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\Users\\humbo\\OneDrive\\Documents\\GitHub\\2605_Team03\\app\\.cxx\\Debug\\542u1s32\\armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\humbo\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\Users\\humbo\\OneDrive\\Documents\\GitHub\\2605_Team03\\app\\.cxx\\Debug\\542u1s32\\armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "nudgie-logic::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "armeabi-v7a",
+      "artifactName": "nudgie-logic",
+      "output": "C:\\Users\\humbo\\OneDrive\\Documents\\GitHub\\2605_Team03\\app\\build\\intermediates\\cxx\\Debug\\542u1s32\\obj\\armeabi-v7a\\libnudgie-logic.so",
+      "runtimeFiles": []
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "C:\\Users\\humbo\\AppData\\Local\\Android\\Sdk\\ndk\\28.2.13676358\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang.exe",
+      "cppCompilerExecutable": "C:\\Users\\humbo\\AppData\\Local\\Android\\Sdk\\ndk\\28.2.13676358\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}

@@ -36,6 +36,18 @@ class HabitRepositoryImpl(
         habitDao.deleteHabit(habit)
     }
 
+    override fun getArchivedHabits(): Flow<List<HabitEntity>> {
+        return habitDao.getArchivedHabits()
+    }
+
+    override suspend fun archiveHabit(habitId: Int, timestamp: Long) {
+        habitDao.archiveHabit(habitId, timestamp)
+    }
+
+    override suspend fun restoreHabit(habitId: Int) {
+        habitDao.restoreHabit(habitId)
+    }
+
     override fun getScreenTimeForDate(date: String): Flow<ScreenTimeRecord?> {
         return screenTimeDao.getRecordForDate(date)
     }

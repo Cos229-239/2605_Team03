@@ -21,6 +21,7 @@ data class HabitLogEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val habitId: Int?,
-    val completedAtTime: String,
+    val completedAtTime: String, // HH:mm
+    val date: String = "", // yyyy-MM-dd
     val isCompleted: Boolean
 )
