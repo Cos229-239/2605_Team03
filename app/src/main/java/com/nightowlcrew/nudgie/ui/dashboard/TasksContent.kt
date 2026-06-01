@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,17 +22,25 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +55,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,13 +74,13 @@ fun TasksContent(
     activities: List<ActivityItem>,
     @Suppress("UNUSED_PARAMETER") archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
-    @Suppress("UNUSED_PARAMETER") onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
+    onAddHabit: (String, String, Int, Boolean) -> Unit,
     @Suppress("UNUSED_PARAMETER") onArchiveHabit: (HabitEntity) -> Unit,
     @Suppress("UNUSED_PARAMETER") onRestoreHabit: (HabitEntity) -> Unit,
 ) {
-    // Categories based on CozyCategory + "All"
-    val categoryTabs = listOf("All") + CozyCategory.entries.map { it.displayName.split(" ").first() }
-    var selectedCategoryTab by remember { mutableStateOf("All") }
+    val categoryTabs = CozyCategory.entries
+    var selectedCategoryTab by remember { mutableStateOf(CozyCategory.BODY_VITALITY) }
+    var showAddDialog by remember { mutableStateOf(false) }
     
     val completedCount = activities.count { it.isCompleted }
     val totalCount = activities.size
@@ -155,18 +165,17 @@ fun TasksContent(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
         ) {
-            // 5 Tabs (All + 4 Categories)
+            // 5 Tabs (Categories only)
             LazyRow(
                 modifier = Modifier.padding(vertical = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(categoryTabs) { tab ->
+                items(categoryTabs) { category ->
                     CategoryChip(
-                        label = tab,
-                        isSelected = selectedCategoryTab == tab,
-                    ) {
-                        selectedCategoryTab = tab
-                    }
+                        label = category.displayName.split(" ").first(),
+                        isSelected = selectedCategoryTab == category,
+                        onClick = { selectedCategoryTab = category }
+                    )
                 }
             }
 
@@ -175,18 +184,13 @@ fun TasksContent(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                val filteredTasks = if (selectedCategoryTab == "All") {
-                    activities
-                } else {
-                    activities.filter { (it.icon == selectedCategoryTab) || it.description.contains(selectedCategoryTab, ignoreCase = true) }
-                }
+                val filteredTasks = activities.filter { it.category == selectedCategoryTab.name }
 
                 items(filteredTasks) { task ->
                     TaskListItem(
                         task = task,
-                    ) {
-                        onToggleHabit(task)
-                    }
+                        onToggle = { onToggleHabit(task) }
+                    )
                 }
                 
                 // Extra padding at the bottom so list doesn't get hidden behind button
@@ -203,7 +207,7 @@ fun TasksContent(
         contentAlignment = Alignment.BottomCenter
     ) {
         Button(
-            onClick = { /* TODO: Implement Add Task functionality */ },
+            onClick = { showAddDialog = true },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -217,6 +221,144 @@ fun TasksContent(
             }
         }
     }
+
+    if (showAddDialog) {
+        AddTaskDialog(
+            initialCategory = selectedCategoryTab,
+            onDismiss = { showAddDialog = false },
+            onConfirm = { title, category, frequency ->
+                onAddHabit(title, category.name, frequency, false)
+                showAddDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun AddTaskDialog(
+    initialCategory: CozyCategory,
+    onDismiss: () -> Unit,
+    onConfirm: (String, CozyCategory, Int) -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var frequency by remember { mutableStateOf("1") }
+    var selectedCategory by remember { mutableStateOf(initialCategory) }
+    var expanded by remember { mutableStateOf(false) }
+    var selectedEmoji by remember { mutableStateOf("💧") }
+    val emojis = listOf("💧", "💊", "🧘", "🪥", "☕", "🏃", "📚", "🧹", "📓", "🌬️", "🛏️", "📱", "🐾")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add New Task", color = Color.White) },
+        containerColor = NavySurface,
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Task Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF6200EE),
+                        unfocusedBorderColor = NavyOutline
+                    )
+                )
+
+                Text("Pick an Emoji", color = LavenderText, fontSize = 12.sp)
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 4.dp)
+                ) {
+                    items(emojis) { emoji ->
+                        val isSelected = selectedEmoji == emoji
+                        Surface(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable { selectedEmoji = emoji },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) Color(0xFF6200EE).copy(alpha = 0.3f) else NavyBackground,
+                            border = BorderStroke(1.dp, if (isSelected) Color(0xFF6200EE) else NavyOutline)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(text = emoji, fontSize = 20.sp)
+                            }
+                        }
+                    }
+                }
+
+                Box {
+                    OutlinedTextField(
+                        value = selectedCategory.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Category") },
+                        modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.ArrowDropDown,
+                                "Dropdown",
+                                Modifier.clickable { expanded = true },
+                                tint = Color.White
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFF6200EE),
+                            unfocusedBorderColor = NavyOutline
+                        )
+                    )
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.background(NavySurface)
+                    ) {
+                        CozyCategory.entries.forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category.displayName, color = Color.White) },
+                                onClick = {
+                                    selectedCategory = category
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = frequency,
+                    onValueChange = { if (it.all { char -> char.isDigit() }) frequency = it },
+                    label = { Text("Target Count (Times per day)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF6200EE),
+                        unfocusedBorderColor = NavyOutline
+                    )
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (title.isNotBlank()) {
+                        onConfirm("$selectedEmoji $title", selectedCategory, frequency.toIntOrNull() ?: 1)
+                    }
+                }
+            ) {
+                Text("ADD", color = Color(0xFF6200EE), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("CANCEL", color = LavenderText)
+            }
+        }
+    )
 }
 
 @Composable
@@ -313,11 +455,19 @@ fun TaskListItem(task: ActivityItem, onToggle: () -> Unit) {
 }
 
 fun getIconForTask(description: String): String {
+    // If the description starts with an emoji, we use it.
+    val emojiRegex = Regex("^(\\p{So}|\\p{Sk})")
+    val match = emojiRegex.find(description)
+    if (match != null) return match.value
+
     return when {
+        description.contains("Journal", ignoreCase = true) -> "📔"
+        description.contains("Read", ignoreCase = true) -> "📚"
         description.contains("Spanish", ignoreCase = true) -> "📖"
         description.contains("Math", ignoreCase = true) -> "🧮"
         description.contains("Workout", ignoreCase = true) -> "🏋️"
-        description.contains("Journal", ignoreCase = true) -> "📓"
+        description.contains("Water", ignoreCase = true) -> "💧"
+        description.contains("Breathe", ignoreCase = true) -> "🌬️"
         else -> "📌"
     }
 }
@@ -326,10 +476,10 @@ fun getIconForTask(description: String): String {
 @Composable
 fun TasksContentPreview() {
     val mockTasks = listOf(
-        ActivityItem(id = 1, icon = "📖", description = "Spanish Lesson", time = "10:00 AM", isCompleted = true),
-        ActivityItem(id = 2, icon = "🧮", description = "Math Practice", time = "11:00 AM", isCompleted = true),
-        ActivityItem(id = 3, icon = "🏋️", description = "Workout", time = "5:00 PM", isCompleted = false),
-        ActivityItem(id = 4, icon = "📓", description = "Journal", time = "9:00 PM", isCompleted = false)
+        ActivityItem(id = 1, icon = CozyCategory.MIND_SPACE.name, description = "Spanish Lesson", category = CozyCategory.MIND_SPACE.name, time = "10:00 AM", isCompleted = true),
+        ActivityItem(id = 2, icon = CozyCategory.MIND_SPACE.name, description = "Math Practice", category = CozyCategory.MIND_SPACE.name, time = "11:00 AM", isCompleted = true),
+        ActivityItem(id = 3, icon = CozyCategory.BODY_VITALITY.name, description = "Workout", category = CozyCategory.BODY_VITALITY.name, time = "5:00 PM", isCompleted = false),
+        ActivityItem(id = 4, icon = CozyCategory.SELF_CARE_RITUALS.name, description = "Journal", category = CozyCategory.SELF_CARE_RITUALS.name, time = "9:00 PM", isCompleted = false)
     )
     TasksContent(
         activities = mockTasks,
@@ -337,6 +487,6 @@ fun TasksContentPreview() {
         onToggleHabit = {},
         onAddHabit = { _, _, _, _ -> },
         onArchiveHabit = {},
-    ) {
-    }
+        onRestoreHabit = {}
+    )
 }

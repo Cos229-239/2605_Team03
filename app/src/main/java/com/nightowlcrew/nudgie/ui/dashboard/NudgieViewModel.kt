@@ -14,7 +14,6 @@ import com.nightowlcrew.nudgie.data.HabitEntity
 import com.nightowlcrew.nudgie.data.HabitLogEntity
 import com.nightowlcrew.nudgie.data.HabitRepository
 import com.nightowlcrew.nudgie.data.HabitRepositoryImpl
-import com.nightowlcrew.nudgie.data.ScreenTimeRecord
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -37,16 +36,13 @@ data class PetStats(
     val energy: Int = 100
 )
 
-/**
- * UI State for the Dashboard screen.
- */
 data class DashboardUiState(
     val activities: List<ActivityItem> = emptyList(),
     val categorizedActivities: Map<CozyCategory, List<ActivityItem>> = emptyMap(),
     val currentScreenTimeMillis: Long = 0L,
-    val screenTimeGoalMillis: Long = 14400000L, // Default 4 hours (4 * 3600 * 1000)
-    val currentTheme: AppTheme = AppTheme.RETRO_SPACE, // Defaulting to your new design
-    val petStats: PetStats = PetStats(level = 5, xp = 450, happiness = 80, energy = 65), // Mock data matching Figma
+    val screenTimeGoalMillis: Long = 14400000L,
+    val currentTheme: AppTheme = AppTheme.RETRO_SPACE,
+    val petStats: PetStats = PetStats(),
     val isLoading: Boolean = true
 )
 
@@ -104,7 +100,7 @@ class NudgieViewModel(
                 _currentTheme
             ) { activities, screenTime, petStats, theme ->
                 val categorized = CozyCategory.entries.associateWith { category ->
-                    activities.filter { it.icon == category.name }
+                    activities.filter { it.category == category.name }
                 }.filterValues { it.isNotEmpty() }
 
                 DashboardUiState(
@@ -122,19 +118,18 @@ class NudgieViewModel(
         }
     }
 
-    fun updateTheme(newTheme: AppTheme) {
-        _currentTheme.value = newTheme
-        sharedPreferences.edit().putString("app_theme", newTheme.name).apply()
+    fun updateTheme(theme: AppTheme) {
+        _currentTheme.value = theme
+        sharedPreferences.edit().putString("app_theme", theme.name).apply()
     }
 
     fun updatePetName(newName: String) {
-        val limitedName = newName.take(13)
-        _petName.value = limitedName
-        sharedPreferences.edit().putString("pet_name", limitedName).apply()
+        _petName.value = newName
+        sharedPreferences.edit().putString("pet_name", newName).apply()
     }
 
     private fun prepopulateDefaultHabits() {
-        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v2_added", false)
+        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v5_added", false)
         if (!alreadyAdded) {
             viewModelScope.launch {
                 HABIT_TEMPLATES.forEach { (category, templates) ->
@@ -142,25 +137,29 @@ class NudgieViewModel(
                         repository.insertHabit(
                             HabitEntity(
                                 title = template.title,
-                                icon = category.name,
+                                icon = "📌", // Standard icon for defaults
+                                category = category.name,
                                 targetFrequencyPerDay = template.defaultFrequency,
                                 isStock = true
                             )
                         )
                     }
                 }
-                sharedPreferences.edit().putBoolean("default_habits_v2_added", true).apply()
+                sharedPreferences.edit().putBoolean("default_habits_v5_added", true).apply()
             }
         }
     }
 
     fun toggleHabitCompletion(activityItem: ActivityItem) {
         viewModelScope.launch {
-            val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            val now = Date()
+            val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(now)
+            val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now)
             val isCompleting = !activityItem.isCompleted
             val log = HabitLogEntity(
                 habitId = activityItem.id,
                 completedAtTime = currentTime,
+                date = todayDate,
                 isCompleted = isCompleting
             )
             repository.insertLog(log)
@@ -173,21 +172,35 @@ class NudgieViewModel(
         }
     }
 
-    fun addNewHabit(title: String, icon: String, frequency: Int, isStock: Boolean = false, markAsCompleted: Boolean = false) {
+    fun addNewHabit(title: String, category: String, frequency: Int, isStock: Boolean = false, markAsCompleted: Boolean = false) {
         viewModelScope.launch {
+            val now = Date()
+            val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now)
+            
+            // If the title starts with an emoji followed by a space, we extract it as the icon
+            val emojiRegex = Regex("^(\\p{So}|\\p{Sk})\\s+(.*)$")
+            val matchResult = emojiRegex.find(title)
+            val (icon, finalTitle) = if (matchResult != null) {
+                matchResult.groupValues[1] to matchResult.groupValues[2]
+            } else {
+                "📌" to title
+            }
+
             val habit = HabitEntity(
-                title = title,
+                title = finalTitle,
                 icon = icon,
+                category = category,
                 targetFrequencyPerDay = frequency,
                 isStock = isStock
             )
             val habitId = repository.insertHabit(habit).toInt()
 
             if (markAsCompleted) {
-                val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+                val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(now)
                 val log = HabitLogEntity(
                     habitId = habitId,
                     completedAtTime = currentTime,
+                    date = todayDate,
                     isCompleted = true
                 )
                 repository.insertLog(log)
@@ -198,19 +211,15 @@ class NudgieViewModel(
 
     fun deleteHabit(id: Int) {
         viewModelScope.launch {
-            val habit = HabitEntity(
-                id = id,
-                title = "",
-                icon = "",
-                targetFrequencyPerDay = 0
-            )
-            repository.deleteHabit(habit)
+            // Since we don't have getHabitById, we use a simple hack or update repository.
+            // For now, let's create a dummy entity with the ID for Room to delete.
+            repository.deleteHabit(HabitEntity(id = id, title = "", icon = "", targetFrequencyPerDay = 0))
         }
     }
 
     fun archiveHabit(habit: HabitEntity) {
         viewModelScope.launch {
-            repository.archiveHabit(habit.id, System.currentTimeMillis())
+            repository.archiveHabit(habit.id)
         }
     }
 
@@ -220,13 +229,13 @@ class NudgieViewModel(
         }
     }
 
-    fun updateScreenTimeGoal(hours: Int) {
+    fun updateScreenTimeGoal(newGoalHours: Int) {
         viewModelScope.launch {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-            val currentRecord = uiState.value
-            val limitMillis = hours.toLong() * 3600000L
-
-            val record = ScreenTimeRecord(
+            val limitMillis = newGoalHours.toLong() * 3600000L
+            
+            val currentRecord = _uiState.value
+            val record = com.nightowlcrew.nudgie.data.ScreenTimeRecord(
                 date = today,
                 targetLimitMillis = limitMillis,
                 actualDurationMillis = currentRecord.currentScreenTimeMillis

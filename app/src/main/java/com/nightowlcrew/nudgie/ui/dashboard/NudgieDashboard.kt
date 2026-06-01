@@ -159,7 +159,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
         uiState = uiState,
         archivedHabits = archivedHabits,
         onToggleHabit = { viewModel.toggleHabitCompletion(it) },
-        onAddHabit = { title, category, frequency, isStock -> viewModel.addNewHabit(title, category.name, frequency, isStock) },
+        onAddHabit = { title, category, frequency, isStock -> viewModel.addNewHabit(title, category, frequency, isStock) },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
@@ -175,7 +175,7 @@ fun NudgieDashboardContent(
     uiState: DashboardUiState,
     archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
-    onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
+    onAddHabit: (String, String, Int, Boolean) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
     onUpdateTheme: (AppTheme) -> Unit,
@@ -237,8 +237,11 @@ fun NudgieDashboardContent(
                     categorizedActivities = uiState.categorizedActivities,
                     currentTheme = uiState.currentTheme,
                     petStats = uiState.petStats,
+                    currentScreenTimeMillis = uiState.currentScreenTimeMillis,
+                    screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     onToggleHabit = onToggleHabit,
                     onUpdatePetName = onUpdatePetName,
+                    onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
                     streak = 12, // For demo, can be linked to viewModel later
                     currency = 250 // For demo, can be linked to viewModel later
                 )
@@ -267,7 +270,7 @@ fun NudgieDashboardContent(
                     archivedHabits = archivedHabits,
                     screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     currentTheme = uiState.currentTheme,
-                    onAddHabit = onAddHabit,
+                    onAddHabit = { title, category, freq, isStock -> onAddHabit(title, category, freq, isStock) },
                     onDeleteHabit = onDeleteHabit,
                     onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
                     onUpdateTheme = onUpdateTheme,
@@ -380,9 +383,7 @@ fun NudgiePetScreen(
 
             // Pet Info Card
             NudgieTopCard(
-                name = petStats.name,
-                level = petStats.level,
-                currentXp = petStats.xp,
+                petStats = petStats,
                 maxXp = 800,
                 onUpdateName = onUpdatePetName
             )
@@ -417,15 +418,13 @@ fun NudgiePetScreen(
 
 @Composable
 fun NudgieTopCard(
-    name: String,
-    level: Int,
-    currentXp: Int,
+    petStats: PetStats,
     maxXp: Int,
     onUpdateName: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isEditingName by remember { mutableStateOf(false) }
-    var nameInput by remember { mutableStateOf(name) }
+    var nameInput by remember { mutableStateOf(petStats.name) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
@@ -466,7 +465,7 @@ fun NudgieTopCard(
                     )
                 } else {
                     Text(
-                        text = name,
+                        text = petStats.name,
                         style = TextStyle(
                             fontFamily = VT323,
                             fontSize = 32.sp,
@@ -486,7 +485,7 @@ fun NudgieTopCard(
                             if (isEditingName) {
                                 onUpdateName(nameInput)
                             } else {
-                                nameInput = name
+                                nameInput = petStats.name
                             }
                             isEditingName = !isEditingName
                         }
@@ -518,7 +517,7 @@ fun NudgieTopCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "Level $level",
+                        text = "Level ${petStats.level}",
                         style = TextStyle(
                             fontFamily = VT323,
                             fontSize = 20.sp,
@@ -534,7 +533,7 @@ fun NudgieTopCard(
                     )
                 }
                 Text(
-                    text = "$currentXp / $maxXp XP",
+                    text = "${petStats.xp} / $maxXp XP",
                     style = TextStyle(
                         fontFamily = VT323,
                         fontSize = 18.sp,
@@ -544,7 +543,7 @@ fun NudgieTopCard(
             }
             Spacer(modifier = Modifier.height(12.dp))
             LinearProgressIndicator(
-                progress = { currentXp.toFloat() / maxXp.toFloat() },
+                progress = { petStats.xp.toFloat() / maxXp.toFloat() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(12.dp)
@@ -574,8 +573,11 @@ fun DashboardContent(
     categorizedActivities: Map<CozyCategory, List<ActivityItem>>,
     currentTheme: AppTheme,
     petStats: PetStats,
+    currentScreenTimeMillis: Long,
+    screenTimeGoalMillis: Long,
     onToggleHabit: (ActivityItem) -> Unit,
     onUpdatePetName: (String) -> Unit,
+    onUpdateScreenTimeGoal: (Int) -> Unit,
     streak: Int,
     currency: Int
 ) {
@@ -585,7 +587,16 @@ fun DashboardContent(
             .background(NavyBackground) // Fix white background issue
             .verticalScroll(rememberScrollState())
     ) {
-        PetFrame(petStats = petStats, currentTheme = currentTheme, onUpdatePetName = onUpdatePetName, streak = streak, currency = currency)
+        PetFrame(
+            petStats = petStats,
+            currentTheme = currentTheme,
+            currentScreenTimeMillis = currentScreenTimeMillis,
+            screenTimeGoalMillis = screenTimeGoalMillis,
+            onUpdatePetName = onUpdatePetName,
+            onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
+            streak = streak,
+            currency = currency
+        )
         Spacer(modifier = Modifier.height(48.dp)) // Move headers down more
         TasksSection(
             categorizedActivities = categorizedActivities,
@@ -597,7 +608,16 @@ fun DashboardContent(
 }
 
 @Composable
-fun PetFrame(petStats: PetStats, currentTheme: AppTheme, onUpdatePetName: (String) -> Unit, streak: Int, currency: Int) {
+fun PetFrame(
+    petStats: PetStats,
+    currentTheme: AppTheme,
+    currentScreenTimeMillis: Long,
+    screenTimeGoalMillis: Long,
+    onUpdatePetName: (String) -> Unit,
+    onUpdateScreenTimeGoal: (Int) -> Unit,
+    streak: Int,
+    currency: Int
+) {
     val statColors = getThemeStatColors(currentTheme)
     var isEditingName by remember { mutableStateOf(value = false) }
     var nameInput by remember { mutableStateOf(petStats.name) }
@@ -613,8 +633,9 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, onUpdatePetName: (Strin
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(460.dp) // Elongated height
+            .height(510.dp) // Slightly increased to accommodate Digital Balance
     ) {
+        // ... (rest of the Box content remains largely the same until Level & XP Box)
         // Edge-to-edge Background Image
         Image(
             painter = painterResource(id = R.drawable.pethero_dashboard),
@@ -773,21 +794,24 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, onUpdatePetName: (Strin
                 }
             }
 
-            // Level & XP Box
-            Box(
+            // Bars Box (XP + Digital Balance)
+            Column(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .padding(vertical = 8.dp) // Reduced vertical padding
+                    .padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // XP Bar Section
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Level ${petStats.level}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) // Larger font
-                        Text("${petStats.xp} / 800 XP", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp) // Larger font
+                        Text("Level ${petStats.level}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("${petStats.xp} / 800 XP", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(4.dp))
                     LinearProgressIndicator(
                         progress = { petStats.xp / 800f },
                         modifier = Modifier
@@ -795,6 +819,32 @@ fun PetFrame(petStats: PetStats, currentTheme: AppTheme, onUpdatePetName: (Strin
                             .height(8.dp)
                             .clip(RoundedCornerShape(4.dp)),
                         color = MaterialTheme.colorScheme.primary,
+                        trackColor = Color.White.copy(alpha = 0.3f),
+                        strokeCap = StrokeCap.Round
+                    )
+                }
+
+                // Digital Balance Bar Section
+                val goalHours = screenTimeGoalMillis / 3600000f
+                val currentHours = currentScreenTimeMillis / 3600000f
+                
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Digital Balance", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("${"%.1f".format(currentHours)}h / ${"%.1f".format(goalHours)}h", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    LinearProgressIndicator(
+                        progress = { (currentHours / goalHours.coerceAtLeast(0.1f)).coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = if (currentHours > goalHours) Color.Red else statColors.success,
                         trackColor = Color.White.copy(alpha = 0.3f),
                         strokeCap = StrokeCap.Round
                     )
@@ -1040,10 +1090,10 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
 fun NudgieDashboardPreview() {
     // Generate some mock activities to match your Figma mockup
     val mockActivities = listOf(
-        ActivityItem(id = 1, icon = "</>", description = "Coding Lesson", time = "10:00 AM", isCompleted = true, targetCount = 1, currentCount = 1),
-        ActivityItem(id = 2, icon = "📖", description = "Read 20 Pages", time = "1:00 PM", isCompleted = true, targetCount = 1, currentCount = 1),
-        ActivityItem(id = 3, icon = "💧", description = "Drink 8 Glasses of Water", time = "All Day", isCompleted = false, targetCount = 8, currentCount = 0),
-        ActivityItem(id = 4, icon = "🧘", description = "Meditate 10 Minutes", time = "8:00 PM", isCompleted = false, targetCount = 1, currentCount = 0)
+        ActivityItem(id = 1, icon = "</>", description = "Coding Lesson", category = CozyCategory.MIND_SPACE.name, time = "10:00 AM", isCompleted = true, targetCount = 1, currentCount = 1),
+        ActivityItem(id = 2, icon = "📖", description = "Read 20 Pages", category = CozyCategory.MIND_SPACE.name, time = "1:00 PM", isCompleted = true, targetCount = 1, currentCount = 1),
+        ActivityItem(id = 3, icon = "💧", description = "Drink 8 Glasses of Water", category = CozyCategory.BODY_VITALITY.name, time = "All Day", isCompleted = false, targetCount = 8, currentCount = 0),
+        ActivityItem(id = 4, icon = "🧘", description = "Meditate 10 Minutes", category = CozyCategory.MIND_SPACE.name, time = "8:00 PM", isCompleted = false, targetCount = 1, currentCount = 0)
     )
 
     // Group them into a mock category

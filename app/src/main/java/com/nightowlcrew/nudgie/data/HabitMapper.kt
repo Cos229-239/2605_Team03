@@ -1,5 +1,9 @@
 package com.nightowlcrew.nudgie.data
 
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 /**
  * Mapper extension functions to convert Database Entities into UI Domain Models.
  */
@@ -17,6 +21,7 @@ fun HabitEntity.toActivityItem(lastLog: HabitLogEntity?, currentCount: Int): Act
         id = this.id,
         icon = this.icon,
         description = displayDescription,
+        category = this.category,
         time = lastLog?.completedAtTime ?: "--:--",
         isCompleted = currentCount >= this.targetFrequencyPerDay,
         targetCount = this.targetFrequencyPerDay,
@@ -28,17 +33,21 @@ fun HabitEntity.toActivityItem(lastLog: HabitLogEntity?, currentCount: Int): Act
 
 /**
  * Converts a Habit with its logs into an ActivityItem based on the most recent log.
+ * Filters logs to only include those from today.
  */
 fun HabitWithLogs.toActivityItem(): ActivityItem {
-    val completedLogs = logs.filter { it.isCompleted }
-    val latestLog = logs.maxByOrNull { it.id } 
-    return habit.toActivityItem(latestLog, completedLogs.size)
+    val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    val todaysLogs = logs.filter { it.date == today }
+    val completedCount = todaysLogs.count { it.isCompleted }
+    val latestLog = todaysLogs.maxByOrNull { it.id } 
+    return habit.toActivityItem(latestLog, completedCount)
 }
 
 fun ActivityItem.toEntity() = HabitEntity(
     id = this.id,
     title = this.originalTitle,
     icon = this.icon,
+    category = this.category,
     targetFrequencyPerDay = this.targetCount,
     isStock = this.isStock
 )

@@ -9,6 +9,7 @@ data class HabitEntity(
     val id: Int = 0,
     val title: String,
     val icon: String,
+    val category: String = "", // CozyCategory name
     val targetFrequencyPerDay: Int,
     val createdAt: Long = System.currentTimeMillis(),
     val isArchived: Boolean = false,

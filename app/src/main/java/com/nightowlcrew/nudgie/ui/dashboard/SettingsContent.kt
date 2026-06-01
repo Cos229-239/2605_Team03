@@ -5,7 +5,16 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -14,10 +23,28 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -53,7 +80,7 @@ fun SettingsScreen(
         screenTimeGoalMillis = uiState.screenTimeGoalMillis,
         currentTheme = uiState.currentTheme,
         onAddHabit = { title, category, frequency, isStock -> 
-            viewModel.addNewHabit(title, category.name, frequency, isStock)
+            viewModel.addNewHabit(title, category, frequency, isStock)
         },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
@@ -69,7 +96,7 @@ fun SettingsContent(
     archivedHabits: List<HabitEntity>,
     screenTimeGoalMillis: Long,
     currentTheme: AppTheme,
-    onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
+    onAddHabit: (String, String, Int, Boolean) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
     onUpdateTheme: (AppTheme) -> Unit,
@@ -114,7 +141,7 @@ fun SettingsContent(
         )
 
         HabitCreatorSection(
-            onAddHabit = { title, category, frequency -> onAddHabit(title, category, frequency, false) },
+            onAddHabit = { title, category, frequency -> onAddHabit(title, category.name, frequency, false) },
             archivedHabits = archivedHabits,
             onRestoreHabit = onRestoreHabit,
             currentTheme = currentTheme,
@@ -410,7 +437,7 @@ fun CategorizedHabitList(
     activities: List<ActivityItem>,
     archivedHabits: List<HabitEntity>,
     currentTheme: AppTheme,
-    onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
+    onAddHabit: (String, String, Int, Boolean) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onArchiveHabit: (HabitEntity) -> Unit,
     onRestoreHabit: (HabitEntity) -> Unit,
@@ -443,7 +470,7 @@ fun CategorizedHabitList(
                 onToggleExpand = {
                     onSectionToggle(if (expandedSection == sectionKey) null else sectionKey)
                 },
-                onAddTemplate = { title, frequency, isStock -> onAddHabit(title, category, frequency, isStock) }
+                onAddTemplate = { title, frequency, isStock -> onAddHabit(title, category.name, frequency, isStock) }
             )
         }
     }
@@ -696,10 +723,10 @@ fun DigitalBalanceCard(
 @Composable
 fun SettingsContentPreview() {
     val mockActivities = listOf(
-        ActivityItem(1, CozyCategory.BODY_VITALITY.name, "Morning Yoga", "08:00", false),
-        ActivityItem(2, CozyCategory.BODY_VITALITY.name, "Drink Water", "10:00", true),
-        ActivityItem(3, CozyCategory.MIND_SPACE.name, "Meditation", "07:00", false),
-        ActivityItem(4, CozyCategory.DAILY_RHYTHMS.name, "Bedtime Reading", "22:00", false),
+        ActivityItem(1, CozyCategory.BODY_VITALITY.name, "Morning Yoga", CozyCategory.BODY_VITALITY.name, "08:00", false),
+        ActivityItem(2, CozyCategory.BODY_VITALITY.name, "Drink Water", CozyCategory.BODY_VITALITY.name, "10:00", true),
+        ActivityItem(3, CozyCategory.MIND_SPACE.name, "Meditation", CozyCategory.MIND_SPACE.name, "07:00", false),
+        ActivityItem(4, CozyCategory.DAILY_RHYTHMS.name, "Bedtime Reading", CozyCategory.DAILY_RHYTHMS.name, "22:00", false),
     )
 
     MaterialTheme {
