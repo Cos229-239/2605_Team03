@@ -1,0 +1,3 @@
+C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/.cxx/Debug/542u1s32/x86/CMakeFiles/nudgie-logic.dir
+C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/.cxx/Debug/542u1s32/x86/CMakeFiles/edit_cache.dir
+C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/.cxx/Debug/542u1s32/x86/CMakeFiles/rebuild_cache.dir

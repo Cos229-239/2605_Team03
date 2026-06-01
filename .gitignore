@@ -1,69 +1,37 @@
 ###############################################################################
-#
-# .gitignore
-#
-# AUTHOR: Patrick J. Kelly
-# DATE: May 2026
-#
-# PURPOSE:
-# This file tells Git what NOT to upload to GitHub.
-#
-# CORE RULE:
-# If YOU did not type it yourself, it probably does not belong in Git.
-#
-# IMPORTANT ABOUT ORDER (READ THIS):
-# - Git reads this file TOP → BOTTOM
-# - If a file is ignored early, it STAYS ignored
-# - UNLESS a later rule uses "!" to override it
-#
-# → ALL EXCEPTIONS MUST BE AT THE BOTTOM OF THIS FILE
-#
-# If something is not committing when it should:
-# - It is being ignored above
-# - You must explicitly UN-IGNORE it at the bottom
-#
+# CORE RULE: Ignore everything except the app and Documents folders
 ###############################################################################
 
+/*
+!/app/
+!/Documents/
+!/.gitignore
+!/README.md
+!/index.html
+!/roster-v2-sample.json
 
-###############################################################################
-# ENVIRONMENT FILES (STRICT)
-#
-# These often contain:
-# - API keys
-# - passwords
-# - local machine config
-#
-# RULE:
-# NEVER commit real environment files
-#
-# NOTE:
-# We intentionally DO NOT use ".env.*"
-# because it incorrectly ignores files like:
-#   .xcode.env
-###############################################################################
+# Keep essential build files (Recommended for project builds)
+!/build.gradle.kts
+!/settings.gradle.kts
+!/gradle.properties
+!/gradlew
+!/gradlew.bat
+!/gradle/
 
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-
-###############################################################################
-# OS / EDITOR JUNK
-#
-# Shared by: macOS, Windows, VS Code, Visual Studio, JetBrains
-###############################################################################
-
-.DS_Store
-Thumbs.db
-desktop.ini
-
-.vs/
-.vscode/
+# Specific ignores for Android/IDE
 .idea/
+.gradle/
+build/
 *.iml
 local.properties
+.DS_Store
+
+# Android C++ / NDK build artifacts
+.cxx/
+.externalNativeBuild/
+
+# Presentation script
+Presentation_Script.md
 
 *.apk
 *.aab
@@ -153,20 +121,3 @@ firestore-debug.log
 # React Native / Xcode env file (REQUIRED for iOS builds)
 !.xcode.env
 !ios/.xcode.env
-=========
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
->>>>>>>>> Temporary merge branch 2
