@@ -1,8 +1,4 @@
 # ninja log v5
-6	830	8019870390563414	CMakeFiles/nudgie-logic.dir/native-lib.cpp.o	6d6c06a3fb6bbb06
-0	860	8019870390856210	CMakeFiles/nudgie-logic.dir/NudgiePet.cpp.o	30b95f9980a0d9f2
-860	936	8019870391560401	C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/build/intermediates/cxx/Debug/542u1s32/obj/x86_64/libnudgie-logic.so	af9a83d7071981
-0	5	0	clean	9cec83cfc8fe91cb
-20	1750	8019896639466936	CMakeFiles/nudgie-logic.dir/native-lib.cpp.o	6d6c06a3fb6bbb06
-12	1789	8019896639877874	CMakeFiles/nudgie-logic.dir/NudgiePet.cpp.o	30b95f9980a0d9f2
-1790	1967	8019896641565085	C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/build/intermediates/cxx/Debug/542u1s32/obj/x86_64/libnudgie-logic.so	af9a83d7071981
+10	1327	8019923013725972	CMakeFiles/nudgie-logic.dir/native-lib.cpp.o	6d6c06a3fb6bbb06
+0	1368	8019923014169813	CMakeFiles/nudgie-logic.dir/NudgiePet.cpp.o	30b95f9980a0d9f2
+1368	1507	8019923015268649	C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/build/intermediates/cxx/Debug/542u1s32/obj/x86_64/libnudgie-logic.so	af9a83d7071981

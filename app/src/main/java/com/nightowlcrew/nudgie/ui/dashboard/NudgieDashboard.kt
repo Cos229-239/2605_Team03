@@ -145,6 +145,7 @@ fun getThemeStatColors(theme: AppTheme): StatColors {
 }
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
+    object Splash : Screen("splash", "Splash", Icons.Default.FlashOn)
     object Home : Screen("home", "Home", Icons.Filled.Home)
     object Pet : Screen("pet", "Pet", Icons.Filled.Favorite) // New Pet tab
     object Tasks : Screen("tasks", "Tasks", Icons.Filled.CheckCircle)
@@ -201,31 +202,34 @@ fun NudgieDashboardContent(
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = NavySurface,
-                tonalElevation = 8.dp
-            ) {
-                screens.forEach { screen ->
-                    val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                    NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.label) },
-                        label = { Text(screen.label) },
-                        selected = selected,
-                        onClick = {
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.White,
-                            selectedTextColor = Color.White,
-                            unselectedIconColor = LavenderText,
-                            unselectedTextColor = LavenderText,
-                            indicatorColor = Color(0xFF6200EE).copy(alpha = 0.5f) // Glowing purple highlight
+            val showBottomBar = currentDestination?.route != Screen.Splash.route
+            if (showBottomBar) {
+                NavigationBar(
+                    containerColor = NavySurface,
+                    tonalElevation = 8.dp
+                ) {
+                    screens.forEach { screen ->
+                        val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                        NavigationBarItem(
+                            icon = { Icon(screen.icon, contentDescription = screen.label) },
+                            label = { Text(screen.label) },
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Color.White,
+                                selectedTextColor = Color.White,
+                                unselectedIconColor = LavenderText,
+                                unselectedTextColor = LavenderText,
+                                indicatorColor = Color(0xFF6200EE).copy(alpha = 0.5f) // Glowing purple highlight
+                            )
                         )
-                    )
+                    }
                 }
             }
         },
@@ -233,9 +237,16 @@ fun NudgieDashboardContent(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = Screen.Splash.route,
             modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()) // Only apply bottom padding
         ) {
+            composable(Screen.Splash.route) {
+                NudgieSplashScreen(onSplashFinished = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                })
+            }
             composable(Screen.Home.route) {
                 DashboardContent(
                     categorizedActivities = uiState.categorizedActivities,
@@ -245,7 +256,6 @@ fun NudgieDashboardContent(
                     screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     onToggleHabit = onToggleHabit,
                     onUpdatePetName = onUpdatePetName,
-                    onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
                     onDigitalBalanceDoubleTap = {
                         navController.navigate("tasks?openSlider=true")
                     },
@@ -594,7 +604,6 @@ fun DashboardContent(
     screenTimeGoalMillis: Long,
     onToggleHabit: (ActivityItem) -> Unit,
     onUpdatePetName: (String) -> Unit,
-    onUpdateScreenTimeGoal: (Int) -> Unit,
     onDigitalBalanceDoubleTap: () -> Unit,
     streak: Int,
     currency: Int
@@ -611,7 +620,6 @@ fun DashboardContent(
             currentScreenTimeMillis = currentScreenTimeMillis,
             screenTimeGoalMillis = screenTimeGoalMillis,
             onUpdatePetName = onUpdatePetName,
-            onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
             onDigitalBalanceDoubleTap = onDigitalBalanceDoubleTap,
             streak = streak,
             currency = currency
@@ -633,7 +641,6 @@ fun PetFrame(
     currentScreenTimeMillis: Long,
     screenTimeGoalMillis: Long,
     onUpdatePetName: (String) -> Unit,
-    onUpdateScreenTimeGoal: (Int) -> Unit,
     onDigitalBalanceDoubleTap: () -> Unit,
     streak: Int,
     currency: Int
