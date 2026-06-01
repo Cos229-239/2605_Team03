@@ -58,7 +58,7 @@ object IconSwitcherManager {
     /**
      * Returns the currently enabled [NudgieIcon] by checking component states.
      */
-    fun getCurrentIcon(context: Context): NudgieIcon? {
+    fun getCurrentIcon(context: Context): NudgieIcon {
         val packageManager = context.packageManager
         val packageName = context.packageName
 

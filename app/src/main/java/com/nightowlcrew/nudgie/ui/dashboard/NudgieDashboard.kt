@@ -124,6 +124,9 @@ import com.nightowlcrew.nudgie.ui.theme.spStatEnergy
 import com.nightowlcrew.nudgie.ui.theme.spStatHappiness
 import com.nightowlcrew.nudgie.ui.theme.spStatLevel
 import com.nightowlcrew.nudgie.ui.theme.spStatSuccess
+import com.nightowlcrew.nudgie.utils.PetAssetManager
+import com.nightowlcrew.nudgie.utils.PetType
+import androidx.compose.ui.platform.LocalContext
 
 // Helper class to hold dynamic stat colors based on the current theme
 data class StatColors(
@@ -159,6 +162,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     
     NudgieDashboardContent(
         uiState = uiState,
@@ -169,6 +173,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
         onUpdatePetName = { viewModel.updatePetName(it) },
+        onUpdatePetType = { viewModel.updatePetType(it, context) },
         onArchiveHabit = { viewModel.archiveHabit(it) },
         onRestoreHabit = { viewModel.restoreHabit(it) }
     )
@@ -185,12 +190,22 @@ fun NudgieDashboardContent(
     onUpdateScreenTimeGoal: (Int) -> Unit,
     onUpdateTheme: (AppTheme) -> Unit,
     onUpdatePetName: (String) -> Unit,
+    onUpdatePetType: (PetType) -> Unit,
     onArchiveHabit: (HabitEntity) -> Unit,
     onRestoreHabit: (HabitEntity) -> Unit
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    var showPetSelection by remember { mutableStateOf(false) }
+
+    if (showPetSelection) {
+        PetSelectionDialog(
+            onDismissRequest = { showPetSelection = false },
+            onPetSelected = onUpdatePetType,
+            currentPetType = uiState.currentPetType
+        )
+    }
 
     val screens = listOf(
         Screen.Home,
@@ -252,6 +267,7 @@ fun NudgieDashboardContent(
                     categorizedActivities = uiState.categorizedActivities,
                     currentTheme = uiState.currentTheme,
                     petStats = uiState.petStats,
+                    currentPetType = uiState.currentPetType,
                     currentScreenTimeMillis = uiState.currentScreenTimeMillis,
                     screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     onToggleHabit = onToggleHabit,
@@ -266,7 +282,9 @@ fun NudgieDashboardContent(
             composable(Screen.Pet.route) {
                 NudgiePetScreen(
                     petStats = uiState.petStats,
-                    onUpdatePetName = onUpdatePetName
+                    currentPetType = uiState.currentPetType,
+                    onUpdatePetName = onUpdatePetName,
+                    onCustomizeClick = { showPetSelection = true }
                 )
             }
             composable(
@@ -370,14 +388,17 @@ fun PetActionButton(
 }
 
 @Composable
-fun PetActionButtons(modifier: Modifier = Modifier) {
+fun PetActionButtons(
+    onCustomizeClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        PetActionButton("Customize", R.drawable.zustomize)
+        PetActionButton("Customize", R.drawable.zustomize, onClick = onCustomizeClick)
         PetActionButton("Food", R.drawable.feed)
         PetActionButton("Play", R.drawable.play)
         PetActionButton("Bath", R.drawable.bath)
@@ -387,7 +408,9 @@ fun PetActionButtons(modifier: Modifier = Modifier) {
 @Composable
 fun NudgiePetScreen(
     petStats: PetStats,
-    onUpdatePetName: (String) -> Unit
+    currentPetType: PetType,
+    onUpdatePetName: (String) -> Unit,
+    onCustomizeClick: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -425,7 +448,7 @@ fun NudgiePetScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.blue_trashpanda),
+                    painter = painterResource(id = PetAssetManager.getPetDrawable(currentPetType)),
                     contentDescription = "Nudgie Character",
                     modifier = Modifier
                         .size(280.dp)
@@ -438,7 +461,7 @@ fun NudgiePetScreen(
             Spacer(modifier = Modifier.weight(0.5f))
 
             // Action Buttons
-            PetActionButtons()
+            PetActionButtons(onCustomizeClick = onCustomizeClick)
         }
     }
 }
@@ -590,7 +613,9 @@ fun NudgiePetScreenPreview() {
     NudgieTheme {
         NudgiePetScreen(
             petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
-            onUpdatePetName = {}
+            currentPetType = PetType.BLUE,
+            onUpdatePetName = {},
+            onCustomizeClick = {}
         )
     }
 }
@@ -600,6 +625,7 @@ fun DashboardContent(
     categorizedActivities: Map<CozyCategory, List<ActivityItem>>,
     currentTheme: AppTheme,
     petStats: PetStats,
+    currentPetType: PetType,
     currentScreenTimeMillis: Long,
     screenTimeGoalMillis: Long,
     onToggleHabit: (ActivityItem) -> Unit,
@@ -617,6 +643,7 @@ fun DashboardContent(
         PetFrame(
             petStats = petStats,
             currentTheme = currentTheme,
+            currentPetType = currentPetType,
             currentScreenTimeMillis = currentScreenTimeMillis,
             screenTimeGoalMillis = screenTimeGoalMillis,
             onUpdatePetName = onUpdatePetName,
@@ -638,6 +665,7 @@ fun DashboardContent(
 fun PetFrame(
     petStats: PetStats,
     currentTheme: AppTheme,
+    currentPetType: PetType,
     currentScreenTimeMillis: Long,
     screenTimeGoalMillis: Long,
     onUpdatePetName: (String) -> Unit,
@@ -894,7 +922,7 @@ fun PetFrame(
                 Spacer(Modifier.weight(1f))
                 // Pixel Art Pet
                 Image(
-                    painter = painterResource(id = R.drawable.blue_trashpanda),
+                    painter = painterResource(id = PetAssetManager.getPetDrawable(currentPetType)),
                     contentDescription = "Your Pet",
                     modifier = Modifier.size(225.dp), // Enlarged to 225.dp
                     contentScale = ContentScale.Fit
@@ -1158,6 +1186,7 @@ fun NudgieDashboardPreview() {
             onUpdateScreenTimeGoal = {},
             onUpdateTheme = {},
             onUpdatePetName = {},
+            onUpdatePetType = {},
             onArchiveHabit = {},
             onRestoreHabit = {}
         )

@@ -14,6 +14,9 @@ import com.nightowlcrew.nudgie.data.HabitEntity
 import com.nightowlcrew.nudgie.data.HabitLogEntity
 import com.nightowlcrew.nudgie.data.HabitRepository
 import com.nightowlcrew.nudgie.data.HabitRepositoryImpl
+import com.nightowlcrew.nudgie.utils.IconSwitcherManager
+import com.nightowlcrew.nudgie.utils.PetAssetManager
+import com.nightowlcrew.nudgie.utils.PetType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +46,7 @@ data class DashboardUiState(
     val screenTimeGoalMillis: Long = 14400000L,
     val currentTheme: AppTheme = AppTheme.RETRO_SPACE,
     val petStats: PetStats = PetStats(),
+    val currentPetType: PetType = PetType.BLUE,
     val isLoading: Boolean = true
 )
 
@@ -77,16 +81,23 @@ class NudgieViewModel(
     )
 
     private val _petName = MutableStateFlow(sharedPreferences.getString("pet_name", "Your Pet") ?: "Your Pet")
+    private val _currentPetType = MutableStateFlow(
+        try {
+            PetType.valueOf(sharedPreferences.getString("pet_type", PetType.BLUE.name) ?: PetType.BLUE.name)
+        } catch (e: Exception) {
+            PetType.BLUE
+        }
+    )
     private val _happiness = MutableStateFlow(85)
     private val _energy = MutableStateFlow(62)
     private val _petLevel = MutableStateFlow(5)
     private val _petXP = MutableStateFlow(450)
 
     init {
-        // Prepopulate default habits if it's the first time
-        prepopulateDefaultHabits()
-
         viewModelScope.launch {
+            // Prepopulate default habits if it's the first time
+            prepopulateDefaultHabits()
+
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
             val petStatsFlow = combine(_petName, _happiness, _energy, _petLevel, _petXP) { name, h, e, l, xp ->
@@ -97,8 +108,9 @@ class NudgieViewModel(
                 repository.getAllHabitsWithLogs(),
                 repository.getScreenTimeForDate(today),
                 petStatsFlow,
-                _currentTheme
-            ) { activities, screenTime, petStats, theme ->
+                _currentTheme,
+                _currentPetType
+            ) { activities, screenTime, petStats, theme, petType ->
                 val categorized = CozyCategory.entries.associateWith { category ->
                     activities.filter { it.category == category.name }
                 }.filterValues { it.isNotEmpty() }
@@ -110,6 +122,7 @@ class NudgieViewModel(
                     screenTimeGoalMillis = screenTime?.targetLimitMillis ?: 14400000L,
                     petStats = petStats,
                     currentTheme = theme,
+                    currentPetType = petType,
                     isLoading = false
                 )
             }.collect { updatedState ->
@@ -128,8 +141,16 @@ class NudgieViewModel(
         sharedPreferences.edit().putString("pet_name", newName).apply()
     }
 
+    fun updatePetType(newType: PetType, context: Context) {
+        _currentPetType.value = newType
+        sharedPreferences.edit().putString("pet_type", newType.name).apply()
+        
+        // Sync the app icon
+        IconSwitcherManager.switchToIcon(context, PetAssetManager.getNudgieIcon(newType))
+    }
+
     private fun prepopulateDefaultHabits() {
-        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v5_added", false)
+        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v7_added", false)
         if (!alreadyAdded) {
             viewModelScope.launch {
                 HABIT_TEMPLATES.forEach { (category, templates) ->
@@ -145,7 +166,7 @@ class NudgieViewModel(
                         )
                     }
                 }
-                sharedPreferences.edit().putBoolean("default_habits_v5_added", true).apply()
+                sharedPreferences.edit().putBoolean("default_habits_v7_added", true).apply()
             }
         }
     }
@@ -248,6 +269,10 @@ class NudgieViewModel(
         val penalty = 15
         val nonPunishmentFloor = 30
         _happiness.value = (_happiness.value - penalty).coerceAtLeast(nonPunishmentFloor)
+    }
+
+    fun drainEnergy(amount: Int) {
+        _energy.value = (_energy.value - amount).coerceAtLeast(0)
     }
 
     private fun completeHabit() {
