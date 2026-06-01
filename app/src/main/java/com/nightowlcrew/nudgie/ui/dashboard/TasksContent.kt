@@ -1,7 +1,6 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,16 +24,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,7 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
@@ -56,10 +52,7 @@ import androidx.compose.ui.unit.sp
 import com.nightowlcrew.nudgie.R
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
-import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
 import com.nightowlcrew.nudgie.data.HabitEntity
-import com.nightowlcrew.nudgie.data.HabitTemplate
-import com.nightowlcrew.nudgie.data.toEntity
 import com.nightowlcrew.nudgie.ui.theme.LavenderText
 import com.nightowlcrew.nudgie.ui.theme.NavyBackground
 import com.nightowlcrew.nudgie.ui.theme.NavyOutline
@@ -75,15 +68,10 @@ fun TasksContent(
     onArchiveHabit: (HabitEntity) -> Unit,
     onRestoreHabit: (HabitEntity) -> Unit,
 ) {
-    var selectedCategory by remember { mutableStateOf<CozyCategory?>(null) }
-    var expandedCategoryId by remember { mutableStateOf<CozyCategory?>(null) }
+    // Categories based on CozyCategory + "All"
+    val categoryTabs = listOf("All") + CozyCategory.entries.map { it.displayName.split(" ").first() }
+    var selectedCategoryTab by remember { mutableStateOf("All") }
     
-    val filteredActivities = if (selectedCategory == null) {
-        activities
-    } else {
-        activities.filter { it.icon == selectedCategory!!.name }
-    }
-
     val completedCount = activities.count { it.isCompleted }
     val totalCount = activities.size
     val progress = if (totalCount > 0) completedCount.toFloat() / totalCount else 0f
@@ -92,286 +80,139 @@ fun TasksContent(
         modifier = Modifier
             .fillMaxSize()
             .background(NavyBackground)
-            .padding(16.dp)
     ) {
-        // Header Section
-        Text(
-            text = "My Tasks",
-            style = MaterialTheme.typography.headlineMedium,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        // Progress Card
-        Card(
+        // Header Image and Progress Section (Sticky)
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
-                .padding(bottom = 16.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = NavySurface)
+                .height(240.dp)
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                Image(
-                    painter = painterResource(id = R.drawable.pethero_dashboard),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.Bottom
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Daily Progress",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "$completedCount / $totalCount Completed",
-                            color = Color.White,
-                            fontSize = 14.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(12.dp)
-                            .clip(RoundedCornerShape(6.dp)),
-                        color = SuccessGreen,
-                        trackColor = Color.White.copy(alpha = 0.3f),
-                        strokeCap = StrokeCap.Round
-                    )
-                }
-            }
-        }
-
-        // Category Filters
-        LazyRow(
-            modifier = Modifier.padding(bottom = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item {
-                CategoryChip(
-                    label = "All",
-                    isSelected = selectedCategory == null,
-                    onClick = { selectedCategory = null }
-                )
-            }
-            items(CozyCategory.entries) { category ->
-                CategoryChip(
-                    label = category.displayName.split(" ").first(),
-                    isSelected = selectedCategory == category,
-                    onClick = { selectedCategory = category }
-                )
-            }
-        }
-
-        // Task List with Management Behavior
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (selectedCategory == null) {
-                // Show categorized view with templates when "All" is selected (similar to old settings)
-                items(CozyCategory.entries) { category ->
-                    ExpandableTaskSection(
-                        category = category,
-                        habits = activities.filter { it.icon == category.name },
-                        archivedHabits = archivedHabits.filter { it.icon == category.name },
-                        isExpanded = expandedCategoryId == category,
-                        onToggleExpand = {
-                            expandedCategoryId = if (expandedCategoryId == category) null else category
-                        },
-                        onToggleHabit = onToggleHabit,
-                        onAddHabit = onAddHabit,
-                        onArchiveHabit = onArchiveHabit,
-                        onRestoreHabit = onRestoreHabit
-                    )
-                }
-            } else {
-                // Show flat list for specific category
-                items(filteredActivities) { task ->
-                    TaskListItem(
-                        task = task,
-                        onToggle = { onToggleHabit(task) },
-                        onDelete = { onArchiveHabit(task.toEntity()) }
-                    )
-                }
-                
-                // Also show templates for this category at the bottom
-                item {
-                    Text(
-                        "Add Suggested Tasks",
-                        color = LavenderText,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 12.dp)
-                    )
-                }
-                
-                val templates = HABIT_TEMPLATES[selectedCategory!!] ?: emptyList()
-                items(templates) { template ->
-                    val activeHabit = activities.find { (it.originalTitle == template.title) && (it.icon == selectedCategory!!.name) }
-                    val archivedHabit = archivedHabits.find { (it.title == template.title) && (it.icon == selectedCategory!!.name) }
-
-                    StockTemplateItem(
-                        template = template,
-                        activeHabit = activeHabit,
-                        archivedHabit = archivedHabit,
-                        onAdd = { onAddHabit(template.title, selectedCategory!!, template.defaultFrequency, true) },
-                        onArchive = { activeHabit?.let { onArchiveHabit(it.toEntity()) } },
-                        onRestore = { archivedHabit?.let { onRestoreHabit(it) } }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ExpandableTaskSection(
-    category: CozyCategory,
-    habits: List<ActivityItem>,
-    archivedHabits: List<HabitEntity>,
-    isExpanded: Boolean,
-    onToggleExpand: () -> Unit,
-    onToggleHabit: (ActivityItem) -> Unit,
-    onAddHabit: (String, CozyCategory, Int, Boolean) -> Unit,
-    onArchiveHabit: (HabitEntity) -> Unit,
-    onRestoreHabit: (HabitEntity) -> Unit,
-) {
-    val rotationState by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "RotationAnimation"
-    )
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onToggleExpand() },
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = NavySurface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, NavyOutline)
-        ) {
-            Row(
+            Image(
+                painter = painterResource(id = R.drawable.task_header),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            
+            // Gradient Overlay for readability
+            Box(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = category.displayName,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = LavenderText,
-                    modifier = Modifier.rotate(rotationState)
-                )
-            }
-        }
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, NavyBackground.copy(alpha = 0.4f), NavyBackground)
+                        )
+                    )
+            )
 
-        AnimatedVisibility(visible = isExpanded) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Bottom
             ) {
-                // Active Habits in this category
-                habits.forEach { habit ->
-                    TaskListItem(
-                        task = habit,
-                        onToggle = { onToggleHabit(habit) },
-                        onDelete = { onArchiveHabit(habit.toEntity()) }
+                Text(
+                    text = "My Tasks",
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "🏆", fontSize = 20.sp)
+                    Text(
+                        text = "$completedCount / $totalCount Completed",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = SuccessGreen,
+                    trackColor = Color.White.copy(alpha = 0.2f),
+                    strokeCap = StrokeCap.Round
+                )
+            }
+        }
 
-                // Templates for this category
-                val templates = HABIT_TEMPLATES[category] ?: emptyList()
-                templates.forEach { template ->
-                    val activeHabit = habits.find { it.originalTitle == template.title }
-                    val archivedHabit = archivedHabits.find { it.title == template.title }
-                    
-                    StockTemplateItem(
-                        template = template,
-                        activeHabit = activeHabit,
-                        archivedHabit = archivedHabit,
-                        onAdd = { onAddHabit(template.title, category, template.defaultFrequency, true) },
-                        onArchive = { activeHabit?.let { onArchiveHabit(it.toEntity()) } },
-                        onRestore = { archivedHabit?.let { onRestoreHabit(it) } }
+        // Main Content Area (Tabs + List + Button)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
+            // 5 Tabs (All + 4 Categories)
+            LazyRow(
+                modifier = Modifier.padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(categoryTabs) { tab ->
+                    CategoryChip(
+                        label = tab,
+                        isSelected = selectedCategoryTab == tab,
+                        onClick = { selectedCategoryTab = tab }
                     )
                 }
             }
+
+            // Scrollable Task List
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                val filteredTasks = if (selectedCategoryTab == "All") {
+                    activities
+                } else {
+                    activities.filter { it.icon == selectedCategoryTab || it.description.contains(selectedCategoryTab, ignoreCase = true) }
+                }
+
+                items(filteredTasks) { task ->
+                    TaskListItem(
+                        task = task,
+                        onToggle = { onToggleHabit(task) }
+                    )
+                }
+                
+                // Extra padding at the bottom so list doesn't get hidden behind button
+                item { Spacer(modifier = Modifier.height(80.dp)) }
+            }
         }
     }
-}
-
-@Composable
-fun StockTemplateItem(
-    template: HabitTemplate,
-    activeHabit: ActivityItem?,
-    archivedHabit: HabitEntity?,
-    onAdd: () -> Unit,
-    onArchive: () -> Unit,
-    onRestore: () -> Unit
-) {
-    val isActive = activeHabit != null
-    val isArchived = archivedHabit != null
-
-    Card(
+    
+    // Persistent Add Task Button at the bottom
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable { 
-                when {
-                    isActive -> onArchive()
-                    isArchived -> onRestore()
-                    else -> onAdd()
-                }
-            },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) NavySurface else NavySurface.copy(alpha = 0.5f)
-        ),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp, 
-            if (isActive) NavyOutline else NavyOutline.copy(alpha = 0.5f)
-        )
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        Row(
+        Button(
+            onClick = { /* TODO */ },
             modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)),
+            shape = RoundedCornerShape(24.dp)
         ) {
-            Text(
-                text = template.title,
-                color = if (isActive) Color.White else LavenderText,
-                fontSize = 16.sp
-            )
-            Icon(
-                imageVector = if (isActive) Icons.Default.Delete else Icons.Default.Add,
-                contentDescription = if (isActive) "Archive Task" else "Add Task",
-                tint = if (isActive) Color.Red.copy(alpha = 0.7f) else LavenderText,
-                modifier = Modifier.size(20.dp)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("+ Add Task", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -379,35 +220,79 @@ fun StockTemplateItem(
 @Composable
 fun CategoryChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
-        modifier = Modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
         color = if (isSelected) Color(0xFF2D2D3F) else Color.Transparent,
-        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, NavyOutline)
+        border = if (isSelected) null else BorderStroke(1.dp, NavyOutline),
+        modifier = Modifier.height(40.dp)
     ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-            color = if (isSelected) Color.White else LavenderText,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-        )
+        Box(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = label,
+                color = if (isSelected) Color.White else LavenderText,
+                fontSize = 14.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            )
+        }
     }
 }
 
 @Composable
-fun TaskListItem(task: ActivityItem, onToggle: () -> Unit, onDelete: () -> Unit) {
+fun TaskListItem(task: ActivityItem, onToggle: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = NavySurface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, NavyOutline)
+        border = BorderStroke(1.dp, NavyOutline.copy(alpha = 0.5f))
     ) {
         Row(
             modifier = Modifier
-                .padding(12.dp)
+                .padding(16.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Task Checkbox (Clickable area separate or the whole row?)
+            // Icon backdrop
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = NavyBackground.copy(alpha = 0.5f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = getIconForTask(task.description),
+                        fontSize = 24.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Info row: Description + XP (XP on the right in mockup)
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = task.description,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                
+                Text(
+                    text = "20 XP",
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+            }
+
+            // Circular Checkmark
             Box(
                 modifier = Modifier
                     .size(28.dp)
@@ -421,53 +306,17 @@ fun TaskListItem(task: ActivityItem, onToggle: () -> Unit, onDelete: () -> Unit)
                     Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
                 }
             }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Task Info
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = task.description,
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "20 XP",
-                    color = LavenderText,
-                    fontSize = 12.sp
-                )
-            }
-
-            // Delete Button (New Behavior from Settings)
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete Task",
-                    tint = Color.Red.copy(alpha = 0.7f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
         }
     }
 }
 
-@Composable
-fun Surface(
-    modifier: Modifier = Modifier,
-    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(0.dp),
-    color: Color = MaterialTheme.colorScheme.surface,
-    border: androidx.compose.foundation.BorderStroke? = null,
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = modifier
-            .clip(shape)
-            .background(color)
-            .then(if (border != null) Modifier.border(border, shape) else Modifier),
-        contentAlignment = Alignment.Center
-    ) {
-        content()
+fun getIconForTask(description: String): String {
+    return when {
+        description.contains("Spanish", ignoreCase = true) -> "📖"
+        description.contains("Math", ignoreCase = true) -> "🧮"
+        description.contains("Workout", ignoreCase = true) -> "🏋️"
+        description.contains("Journal", ignoreCase = true) -> "📓"
+        else -> "📌"
     }
 }
 
@@ -475,10 +324,10 @@ fun Surface(
 @Composable
 fun TasksContentPreview() {
     val mockTasks = listOf(
-        ActivityItem(id = 1, icon = CozyCategory.BODY_VITALITY.name, description = "Spanish Lesson", time = "10:00 AM", isCompleted = true, originalTitle = "Spanish Lesson"),
-        ActivityItem(id = 2, icon = CozyCategory.MIND_SPACE.name, description = "Math Practice", time = "11:00 AM", isCompleted = true, originalTitle = "Math Practice"),
-        ActivityItem(id = 3, icon = CozyCategory.BODY_VITALITY.name, description = "Workout", time = "5:00 PM", isCompleted = false, originalTitle = "Workout"),
-        ActivityItem(id = 4, icon = CozyCategory.MIND_SPACE.name, description = "Journal", time = "9:00 PM", isCompleted = false, originalTitle = "Journal")
+        ActivityItem(id = 1, icon = "📖", description = "Spanish Lesson", time = "10:00 AM", isCompleted = true),
+        ActivityItem(id = 2, icon = "🧮", description = "Math Practice", time = "11:00 AM", isCompleted = true),
+        ActivityItem(id = 3, icon = "🏋️", description = "Workout", time = "5:00 PM", isCompleted = false),
+        ActivityItem(id = 4, icon = "📓", description = "Journal", time = "9:00 PM", isCompleted = false)
     )
     TasksContent(
         activities = mockTasks,

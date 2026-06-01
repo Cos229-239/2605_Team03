@@ -374,23 +374,7 @@ fun NudgiePetScreen(
                 .padding(bottom = 32.dp)
         ) {
             // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Your Nudgie",
-                    style = TextStyle(
-                        fontFamily = VT323,
-                        fontSize = 32.sp,
-                        color = Color.White
-                    )
-                )
-                HeartsRow(happiness = petStats.happiness)
-            }
+
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -509,6 +493,24 @@ fun NudgieTopCard(
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Your Nudgie",
+                    style = TextStyle(
+                        fontFamily = VT323,
+                        fontSize = 32.sp,
+                        color = Color.White
+                    )
+                )
+                HeartsRow(happiness = petStats.happiness)
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
