@@ -163,7 +163,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    
+
     NudgieDashboardContent(
         uiState = uiState,
         archivedHabits = archivedHabits,
@@ -289,9 +289,9 @@ fun NudgieDashboardContent(
             }
             composable(
                 route = "tasks?openSlider={openSlider}",
-                arguments = listOf(navArgument("openSlider") { 
+                arguments = listOf(navArgument("openSlider") {
                     type = NavType.BoolType
-                    defaultValue = false 
+                    defaultValue = false
                 })
             ) { backStackEntry ->
                 val openSlider = backStackEntry.arguments?.getBoolean("openSlider") ?: false
@@ -883,7 +883,7 @@ fun PetFrame(
                 // Digital Balance Bar Section
                 val goalHours = screenTimeGoalMillis / 3600000f
                 val currentHours = currentScreenTimeMillis / 3600000f
-                
+
                 Column(
                     modifier = Modifier.pointerInput(Unit) {
                         detectTapGestures(
@@ -988,7 +988,7 @@ fun TasksSection(
 ) {
     // Filter categories that have tasks
     val activeCategories = CozyCategory.entries.filter { categorizedActivities[it]?.isNotEmpty() == true }
-    
+
     if (activeCategories.isEmpty()) return
 
     var selectedCategory by remember { mutableStateOf(activeCategories.first()) }
@@ -1013,7 +1013,7 @@ fun TasksSection(
                 color = LavenderText, // Match mockup
                 fontSize = 18.sp, // Increased font size (Orange Line)
                 fontWeight = FontWeight.Normal
-                
+
             )
         }
 
@@ -1034,7 +1034,7 @@ fun TasksSection(
                     CozyCategory.SELF_CARE_RITUALS -> "✨"
                     CozyCategory.CONNECTIONS -> "🤝"
                 }
-                
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -1078,7 +1078,7 @@ fun TasksSection(
 fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (ActivityItem) -> Unit) {
     val isCompleted = task.isCompleted
     val statColors = getThemeStatColors(currentTheme)
-    val successColor = statColors.success 
+    val successColor = statColors.success
 
     Card(
         colors = CardDefaults.cardColors(containerColor = NavySurface),
@@ -1121,14 +1121,14 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    task.description, 
-                    color = Color.White, 
+                    task.description,
+                    color = Color.White,
                     fontSize = 20.sp, // Increased font size (Orange Line)
                     fontWeight = FontWeight.SemiBold
                 )
-                
+
                 Spacer(Modifier.height(4.dp))
-                
+
                 // Task Progress Bar
                 val progress = if (task.targetCount > 0) task.currentCount.toFloat() / task.targetCount else 0f
                 LinearProgressIndicator(
