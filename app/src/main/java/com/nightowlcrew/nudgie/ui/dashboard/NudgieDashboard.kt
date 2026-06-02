@@ -173,7 +173,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
         onUpdatePetName = { viewModel.updatePetName(it) },
-        onUpdatePetType = { viewModel.updatePetType(it, context) },
+        onUpdatePetType = { viewModel.updatePetType(it) },
         onArchiveHabit = { viewModel.archiveHabit(it) },
         onRestoreHabit = { viewModel.restoreHabit(it) }
     )

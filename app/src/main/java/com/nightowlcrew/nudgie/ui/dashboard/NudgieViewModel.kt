@@ -141,12 +141,17 @@ class NudgieViewModel(
         sharedPreferences.edit().putString("pet_name", newName).apply()
     }
 
-    fun updatePetType(newType: PetType, context: Context) {
+    fun updatePetType(newType: PetType) {
         _currentPetType.value = newType
         sharedPreferences.edit().putString("pet_type", newType.name).apply()
-        
-        // Sync the app icon
-        IconSwitcherManager.switchToIcon(context, PetAssetManager.getNudgieIcon(newType))
+    }
+
+    /**
+     * Synchronizes the Android Launcher icon with the currently selected PetType.
+     * WARNING: This will likely trigger an application restart by the system.
+     */
+    fun syncAppIcon(context: Context) {
+        IconSwitcherManager.switchToIcon(context, PetAssetManager.getNudgieIcon(_currentPetType.value))
     }
 
     private fun prepopulateDefaultHabits() {
