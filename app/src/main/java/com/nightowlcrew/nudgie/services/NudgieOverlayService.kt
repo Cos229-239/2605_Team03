@@ -16,8 +16,11 @@ import androidx.compose.foundation.shape.CircleShape
 
 class NudgieOverlayService : Service()
 {
+    private lateinit var windowManager: WindowManager
+
     override fun onBind(intent: Intent?): IBinder?
     {
         return null
     }
 }
+
