@@ -67,5 +67,12 @@ class NudgieOverlayService : Service()
 
         windowManager.addView(composeView, params)
     }
+    override fun onDestroy() {
+        super.onDestroy()
+
+        if (::composeView.isInitialized) {
+            windowManager.removeView(composeView)
+        }
+    }
 }
 
