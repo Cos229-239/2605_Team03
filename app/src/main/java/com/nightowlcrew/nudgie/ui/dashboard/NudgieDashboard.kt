@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -614,11 +615,14 @@ fun ActivityLogItem(
     currentTheme: AppTheme,
     onToggleHabit: (ActivityItem) -> Unit,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val itemBgColor = MaterialTheme.colorScheme.surfaceVariant
     val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     val isCompleted = activity.currentCount >= activity.targetCount
     val contentAlpha = if (isCompleted) 0.8f else 1.0f
-
+    val displayTime = androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(activity.time)
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -682,11 +686,46 @@ fun ActivityLogItem(
 
                 // Time
                 Text(
-                    text = activity.time,
+                    text = displayTime.value,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 1f),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
+                Spacer(modifier = Modifier.width(8.dp))
+                androidx.compose.material3.IconButton(
+                    onClick = {
+                        val calendar = java.util.Calendar.getInstance()
+                        val currentHour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+                        val currentMinute = calendar.get(java.util.Calendar.MINUTE)
+
+                        android.app.TimePickerDialog(
+                            context,
+                            { _, selectedHour, selectedMinute ->
+                                val triggerTime = java.util.Calendar.getInstance().apply {
+                                    set(java.util.Calendar.HOUR_OF_DAY, selectedHour)
+                                    set(java.util.Calendar.MINUTE, selectedMinute)
+                                    set(java.util.Calendar.SECOND, 0)
+                                }.timeInMillis
+
+
+                                 AlarmUtils.setExactAlarm(context, triggerTime)
+
+                                val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+                                displayTime.value = formattedTime //
+                            },
+                            currentHour,
+                            currentMinute,
+                            false
+                        ).show()
+                    },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    androidx.compose.material3.Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Notifications,
+                        contentDescription = "Set Reminder",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
             // Multistep checkboxes (for habits like Water)
