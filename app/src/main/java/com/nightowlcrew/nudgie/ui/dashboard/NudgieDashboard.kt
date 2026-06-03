@@ -34,6 +34,10 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.HourglassBottom
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Settings
@@ -159,7 +163,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
-    
+
     NudgieDashboardContent(
         uiState = uiState,
         archivedHabits = archivedHabits,
@@ -271,9 +275,9 @@ fun NudgieDashboardContent(
             }
             composable(
                 route = "tasks?openSlider={openSlider}",
-                arguments = listOf(navArgument("openSlider") { 
+                arguments = listOf(navArgument("openSlider") {
                     type = NavType.BoolType
-                    defaultValue = false 
+                    defaultValue = false
                 })
             ) { backStackEntry ->
                 val openSlider = backStackEntry.arguments?.getBoolean("openSlider") ?: false
@@ -851,11 +855,134 @@ fun PetFrame(
                         strokeCap = StrokeCap.Round
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ActivityLogItem(
+    activity: ActivityItem,
+    currentTheme: AppTheme,
+    onToggleHabit: (ActivityItem) -> Unit,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val itemBgColor = MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val isCompleted = activity.currentCount >= activity.targetCount
+    val contentAlpha = if (isCompleted) 0.8f else 1.0f
+    val displayTime = androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(activity.time)
+    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .nudgieCardShadow(currentTheme, 4.dp, RoundedCornerShape(16.dp))
+            .clickable {
+                if (activity.targetCount <= 1) {
+                    onToggleHabit(activity)
+                }
+            },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = itemBgColor)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Status Icon Box (Acts as Checkbox for single-step habits)
+                if (activity.targetCount <= 1) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), MaterialTheme.shapes.small)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (activity.isCompleted) {
+                            Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                } else {
+                    // Multistep habits: use a simple bullet point/indicator or hide completely
+                    // since we have the row of checkboxes below.
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
+
+                // Emoji/Icon
+                if (activity.icon.length <= 2) {
+                    Text(text = activity.icon, fontSize = 20.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
+
+                // Description
+                Text(
+                    text = activity.description,
+                    color = contentColor.copy(alpha = contentAlpha),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Time
+                Text(
+                    text = displayTime.value,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                androidx.compose.material3.IconButton(
+                    onClick = {
+                        val calendar = java.util.Calendar.getInstance()
+                        val currentHour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+                        val currentMinute = calendar.get(java.util.Calendar.MINUTE)
+
+                        android.app.TimePickerDialog(
+                            context,
+                            { _, selectedHour, selectedMinute ->
+                                val triggerTime = java.util.Calendar.getInstance().apply {
+                                    set(java.util.Calendar.HOUR_OF_DAY, selectedHour)
+                                    set(java.util.Calendar.MINUTE, selectedMinute)
+                                    set(java.util.Calendar.SECOND, 0)
+                                }.timeInMillis
+
+
+                                 AlarmUtils.setExactAlarm(context, triggerTime)
+
+                                val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+                                displayTime.value = formattedTime //
+                            },
+                            currentHour,
+                            currentMinute,
+                            false
+                        ).show()
+                    },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    androidx.compose.material3.Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Notifications,
+                        contentDescription = "Set Reminder",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
 
                 // Digital Balance Bar Section
                 val goalHours = screenTimeGoalMillis / 3600000f
                 val currentHours = currentScreenTimeMillis / 3600000f
-                
+
                 Column(
                     modifier = Modifier.pointerInput(Unit) {
                         detectTapGestures(
@@ -960,7 +1087,7 @@ fun TasksSection(
 ) {
     // Filter categories that have tasks
     val activeCategories = CozyCategory.entries.filter { categorizedActivities[it]?.isNotEmpty() == true }
-    
+
     if (activeCategories.isEmpty()) return
 
     var selectedCategory by remember { mutableStateOf(activeCategories.first()) }
@@ -985,7 +1112,7 @@ fun TasksSection(
                 color = LavenderText, // Match mockup
                 fontSize = 18.sp, // Increased font size (Orange Line)
                 fontWeight = FontWeight.Normal
-                
+
             )
         }
 
@@ -1006,7 +1133,7 @@ fun TasksSection(
                     CozyCategory.SELF_CARE_RITUALS -> "✨"
                     CozyCategory.CONNECTIONS -> "🤝"
                 }
-                
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -1050,7 +1177,7 @@ fun TasksSection(
 fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (ActivityItem) -> Unit) {
     val isCompleted = task.isCompleted
     val statColors = getThemeStatColors(currentTheme)
-    val successColor = statColors.success 
+    val successColor = statColors.success
 
     Card(
         colors = CardDefaults.cardColors(containerColor = NavySurface),
@@ -1093,14 +1220,14 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    task.description, 
-                    color = Color.White, 
+                    task.description,
+                    color = Color.White,
                     fontSize = 20.sp, // Increased font size (Orange Line)
                     fontWeight = FontWeight.SemiBold
                 )
-                
+
                 Spacer(Modifier.height(4.dp))
-                
+
                 // Task Progress Bar
                 val progress = if (task.targetCount > 0) task.currentCount.toFloat() / task.targetCount else 0f
                 LinearProgressIndicator(
