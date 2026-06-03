@@ -1,12 +1,12 @@
 [
 {
-  "directory": "C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/.cxx/Debug/542u1s32/x86",
-  "command": "C:\\Users\\humbo\\AppData\\Local\\Android\\Sdk\\ndk\\28.2.13676358\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=i686-none-linux-android26 --sysroot=C:/Users/humbo/AppData/Local/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dnudgie_logic_EXPORTS -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -o CMakeFiles\\nudgie-logic.dir\\native-lib.cpp.o -c C:\\Users\\humbo\\OneDrive\\Documents\\GitHub\\2605_Team03\\app\\src\\main\\cpp\\native-lib.cpp",
-  "file": "C:\\Users\\humbo\\OneDrive\\Documents\\GitHub\\2605_Team03\\app\\src\\main\\cpp\\native-lib.cpp"
+  "directory": "F:/Habit tracker app/app/.cxx/Debug/542u1s32/x86",
+  "command": "C:\\Users\\alecr\\AppData\\Local\\Android\\Sdk\\ndk\\28.2.13676358\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=i686-none-linux-android26 --sysroot=C:/Users/alecr/AppData/Local/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dnudgie_logic_EXPORTS -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -o CMakeFiles\\nudgie-logic.dir\\native-lib.cpp.o -c \"F:\\Habit tracker app\\app\\src\\main\\cpp\\native-lib.cpp\"",
+  "file": "F:\\Habit tracker app\\app\\src\\main\\cpp\\native-lib.cpp"
 },
 {
-  "directory": "C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/.cxx/Debug/542u1s32/x86",
-  "command": "C:\\Users\\humbo\\AppData\\Local\\Android\\Sdk\\ndk\\28.2.13676358\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=i686-none-linux-android26 --sysroot=C:/Users/humbo/AppData/Local/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dnudgie_logic_EXPORTS -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -o CMakeFiles\\nudgie-logic.dir\\NudgiePet.cpp.o -c C:\\Users\\humbo\\OneDrive\\Documents\\GitHub\\2605_Team03\\app\\src\\main\\cpp\\NudgiePet.cpp",
-  "file": "C:\\Users\\humbo\\OneDrive\\Documents\\GitHub\\2605_Team03\\app\\src\\main\\cpp\\NudgiePet.cpp"
+  "directory": "F:/Habit tracker app/app/.cxx/Debug/542u1s32/x86",
+  "command": "C:\\Users\\alecr\\AppData\\Local\\Android\\Sdk\\ndk\\28.2.13676358\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=i686-none-linux-android26 --sysroot=C:/Users/alecr/AppData/Local/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dnudgie_logic_EXPORTS -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -o CMakeFiles\\nudgie-logic.dir\\NudgiePet.cpp.o -c \"F:\\Habit tracker app\\app\\src\\main\\cpp\\NudgiePet.cpp\"",
+  "file": "F:\\Habit tracker app\\app\\src\\main\\cpp\\NudgiePet.cpp"
 }
 ]
