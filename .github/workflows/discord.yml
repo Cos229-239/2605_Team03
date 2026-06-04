@@ -493,10 +493,30 @@ jobs:
               status_cycle = input_cycle or "cycle"
               summary_text = input_summary or "No branch summary provided."
               details_rows = [line for line in (input_details or "").splitlines() if line.strip()]
+              diverged_embeds = []
+              mention_candidates = []
+              for row in details_rows:
+                  raw = str(row or "").strip()
+                  if not raw or "—" not in raw:
+                      continue
+                  branch_name, _, remainder = raw.partition("—")
+                  branch_name = branch_name.strip()
+                  state_text = remainder.strip()
+                  state_name = state_text.split("(", 1)[0].strip()
+                  if state_name == "Diverged" and branch_diverged_notice_enabled(branch_name):
+                      compare = fetch_branch_compare(repo, "dev", branch_name)
+                      diverged_embeds.append(build_branch_fix_help_embed(repo, branch_name, compare))
+                      mention = branch_mention_text(branch_name)
+                      if mention:
+                          mention_candidates.append(mention)
+              mention_text = " ".join(dict.fromkeys([item for item in mention_candidates if item]))
               payload = {
+                  "content": mention_text,
+                  "allowed_mentions": {"parse": ["users"]} if mention_text else {"parse": []},
                   "embeds": [
-                      build_branch_status_embed(status_repo, status_cycle, summary_text, details_rows, input_headline or "Branch VS Dev Update")
-                  ]
+                      build_branch_status_embed(status_repo, status_cycle, summary_text, details_rows, input_headline or "Branch VS Dev Update"),
+                      *diverged_embeds,
+                  ][:10]
               }
           elif event_name == "schedule":
               if not notify_enabled:
