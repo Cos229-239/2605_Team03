@@ -3,11 +3,10 @@ package com.nightowlcrew.nudgie.utils
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.nightowlcrew.nudgie.R
 
-object NotificationUtils {
+object  NotificationUtils {
     private const val CHANNEL_SCREEN_TIME = "screen_time_alerts"
     private const val CHANNEL_HABITS = "habit_reminders"
     private const val CHANNEL_GREETINGS = "daily_greetings"

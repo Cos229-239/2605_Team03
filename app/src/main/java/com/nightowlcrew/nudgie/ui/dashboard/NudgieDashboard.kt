@@ -1,15 +1,15 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,22 +18,29 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.automirrored.filled.ShowChart
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
@@ -49,18 +56,33 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -69,32 +91,78 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.nightowlcrew.nudgie.R
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
-import com.nightowlcrew.nudgie.ui.theme.CardBlueBg
-import com.nightowlcrew.nudgie.ui.theme.CardGreenBg
-import com.nightowlcrew.nudgie.ui.theme.CardRedBg
-import com.nightowlcrew.nudgie.ui.theme.CardYellowBg
-import com.nightowlcrew.nudgie.ui.theme.DarkBackground
+import com.nightowlcrew.nudgie.data.HabitEntity
+import com.nightowlcrew.nudgie.ui.theme.BrandGold
 import com.nightowlcrew.nudgie.ui.theme.ElectricYellow
 import com.nightowlcrew.nudgie.ui.theme.HeartRed
+import com.nightowlcrew.nudgie.ui.theme.LavenderText
 import com.nightowlcrew.nudgie.ui.theme.LevelUpBlue
+import com.nightowlcrew.nudgie.ui.theme.NavyBackground
+import com.nightowlcrew.nudgie.ui.theme.NavyOutline
+import com.nightowlcrew.nudgie.ui.theme.NavySurface
 import com.nightowlcrew.nudgie.ui.theme.NudgieTheme
-import com.nightowlcrew.nudgie.ui.theme.PressStart2P
+import com.nightowlcrew.nudgie.ui.theme.SpaceAccent
+import com.nightowlcrew.nudgie.ui.theme.SpaceEnergy
+import com.nightowlcrew.nudgie.ui.theme.SpaceHappiness
+import com.nightowlcrew.nudgie.ui.theme.SpaceLevel
+import com.nightowlcrew.nudgie.ui.theme.SpaceOutline
+import com.nightowlcrew.nudgie.ui.theme.SpaceSecondaryText
+import com.nightowlcrew.nudgie.ui.theme.SpaceSuccess
+import com.nightowlcrew.nudgie.ui.theme.SpaceSurface
 import com.nightowlcrew.nudgie.ui.theme.SuccessGreen
-import com.nightowlcrew.nudgie.ui.theme.cpNeonGreen
-import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
-import com.nightowlcrew.nudgie.ui.theme.spParchment
+import com.nightowlcrew.nudgie.ui.theme.VT323
+import com.nightowlcrew.nudgie.ui.theme.cpStatEnergy
+import com.nightowlcrew.nudgie.ui.theme.cpStatHappiness
+import com.nightowlcrew.nudgie.ui.theme.cpStatLevel
+import com.nightowlcrew.nudgie.ui.theme.cpStatSuccess
+import com.nightowlcrew.nudgie.ui.theme.gothStatEnergy
+import com.nightowlcrew.nudgie.ui.theme.gothStatHappiness
+import com.nightowlcrew.nudgie.ui.theme.gothStatLevel
+import com.nightowlcrew.nudgie.ui.theme.gothStatSuccess
+import com.nightowlcrew.nudgie.ui.theme.spStatEnergy
+import com.nightowlcrew.nudgie.ui.theme.spStatHappiness
+import com.nightowlcrew.nudgie.ui.theme.spStatLevel
+import com.nightowlcrew.nudgie.ui.theme.spStatSuccess
+import com.nightowlcrew.nudgie.utils.AlarmUtils
+import com.nightowlcrew.nudgie.utils.PetAssetManager
+import com.nightowlcrew.nudgie.utils.PetType
+import java.util.Calendar
+
+// Helper class to hold dynamic stat colors based on the current theme
+data class StatColors(
+    val happiness: Color,
+    val energy: Color,
+    val level: Color,
+    val success: Color,
+)
+
+// Maps the active app theme to its distinct semantic stat colors
+fun getThemeStatColors(theme: AppTheme): StatColors {
+    return when (theme) {
+        AppTheme.CYBERPUNK -> StatColors(cpStatHappiness, cpStatEnergy, cpStatLevel, cpStatSuccess)
+        AppTheme.STEAMPUNK -> StatColors(spStatHappiness, spStatEnergy, spStatLevel, spStatSuccess)
+        AppTheme.GOTH -> StatColors(gothStatHappiness, gothStatEnergy, gothStatLevel, gothStatSuccess)
+        AppTheme.RETRO_SPACE -> StatColors(SpaceHappiness, SpaceEnergy, SpaceLevel, SpaceSuccess)
+        else -> StatColors(HeartRed, ElectricYellow, LevelUpBlue, SuccessGreen) // Default
+    }
+}
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
+    object Splash : Screen("splash", "Splash", Icons.Default.FlashOn)
     object Home : Screen("home", "Home", Icons.Filled.Home)
-    object Pet : Screen("pet", "Pet", Icons.Filled.AutoAwesome)
-    object Learn : Screen("learn", "Learn", Icons.AutoMirrored.Filled.MenuBook)
-    object Stats : Screen("stats", "Stats", Icons.AutoMirrored.Filled.ShowChart)
+    object Pet : Screen("pet", "Pet", Icons.Filled.Favorite) // New Pet tab
+    object Tasks : Screen("tasks", "Tasks", Icons.Filled.CheckCircle)
+    object Stats : Screen("stats", "Stats", Icons.Filled.Star)
+    object Profile : Screen("profile", "Profile", Icons.Filled.Person)
     object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
 }
 
@@ -102,523 +170,793 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 @Composable
 fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    NudgieDashboardContent(
+        uiState = uiState,
+        archivedHabits = archivedHabits,
+        onToggleHabit = { viewModel.toggleHabitCompletion(it) },
+        onAddHabit = { title, category, frequency, isStock -> viewModel.addNewHabit(title, category, frequency, isStock) },
+        onDeleteHabit = { id -> viewModel.deleteHabit(id) },
+        onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
+        onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
+        onUpdatePetName = { viewModel.updatePetName(it) },
+        onUpdatePetType = { viewModel.updatePetType(it, context) },
+        onArchiveHabit = { viewModel.archiveHabit(it) },
+        onRestoreHabit = { viewModel.restoreHabit(it) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NudgieDashboardContent(
+    uiState: DashboardUiState,
+    archivedHabits: List<HabitEntity>,
+    onToggleHabit: (ActivityItem) -> Unit,
+    onAddHabit: (String, String, Int, Boolean) -> Unit,
+    onDeleteHabit: (Int) -> Unit,
+    onUpdateScreenTimeGoal: (Int) -> Unit,
+    onUpdateTheme: (AppTheme) -> Unit,
+    onUpdatePetName: (String) -> Unit,
+    onUpdatePetType: (PetType) -> Unit,
+    onArchiveHabit: (HabitEntity) -> Unit,
+    onRestoreHabit: (HabitEntity) -> Unit
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    var showPetSelection by remember { mutableStateOf(false) }
+
+    if (showPetSelection) {
+        PetSelectionDialog(
+            onDismissRequest = { showPetSelection = false },
+            onPetSelected = onUpdatePetType,
+            currentPetType = uiState.currentPetType
+        )
+    }
 
     val screens = listOf(
         Screen.Home,
         Screen.Pet,
-        Screen.Learn,
+        Screen.Profile,
         Screen.Stats,
-        Screen.Settings,
+        Screen.Tasks,
     )
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp
-            ) {
-                screens.forEach { screen ->
-                    val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                    NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.label) },
-                        label = {
-                            Text(
-                                text = screen.label.uppercase(),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontSize = 11.sp
-                            )
-                        },
-                        selected = selected,
-                        onClick = {
-                            navController.navigate(screen.route) {
-                                // Pop up to the start destination of the graph to
-                                // avoid building up a large stack of destinations
-                                // on the back stack as users select items
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+            val showBottomBar = currentDestination?.route != Screen.Splash.route
+            if (showBottomBar) {
+                NavigationBar(
+                    containerColor = NavySurface,
+                    tonalElevation = 8.dp
+                ) {
+                    screens.forEach { screen ->
+                        val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                        NavigationBarItem(
+                            icon = { Icon(screen.icon, contentDescription = screen.label) },
+                            label = { Text(screen.label) },
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                // Avoid multiple copies of the same destination when
-                                // reselecting the same item
-                                launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
-                                restoreState = true
-                            }
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            indicatorColor = MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Color.White,
+                                selectedTextColor = Color.White,
+                                unselectedIconColor = LavenderText,
+                                unselectedTextColor = LavenderText,
+                                indicatorColor = Color(0xFF6200EE).copy(alpha = 0.5f) // Glowing purple highlight
+                            )
                         )
-                    )
+                    }
                 }
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
-            modifier = Modifier.padding(innerPadding)
+            startDestination = Screen.Splash.route,
+            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()) // Only apply bottom padding
         ) {
+            composable(Screen.Splash.route) {
+                NudgieSplashScreen(onSplashFinished = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                })
+            }
             composable(Screen.Home.route) {
                 DashboardContent(
                     categorizedActivities = uiState.categorizedActivities,
                     currentTheme = uiState.currentTheme,
-                    onToggleHabit = { viewModel.toggleHabitCompletion(it) },
+                    petStats = uiState.petStats,
+                    currentPetType = uiState.currentPetType,
+                    currentScreenTimeMillis = uiState.currentScreenTimeMillis,
+                    screenTimeGoalMillis = uiState.screenTimeGoalMillis,
+                    onToggleHabit = onToggleHabit,
+                    onUpdatePetName = onUpdatePetName,
+                    onDigitalBalanceDoubleTap = {
+                        navController.navigate("tasks?openSlider=true")
+                    },
+                    streak = 12, // For demo, can be linked to viewModel later
+                    currency = 250 // For demo, can be linked to viewModel later
                 )
             }
             composable(Screen.Pet.route) {
-                PetScreenContent(currentTheme = uiState.currentTheme)
+                NudgiePetScreen(
+                    petStats = uiState.petStats,
+                    currentPetType = uiState.currentPetType,
+                    onUpdatePetName = onUpdatePetName,
+                    onCustomizeClick = { showPetSelection = true }
+                )
             }
+            composable(
+                route = "tasks?openSlider={openSlider}",
+                arguments = listOf(navArgument("openSlider") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                })
+            ) { backStackEntry ->
+                val openSlider = backStackEntry.arguments?.getBoolean("openSlider") ?: false
+                TasksContent(
+                    activities = uiState.activities,
+                    archivedHabits = archivedHabits,
+                    screenTimeGoalMillis = uiState.screenTimeGoalMillis,
+                    onToggleHabit = onToggleHabit,
+                    onAddHabit = onAddHabit,
+                    onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
+                    onArchiveHabit = onArchiveHabit,
+                    onRestoreHabit = onRestoreHabit,
+                    initialOpenSlider = openSlider
+                )
+            }
+            composable(Screen.Stats.route) { ComingSoonScreen("Stats") }
+            composable(Screen.Profile.route) { ComingSoonScreen("Profile") }
             composable(Screen.Settings.route) {
-                SettingsScreen(viewModel = viewModel)
+                SettingsContent(
+                    activities = uiState.activities,
+                    archivedHabits = archivedHabits,
+                    screenTimeGoalMillis = uiState.screenTimeGoalMillis,
+                    currentTheme = uiState.currentTheme,
+                    onAddHabit = { title, category, freq, isStock -> onAddHabit(title, category, freq, isStock) },
+                    onDeleteHabit = onDeleteHabit,
+                    onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
+                    onUpdateTheme = onUpdateTheme,
+                    onArchiveHabit = onArchiveHabit,
+                    onRestoreHabit = onRestoreHabit
+                )
             }
-            // Placeholders for Learn and Stats
-            composable(Screen.Learn.route) { ComingSoonScreen() }
-            composable(Screen.Stats.route) { ComingSoonScreen() }
         }
     }
 }
 
 @Composable
-fun ComingSoonScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "Screen Coming Soon".uppercase(),
-            style = MaterialTheme.typography.headlineMedium,
-            color = Color.Gray
-        )
+fun ComingSoonScreen(title: String) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(title.uppercase(), style = MaterialTheme.typography.headlineMedium, color = Color.Gray)
     }
 }
 
 @Composable
-fun PetScreenContent(currentTheme: AppTheme = AppTheme.DEFAULT) {
-    Column(
+fun HeartsRow(happiness: Int, modifier: Modifier = Modifier) {
+    Row(modifier = modifier) {
+        repeat(3) { index ->
+            val isFilled = index < (happiness / 33.4).toInt().coerceAtMost(3)
+            Icon(
+                imageVector = if (isFilled) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                contentDescription = null,
+                tint = if (isFilled) HeartRed else Color.Gray.copy(alpha = 0.5f),
+                modifier = Modifier.size(28.dp)
+            )
+            if (index < 2) Spacer(modifier = Modifier.width(4.dp))
+        }
+    }
+}
+
+@Composable
+fun PetActionButton(
+    label: String,
+    iconRes: Int,
+    onClick: () -> Unit = {}
+) {
+    Surface(
+        color = SpaceSurface.copy(alpha = 0.8f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, SpaceOutline.copy(alpha = 0.5f)),
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 16.dp), // Cushioned horizontal padding
-        horizontalAlignment = Alignment.CenterHorizontally
+            .size(width = 85.dp, height = 100.dp)
+            .clickable { onClick() }
     ) {
-        Text(
-            text = "MY PET",
-            style = MaterialTheme.typography.displayLarge.copy(
-                fontSize = 44.sp,
-                lineHeight = 52.sp,
-                fontFamily = PressStart2P
-            ),
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        // Extra spacer for pixel font vertical breathing room
-        Spacer(modifier = Modifier.height(32.dp))
-
-        PetHeroContainer(currentTheme = currentTheme)
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // STATS GRID
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                NewStatCard(
-                    label = "HAPPINESS",
-                    value = "85%",
-                    icon = Icons.Filled.Favorite,
-                    iconColor = Color.Red,
-                    bgColor = CardRedBg,
-                    borderColor = HeartRed,
-                    currentTheme = currentTheme,
-                    modifier = Modifier.weight(1f)
-                )
-                NewStatCard(
-                    label = "ENERGY",
-                    value = "62%",
-                    icon = Icons.Filled.FlashOn,
-                    iconColor = Color(0xFFFFC107),
-                    bgColor = CardYellowBg,
-                    borderColor = ElectricYellow,
-                    currentTheme = currentTheme,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                NewStatCard(
-                    label = "LEVEL",
-                    value = "5",
-                    icon = Icons.Filled.Star,
-                    iconColor = Color.Blue,
-                    bgColor = CardBlueBg,
-                    borderColor = LevelUpBlue,
-                    currentTheme = currentTheme,
-                    modifier = Modifier.weight(1f)
-                )
-                NewStatCard(
-                    label = "AGE",
-                    value = "5 Days",
-                    icon = Icons.Filled.CalendarToday,
-                    iconColor = Color.Green,
-                    bgColor = CardGreenBg,
-                    borderColor = SuccessGreen,
-                    currentTheme = currentTheme,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            text = "Customization coming soon!".uppercase(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
-        )
-    }
-}
-
-@Composable
-fun PetHeroContainer(currentTheme: AppTheme = AppTheme.DEFAULT) {
-    if (currentTheme == AppTheme.DEFAULT) {
-        // ORIGINAL DEFAULT LOOK
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp)
-                .background(Color(0xFFD1D5DB), RoundedCornerShape(24.dp))
-                .border(4.dp, DarkBackground, RoundedCornerShape(24.dp)),
-            contentAlignment = Alignment.Center
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(8.dp)
         ) {
+            Image(
+                painter = painterResource(id = iconRes),
+                contentDescription = label,
+                modifier = Modifier.size(45.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = """
-|       _..._
-|     .'     '.
-|    /`\     /`\
-|   (_*_|   |_*_)
-|   (     "     )
-|    \         /
-|     \  \_/  /
-|      '.___.'
-                """.trimMargin(),
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = FontFamily.Monospace,
-                    lineHeight = 12.sp,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = DarkBackground
+                text = label,
+                style = TextStyle(
+                    fontFamily = VT323,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
             )
         }
-    } else {
-        // THEMED WINDOW (Cyberpunk / Steampunk / Goth / Alien)
-        Box(
+    }
+}
+
+@Composable
+fun PetActionButtons(
+    onCustomizeClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        PetActionButton("Customize", R.drawable.zustomize, onClick = onCustomizeClick)
+        PetActionButton("Food", R.drawable.feed)
+        PetActionButton("Play", R.drawable.play)
+        PetActionButton("Bath", R.drawable.bath)
+    }
+}
+
+@Composable
+fun NudgiePetScreen(
+    petStats: PetStats,
+    currentPetType: PetType,
+    onUpdatePetName: (String) -> Unit,
+    onCustomizeClick: () -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.pet_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(240.dp)
-                .background(
-                    MaterialTheme.colorScheme.surface,
-                    RoundedCornerShape(16.dp)
-                ),
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(bottom = 32.dp)
         ) {
-            when (currentTheme) {
-                AppTheme.GOTH -> AnimatedKitty(color = MaterialTheme.colorScheme.onSurface)
-                AppTheme.CYBERPUNK -> AnimatedAlien(baseColor = LevelUpBlue)
-                AppTheme.STEAMPUNK -> {
-                    val steampunkAscii = """
-|
-|       _..._
-|     .'     '.
-|    /`\     /`\
-|   (_*_|   |_*_)
-|   (     "     ) |\ |\ /|          __+__
-|    \         /   \\||//          /     \
-|     \  \_/  /  |\|`  /        __/   O   \__
-|      '.___.'   \____/       /    \__|__/   \
-|       (___)    (___)        \______________/
-|     /`     `\  / /                 /|\
-|    |         \/ /                 / | \
-|    | |     |\  /                 /  |  \
-|    | |     | "`           
-|    |_|_____|        
-|   (___)_____) 
-                    """.trimMargin()
-                    Text(
-                        text = steampunkAscii,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = FontFamily.Monospace,
-                            lineHeight = 14.sp,
-                            fontSize = 13.sp,
+            // Header
+
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Pet Info Card
+            NudgieTopCard(
+                petStats = petStats,
+                maxXp = 800,
+                onUpdateName = onUpdatePetName
+            )
+
+            Spacer(modifier = Modifier.weight(0.8f))
+
+            // Character
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(2f),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = PetAssetManager.getPetDrawable(currentPetType)),
+                    contentDescription = "Nudgie Character",
+                    modifier = Modifier
+                        .size(280.dp)
+                        .offset(x = (-70).dp, y = 15.dp)
+                        .graphicsLayer { scaleX = -1f }, // Flip horizontally
+                    contentScale = ContentScale.Fit
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(0.5f))
+
+            // Action Buttons
+            PetActionButtons(onCustomizeClick = onCustomizeClick)
+        }
+    }
+}
+
+@Composable
+fun NudgieTopCard(
+    petStats: PetStats,
+    maxXp: Int,
+    onUpdateName: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var isEditingName by remember { mutableStateOf(false) }
+    var nameInput by remember { mutableStateOf(petStats.name) }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
+    Surface(
+        color = NavySurface.copy(alpha = 0.9f),
+        shape = RoundedCornerShape(20.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isEditingName) {
+                    BasicTextField(
+                        value = nameInput,
+                        onValueChange = { if (it.length <= 13) nameInput = it },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            fontFamily = VT323,
+                            fontSize = 32.sp,
+                            color = Color.White,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = spParchment
+                        cursorBrush = SolidColor(Color.White),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                onUpdateName(nameInput)
+                                isEditingName = false
+                                focusManager.clearFocus()
+                            }
+                        ),
+                        modifier = Modifier
+                            .width(IntrinsicSize.Min)
+                            .focusRequester(focusRequester)
+                    )
+                } else {
+                    Text(
+                        text = petStats.name,
+                        style = TextStyle(
+                            fontFamily = VT323,
+                            fontSize = 32.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
                     )
                 }
+                Spacer(modifier = Modifier.width(12.dp))
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit Name",
+                    tint = SpaceSecondaryText,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {
+                            if (isEditingName) {
+                                onUpdateName(nameInput)
+                            } else {
+                                nameInput = petStats.name
+                            }
+                            isEditingName = !isEditingName
+                        }
+                )
             }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Your Nudgie",
+                    style = TextStyle(
+                        fontFamily = VT323,
+                        fontSize = 32.sp,
+                        color = Color.White
+                    )
+                )
+                HeartsRow(happiness = petStats.happiness)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Level ${petStats.level}",
+                        style = TextStyle(
+                            fontFamily = VT323,
+                            fontSize = 20.sp,
+                            color = Color.White
+                        )
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        imageVector = Icons.Default.Pets,
+                        contentDescription = null,
+                        tint = SpaceAccent,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Text(
+                    text = "${petStats.xp} / $maxXp XP",
+                    style = TextStyle(
+                        fontFamily = VT323,
+                        fontSize = 18.sp,
+                        color = Color.White
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            LinearProgressIndicator(
+                progress = { petStats.xp.toFloat() / maxXp.toFloat() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+                    .clip(RoundedCornerShape(6.dp)),
+                color = SuccessGreen,
+                trackColor = Color.White.copy(alpha = 0.2f),
+                strokeCap = StrokeCap.Round
+            )
         }
     }
 }
 
 
+@Preview(showBackground = true)
+@Composable
+fun NudgiePetScreenPreview() {
+    NudgieTheme {
+        NudgiePetScreen(
+            petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
+            currentPetType = PetType.BLUE,
+            onUpdatePetName = {},
+            onCustomizeClick = {}
+        )
+    }
+}
 
 @Composable
 fun DashboardContent(
     categorizedActivities: Map<CozyCategory, List<ActivityItem>>,
-    currentTheme: AppTheme = AppTheme.DEFAULT,
+    currentTheme: AppTheme,
+    petStats: PetStats,
+    currentPetType: PetType,
+    currentScreenTimeMillis: Long,
+    screenTimeGoalMillis: Long,
     onToggleHabit: (ActivityItem) -> Unit,
+    onUpdatePetName: (String) -> Unit,
+    onDigitalBalanceDoubleTap: () -> Unit,
+    streak: Int,
+    currency: Int
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(NavyBackground)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 16.dp) // Cushioned horizontal padding
     ) {
-        // HEADER
-        Text(
-            text = "NUDGIE",
-            style = MaterialTheme.typography.displayLarge.copy(
-                fontSize = 44.sp,
-                lineHeight = 52.sp,
-                fontFamily = PressStart2P
-            ),
-            color = MaterialTheme.colorScheme.onBackground
+        PetFrame(
+            petStats = petStats,
+            currentTheme = currentTheme,
+            currentPetType = currentPetType,
+            currentScreenTimeMillis = currentScreenTimeMillis,
+            screenTimeGoalMillis = screenTimeGoalMillis,
+            onUpdatePetName = onUpdatePetName,
+            onDigitalBalanceDoubleTap = onDigitalBalanceDoubleTap,
+            streak = streak,
+            currency = currency
         )
-        // High-density metadata
-        Text(
-            text = "Level 5 • Baby Stage",
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontFamily = PressStart2P,
-                fontSize = 12.sp
-            ),
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+        Spacer(modifier = Modifier.height(48.dp))
+        TasksSection(
+            categorizedActivities = categorizedActivities,
+            currentTheme = currentTheme,
+            onToggleHabit = onToggleHabit
         )
-
         Spacer(modifier = Modifier.height(24.dp))
+    }
+}
 
-        // TOP HAPPINESS BAR
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            ),
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier
-                .fillMaxWidth()
-                .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Filled.Favorite,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "HAPPINESS".uppercase(),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontFamily = PressStart2P,
-                                fontSize = 14.sp
-                            ),
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Text(
-                        text = "85%",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = PressStart2P,
-                            fontSize = 14.sp
-                        ),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                LinearProgressIndicator(
-                    progress = { 0.85f },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp)
-                        .clip(CircleShape),
-                    color = MaterialTheme.colorScheme.tertiary,
-                    trackColor = MaterialTheme.colorScheme.tertiaryContainer
-                )
-            }
+@Composable
+fun PetFrame(
+    petStats: PetStats,
+    currentTheme: AppTheme,
+    currentPetType: PetType,
+    currentScreenTimeMillis: Long,
+    screenTimeGoalMillis: Long,
+    onUpdatePetName: (String) -> Unit,
+    onDigitalBalanceDoubleTap: () -> Unit,
+    streak: Int,
+    currency: Int
+) {
+    val statColors = getThemeStatColors(currentTheme)
+    var isEditingName by remember { mutableStateOf(value = false) }
+    var nameInput by remember { mutableStateOf(petStats.name) }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(isEditingName) {
+        if (isEditingName) {
+            focusRequester.requestFocus()
         }
+    }
 
-        Spacer(modifier = Modifier.height(32.dp))
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(510.dp)
+    ) {
+        // Edge-to-edge Background Image
+        Image(
+            painter = painterResource(id = R.drawable.pethero_dashboard),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
 
-        // BUDDY WINDOW WITH FLOATING STATS
+        // Feathering mask to dissolve the bottom edge into NavyBackground
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            PetHeroContainer(currentTheme = currentTheme)
+                .height(140.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, NavyBackground)
+                    )
+                )
+        )
 
-            // Top Left - Happiness
-            PetCornerStatBadge(
-                label = "Happiness",
-                value = "85%",
-                icon = Icons.Filled.Favorite,
-                currentTheme = currentTheme,
-                accentColor = Color(0xFFFF003C), // Corpo Red
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(x = (-8).dp, y = (-12).dp)
-            )
-
-            // Top Right - Energy
-            PetCornerStatBadge(
-                label = "Energy",
-                value = "62%",
-                icon = Icons.Filled.FlashOn,
-                currentTheme = currentTheme,
-                accentColor = Color(0xFFFCEE0A), // Cyber Yellow
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = 8.dp, y = (-12).dp)
-            )
-
-            // Bottom Left - Age
-            PetCornerStatBadge(
-                label = "Age",
-                value = "5 Days",
-                icon = Icons.Filled.HourglassBottom,
-                currentTheme = currentTheme,
-                accentColor = cpNeonGreen,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .offset(x = (-8).dp, y = 12.dp)
-            )
-
-            // Bottom Right - Level
-            PetCornerStatBadge(
-                label = "Level",
-                value = "5",
-                icon = Icons.Filled.Star,
-                currentTheme = currentTheme,
-                accentColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 8.dp, y = 12.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // TODAY'S ACTIVITY
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.Filled.Schedule,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "TODAY'S Habits".uppercase(),
-                style = MaterialTheme.typography.headlineMedium.copy(fontFamily = PressStart2P),
-                fontSize = 18.sp, // Slightly forced override for width management
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        CategorizedActivityLog(categorizedActivities, currentTheme, onToggleHabit)
-
-        Spacer(modifier = Modifier.height(80.dp)) // Extra space for scroll
-    }
-}
-
-/**
- * A categorized version of the activity log that uses expandable sections.
- */
-@Composable
-fun CategorizedActivityLog(
-    categorizedActivities: Map<CozyCategory, List<ActivityItem>>,
-    currentTheme: AppTheme,
-    onToggleHabit: (ActivityItem) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        categorizedActivities.forEach { (category, habits) ->
-            ExpandableDashboardSection(
-                categoryTitle = category.displayName,
-                habits = habits,
-                currentTheme = currentTheme,
-                onToggleHabit = onToggleHabit
-            )
-        }
-    }
-}
-
-@Composable
-private fun ExpandableDashboardSection(
-    categoryTitle: String,
-    habits: List<ActivityItem>,
-    currentTheme: AppTheme,
-    onToggleHabit: (ActivityItem) -> Unit
-) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    val rotationState by animateFloatAsState(
-        targetValue = if (expanded) 180f else 0f,
-        label = "RotationAnimation"
-    )
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Surface(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .nudgieCardShadow(currentTheme, 4.dp, RoundedCornerShape(12.dp))
-                .clickable { expanded = !expanded },
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(12.dp),
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Overlaid Streak and Currency Row
             Row(
                 modifier = Modifier
-                    .padding(vertical = 14.dp, horizontal = 16.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                    .statusBarsPadding()
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = categoryTitle.uppercase(),
-                    style = MaterialTheme.typography.headlineMedium.copy(fontFamily = PressStart2P), // Increased size/impact
-                    fontSize = 20.sp, // Scaled down for width management
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold,
-                )
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (expanded) "Collapse" else "Expand",
-                    modifier = Modifier.rotate(rotationState),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // Streak Logic
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val streakIcon = when {
+                        streak >= 10 -> "🔥"
+                        streak >= 5 -> "⭐"
+                        else -> "•"
+                    }
+                    val fontSize = if (streak >= 25) 22.sp else 20.sp
+                    Text(text = streakIcon, fontSize = 24.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "$streak Day Streak!",
+                        color = Color.White,
+                        fontSize = fontSize,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Currency
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "💎", fontSize = 22.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = currency.toString(),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                }
+            }
+
+            // Digital Clock Frame and Pet Name wrapper
+            Box(contentAlignment = Alignment.BottomCenter) {
+                // Digital Clock Frame with custom background asset
+                Box(
+                    modifier = Modifier
+                        .width(320.dp)
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(50.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.clock_date_alarm),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit,
+                    )
+                    Column(
+                        modifier = Modifier.padding(bottom = 1.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text("08:30", fontSize = 72.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                            Text("AM", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
+                        }
+                        Text("Thursday, May 7", fontSize = 18.sp, color = Color.White.copy(alpha = 0.8f))
+                    }
+                }
+
+                // Pet Name Box centered and overlapping the bottom
+                Surface(
+                    color = SpaceSurface.copy(alpha = 1f),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(2.dp, NavyOutline),
+                    modifier = Modifier.offset(y = 10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (isEditingName) {
+                            BasicTextField(
+                                value = nameInput,
+                                onValueChange = { if (it.length <= 13) nameInput = it },
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    color = BrandGold,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                cursorBrush = SolidColor(BrandGold),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        onUpdatePetName(nameInput)
+                                        isEditingName = false
+                                        focusManager.clearFocus()
+                                    }
+                                ),
+                                modifier = Modifier
+                                    .width(IntrinsicSize.Min)
+                                    .focusRequester(focusRequester)
+                            )
+                        } else {
+                            Text(
+                                petStats.name,
+                                color = BrandGold,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(Modifier.width(6.dp))
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Edit",
+                            modifier = Modifier
+                                .size(14.dp)
+                                .clickable {
+                                    if (isEditingName) {
+                                        onUpdatePetName(nameInput)
+                                    } else {
+                                        nameInput = petStats.name
+                                    }
+                                    isEditingName = !isEditingName
+                                },
+                            tint = BrandGold
+                        )
+                    }
+                }
+            }
+
+            // Bars Box (XP + Digital Balance)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // XP Bar Section
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Level ${petStats.level}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("${petStats.xp} / 800 XP", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    LinearProgressIndicator(
+                        progress = { petStats.xp / 800f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = Color.White.copy(alpha = 0.3f),
+                        strokeCap = StrokeCap.Round
+                    )
+                }
+
+                // Digital Balance Bar Section
+                val goalHours = screenTimeGoalMillis / 3600000f
+                val currentHours = currentScreenTimeMillis / 3600000f
+
+                Column(
+                    modifier = Modifier.pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                onDigitalBalanceDoubleTap()
+                            }
+                        )
+                    }
+                ) {
+                    LinearProgressIndicator(
+                        progress = { (currentHours / goalHours.coerceAtLeast(0.1f)).coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = if (currentHours > goalHours) Color.Red else statColors.success,
+                        trackColor = Color.White.copy(alpha = 0.3f),
+                        strokeCap = StrokeCap.Round
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Digital Balance", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("${"%.1f".format(currentHours)}h / ${"%.1f".format(goalHours)}h", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                    }
+                }
             }
         }
 
-        AnimatedVisibility(visible = expanded) {
-            Column(
+        // Interactive Bottom Strip - Enlarged Pet
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Spacer(Modifier.weight(1f))
+            // Pixel Art Pet
+            Image(
+                painter = painterResource(id = PetAssetManager.getPetDrawable(currentPetType)),
+                contentDescription = "Your Pet",
+                modifier = Modifier.size(225.dp),
+                contentScale = ContentScale.Fit
+            )
+            Spacer(Modifier.weight(3f))
+        }
+
+        // Stats Box with solid background
+        Surface(
+            color = NavySurface,
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(2.dp, NavyOutline),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 55.dp)
+                .align(Alignment.BottomCenter)
+                .offset(y = 55.dp)
+                .height(70.dp)
+        ) {
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                habits.forEach { activity ->
-                    ActivityLogItem(activity, currentTheme, onToggleHabit)
-                }
+                StatItem("Happiness", "${petStats.happiness}%", statColors.happiness, Icons.Default.Favorite)
+                StatItem("Energy", "${petStats.energy}%", statColors.energy, Icons.Default.FlashOn)
+                StatItem("Level", petStats.level.toString(), statColors.level, Icons.Default.Star)
             }
         }
     }
@@ -630,15 +968,18 @@ fun ActivityLogItem(
     currentTheme: AppTheme,
     onToggleHabit: (ActivityItem) -> Unit,
 ) {
+    val context = LocalContext.current
     val itemBgColor = MaterialTheme.colorScheme.surfaceVariant
     val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     val isCompleted = activity.currentCount >= activity.targetCount
     val contentAlpha = if (isCompleted) 0.8f else 1.0f
+    val displayTime = remember {
+        mutableStateOf(activity.time)
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .nudgieCardShadow(currentTheme, 4.dp, RoundedCornerShape(16.dp))
             .clickable {
                 if (activity.targetCount <= 1) {
                     onToggleHabit(activity)
@@ -652,30 +993,18 @@ fun ActivityLogItem(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Status Icon Box (Acts as Checkbox for single-step habits)
+                // Status Icon Box
                 if (activity.targetCount <= 1) {
                     Box(
                         modifier = Modifier
                             .size(28.dp)
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), MaterialTheme.shapes.small)
-                            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small),
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         if (activity.isCompleted) {
                             Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
                         }
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                } else {
-                    // Multistep habits: use a simple bullet point/indicator or hide completely
-                    // since we have the row of checkboxes below.
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                 }
@@ -698,169 +1027,280 @@ fun ActivityLogItem(
 
                 // Time
                 Text(
-                    text = activity.time,
+                    text = displayTime.value,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 1f),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
-            }
+                Spacer(modifier = Modifier.width(8.dp))
+                androidx.compose.material3.IconButton(
+                    onClick = {
+                        val calendar = Calendar.getInstance()
+                        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+                        val currentMinute = calendar.get(Calendar.MINUTE)
 
-            // Multistep checkboxes (for habits like Water)
-            if (activity.targetCount > 1) {
-                Spacer(modifier = Modifier.height(12.dp))
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        android.app.TimePickerDialog(
+                            context,
+                            { _, selectedHour, selectedMinute ->
+                                val triggerTime = Calendar.getInstance().apply {
+                                    set(Calendar.HOUR_OF_DAY, selectedHour)
+                                    set(Calendar.MINUTE, selectedMinute)
+                                    set(Calendar.SECOND, 0)
+                                }.timeInMillis
+
+                                AlarmUtils.setExactAlarm(context, triggerTime)
+
+                                val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+                                displayTime.value = formattedTime
+                            },
+                            currentHour,
+                            currentMinute,
+                            false
+                        ).show()
+                    },
+                    modifier = Modifier.size(24.dp)
                 ) {
-                    repeat(activity.targetCount) { index ->
-                        val isChecked = index < activity.currentCount
-                        Box(
-                            modifier = Modifier
-                                .size(26.dp)
-                                .background(
-                                    if (isChecked) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.2f),
-                                    MaterialTheme.shapes.small
-                                )
-                                .border(
-                                    1.dp,
-                                    if (isChecked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                                    MaterialTheme.shapes.small
-                                )
-                                .clickable {
-                                    // Clicking an unchecked slot adds a log
-                                    if (index == activity.currentCount) {
-                                        onToggleHabit(activity)
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isChecked) {
-                                Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
-                            }
-                        }
-                    }
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Set Reminder",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun FIGMA_DASHBOARD_PREVIEW() {
-    val mockActivities = listOf(
-        ActivityItem(1, "BODY_VITALITY", "Fed Buddy", "08:30", true),
-        ActivityItem(2, "BODY_VITALITY", "Played with ball", "10:15", true),
-        ActivityItem(3, "MIND_SPACE", "Training session", "12:00", false),
-        ActivityItem(4, "DAILY_RHYTHMS", "Walk outside", "15:00", false),
-        ActivityItem(5, "DAILY_RHYTHMS", "Evening meal", "18:00", false)
-    )
-    val mockCategorized = mapOf(
-        CozyCategory.BODY_VITALITY to mockActivities.filter { it.icon == "BODY_VITALITY" },
-        CozyCategory.MIND_SPACE to mockActivities.filter { it.icon == "MIND_SPACE" },
-        CozyCategory.DAILY_RHYTHMS to mockActivities.filter { it.icon == "DAILY_RHYTHMS" }
-    )
-    NudgieTheme {
-        DashboardContent(
-            categorizedActivities = mockCategorized,
-            onToggleHabit = {}
+fun StatItem(label: String, value: String, color: Color, icon: ImageVector) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp)) // Restored icon size
+            Spacer(Modifier.width(5.dp))
+            Text(label, color = Color.White, fontSize = 16.sp) // White labels as requested
+        }
+        Spacer(Modifier.height((-8).dp))
+        Text(value, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 18.sp, modifier = Modifier.offset(y = (-4).dp)) // Prominent value, now White and larger
+        Spacer(Modifier.height(1.dp))
+        LinearProgressIndicator(
+            progress = { value.replace("%", "").toFloatOrNull()?.div(100f) ?: 1f },
+            modifier = Modifier.width(32.dp).height(2.dp).clip(RoundedCornerShape(1.dp)), // Very slim and short bars
+            color = color,
+            trackColor = MaterialTheme.colorScheme.background,
+            strokeCap = StrokeCap.Round
         )
     }
 }
 
 @Composable
-fun NewStatCard(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    iconColor: Color,
-    bgColor: Color,
-    borderColor: Color,
+fun TasksSection(
+    categorizedActivities: Map<CozyCategory, List<ActivityItem>>,
     currentTheme: AppTheme,
-    modifier: Modifier
+    onToggleHabit: (ActivityItem) -> Unit
 ) {
-    Card(
-        modifier = modifier
-            .height(110.dp)
-            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
-        shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(2.dp, if (MaterialTheme.colorScheme.outline != Color.Unspecified) MaterialTheme.colorScheme.outline else borderColor),
-        colors = CardDefaults.cardColors(containerColor = if (MaterialTheme.colorScheme.surfaceVariant != Color.Unspecified) MaterialTheme.colorScheme.surfaceVariant else bgColor)
-    ) {
-        Column(
+    // Filter categories that have tasks
+    val activeCategories = CozyCategory.entries.filter { categorizedActivities[it]?.isNotEmpty() == true }
+
+    if (activeCategories.isEmpty()) return
+
+    var selectedCategory by remember { mutableStateOf(activeCategories.first()) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(5.dp))
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxWidth()
+                .padding(horizontal = 30.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = iconColor,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = label.uppercase(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                style = MaterialTheme.typography.labelSmall
+                "Today's Tasks",
+                color = LavenderText, // Match mockup
+                fontWeight = FontWeight.Normal,
+                fontSize = 18.sp // Increased font size (Orange Line)
             )
             Text(
-                text = value.uppercase(),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                "View All",
+                color = LavenderText, // Match mockup
+                fontSize = 18.sp, // Increased font size (Orange Line)
+                fontWeight = FontWeight.Normal
+
             )
+        }
+
+        Spacer(Modifier.height(5.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            activeCategories.forEach { category ->
+                val isSelected = selectedCategory == category
+                val icon = when (category) {
+                    CozyCategory.BODY_VITALITY -> "💪"
+                    CozyCategory.MIND_SPACE -> "🧠"
+                    CozyCategory.DAILY_RHYTHMS -> "📅"
+                    CozyCategory.SELF_CARE_RITUALS -> "✨"
+                    CozyCategory.CONNECTIONS -> "🤝"
+                }
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                        .background(if (isSelected) NavySurface else Color.Transparent)
+                        .clickable { selectedCategory = category }
+                        .drawBehind {
+                            val strokeWidth = 1.dp.toPx()
+                            val color = NavyOutline
+                            val cornerRadius = 12.dp.toPx()
+
+                            // Full outline for all tabs (including active)
+                            drawRoundRect(
+                                color = color,
+                                cornerRadius = CornerRadius(cornerRadius),
+                                style = Stroke(strokeWidth)
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = icon, fontSize = 20.sp)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        val tasksInCategory = categorizedActivities[selectedCategory] ?: emptyList()
+
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            tasksInCategory.forEach { task ->
+                TaskItem(task, currentTheme, onToggleHabit)
+                Spacer(Modifier.height(12.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun PetCornerStatBadge(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    currentTheme: AppTheme,
-    modifier: Modifier = Modifier,
-    accentColor: Color = Color.Black,
-) {
+fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (ActivityItem) -> Unit) {
+    val isCompleted = task.isCompleted
+    val statColors = getThemeStatColors(currentTheme)
+    val successColor = statColors.success
 
-    val backgroundColor = MaterialTheme.colorScheme.surface
-
-    Surface(
-        modifier = modifier.nudgieCardShadow(currentTheme, 2.dp, CircleShape),
-        color = backgroundColor,
-        shape = CircleShape,
-        border = BorderStroke(1.dp, accentColor),
+    Card(
+        colors = CardDefaults.cardColors(containerColor = NavySurface),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, if(isCompleted) successColor.copy(alpha=0.5f) else NavyOutline),
+        modifier = Modifier.clickable { onToggleHabit(task) }
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = accentColor,
-                modifier = Modifier.size(12.dp)
-            )
-            Text(
-                text = label.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp
-            )
-            Text(
-                text = value.uppercase(),
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontFamily = PressStart2P,
-                    fontSize = 12.sp
-                ),
-                fontWeight = FontWeight.Bold,
-                color = accentColor
-            )
+            // Task Checkbox Container
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(if (isCompleted) successColor else NavyBackground.copy(alpha = 0.5f))
+                    .border(1.dp, if (isCompleted) successColor else NavyOutline, RoundedCornerShape(6.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isCompleted) {
+                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                }
+            }
+
+            Spacer(Modifier.width(16.dp))
+
+            // Icon backdrop box
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(NavyBackground.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = if (task.icon.length <= 2) task.icon else "📌", fontSize = 20.sp)
+            }
+
+            Spacer(Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    task.description,
+                    color = Color.White,
+                    fontSize = 20.sp, // Increased font size (Orange Line)
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                // Task Progress Bar
+                val progress = if (task.targetCount > 0) task.currentCount.toFloat() / task.targetCount else 0f
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = if (isCompleted) successColor else MaterialTheme.colorScheme.primary,
+                    trackColor = NavyOutline.copy(alpha = 0.3f),
+                    strokeCap = StrokeCap.Round
+                )
+            }
+
+            // Reward
+            Text("15 XP", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun NudgieDashboardPreview() {
+    // Generate some mock activities to match your Figma mockup
+    val mockActivities = listOf(
+        ActivityItem(id = 1, icon = "</>", description = "Coding Lesson", category = CozyCategory.MIND_SPACE.name, time = "10:00 AM", isCompleted = true, targetCount = 1, currentCount = 1),
+        ActivityItem(id = 2, icon = "📖", description = "Read 20 Pages", category = CozyCategory.MIND_SPACE.name, time = "1:00 PM", isCompleted = true, targetCount = 1, currentCount = 1),
+        ActivityItem(id = 3, icon = "💧", description = "Drink 8 Glasses of Water", category = CozyCategory.BODY_VITALITY.name, time = "All Day", isCompleted = false, targetCount = 8, currentCount = 0),
+        ActivityItem(id = 4, icon = "🧘", description = "Meditate 10 Minutes", category = CozyCategory.MIND_SPACE.name, time = "8:00 PM", isCompleted = false, targetCount = 1, currentCount = 0)
+    )
+
+    // Group them into a mock category
+    val categorizedActivities = mapOf(
+        CozyCategory.MIND_SPACE to mockActivities
+    )
+
+    val sampleUiState = DashboardUiState(
+        activities = mockActivities,
+        categorizedActivities = categorizedActivities,
+        currentScreenTimeMillis = 3600000L,
+        screenTimeGoalMillis = 14400000L,
+        currentTheme = AppTheme.RETRO_SPACE,
+        petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
+        isLoading = false
+    )
+
+    // Wrap the preview in the NudgieTheme targeting the RETRO_SPACE look
+    NudgieTheme(appTheme = AppTheme.RETRO_SPACE) {
+        NudgieDashboardContent(
+            uiState = sampleUiState,
+            archivedHabits = emptyList(),
+            onToggleHabit = {},
+            onAddHabit = { _, _, _, _ -> },
+            onDeleteHabit = {},
+            onUpdateScreenTimeGoal = {},
+            onUpdateTheme = {},
+            onUpdatePetName = {},
+            onUpdatePetType = {},
+            onArchiveHabit = {},
+            onRestoreHabit = {}
+        )
     }
 }

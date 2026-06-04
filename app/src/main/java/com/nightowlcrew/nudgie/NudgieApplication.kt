@@ -4,7 +4,7 @@ import android.app.Application
 import com.nightowlcrew.nudgie.data.NudgieDatabase
 import com.nightowlcrew.nudgie.workers.ScreenTimeSyncWorker
 
-class NudgieApplication : Application() {
+class  NudgieApplication : Application() {
     val database: NudgieDatabase by lazy { NudgieDatabase.getDatabase(this) }
 
     override fun onCreate() {

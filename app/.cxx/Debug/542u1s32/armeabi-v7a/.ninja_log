@@ -1,0 +1,6 @@
+# ninja log v5
+1	606	8019924111389582	CMakeFiles/nudgie-logic.dir/native-lib.cpp.o	c3fd7b0198503fba
+5	632	8019924111665079	CMakeFiles/nudgie-logic.dir/NudgiePet.cpp.o	7d1276c44a2aea9
+632	734	8019924112612080	C:/Users/humbo/OneDrive/Documents/GitHub/2605_Team03/app/build/intermediates/cxx/Debug/542u1s32/obj/armeabi-v7a/libnudgie-logic.so	edbab6b9097f5179
+0	10	0	clean	9cec83cfc8fe91cb
+1	6	0	clean	9cec83cfc8fe91cb
