@@ -32,14 +32,15 @@ object AlarmUtils {
             putExtra("EXTRA_TIME", triggerAtMillis)
         }
 
+        val uniqueRequestCode = System.currentTimeMillis().toInt()
+
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            triggerAtMillis.toInt(), // Use time as requestCode for uniqueness
+            uniqueRequestCode, // <--- Use the unique ID here
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Set the alarm to wake the device and trigger precisely
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             triggerAtMillis,
