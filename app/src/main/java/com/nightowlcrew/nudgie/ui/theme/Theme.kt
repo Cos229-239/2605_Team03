@@ -10,13 +10,16 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import com.nightowlcrew.nudgie.ui.dashboard.AppTheme
 
 /**
@@ -134,6 +137,22 @@ private val GothColorScheme = darkColorScheme(
     outline = gothBloodRed
 )
 
+private val RetroSpaceColorScheme = darkColorScheme(
+    primary = SpaceAccent,
+    secondary = SpaceOutline,
+    tertiary = SpaceSuccess,
+    background = SpaceBackground,
+    surface = SpaceSurface,
+    onPrimary = Color.Black,
+    onSecondary = Color.White,
+    onTertiary = Color.Black,
+    onBackground = Color.White,
+    onSurface = Color.White,
+    surfaceVariant = NavySurface,
+    onSurfaceVariant = LavenderText,
+    outline = NavyOutline
+)
+
 private val DarkColorScheme = darkColorScheme(
     primary = BrandGold,
     secondary = LevelUpBlue,
@@ -169,6 +188,7 @@ fun NudgieTheme(
         appTheme == AppTheme.CYBERPUNK -> CyberpunkColorScheme
         appTheme == AppTheme.STEAMPUNK -> SteampunkColorScheme
         appTheme == AppTheme.GOTH -> GothColorScheme
+        appTheme == AppTheme.RETRO_SPACE -> RetroSpaceColorScheme
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -182,6 +202,15 @@ fun NudgieTheme(
         AppTheme.STEAMPUNK -> SteampunkShapes
         AppTheme.GOTH -> GothShapes
         else -> MaterialTheme.shapes
+    }
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as android.app.Activity).window
+            // We want white icons for the status bar because our dashboard top is dark
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+        }
     }
 
     MaterialTheme(

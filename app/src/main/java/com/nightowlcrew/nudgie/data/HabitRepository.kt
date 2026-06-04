@@ -13,6 +13,10 @@ interface HabitRepository {
     suspend fun insertLog(log: HabitLogEntity): Long
     suspend fun deleteHabit(habit: HabitEntity)
 
+    fun getArchivedHabits(): Flow<List<HabitEntity>>
+    suspend fun archiveHabit(habitId: Int, timestamp: Long = System.currentTimeMillis())
+    suspend fun restoreHabit(habitId: Int)
+
     // Screen Time Operations
     /**
      * Retrieves the screen time record for a specific date.
