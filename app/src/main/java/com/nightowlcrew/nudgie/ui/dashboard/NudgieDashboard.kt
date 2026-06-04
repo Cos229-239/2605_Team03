@@ -98,6 +98,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.nightowlcrew.nudgie.R
+import com.nightowlcrew.nudgie.data.AccessoryItem
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.data.HabitEntity
@@ -184,7 +185,9 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
         onUpdatePetName = { viewModel.updatePetName(it) },
         onUpdatePetType = { viewModel.updatePetType(it) },
         onArchiveHabit = { viewModel.archiveHabit(it) },
-        onRestoreHabit = { viewModel.restoreHabit(it) }
+        onRestoreHabit = { viewModel.restoreHabit(it) },
+        onBuyAccessory = { viewModel.buyAccessory(it) },
+        onEquipAccessory = { viewModel.equipAccessory(it) }
     )
 }
 
@@ -201,18 +204,31 @@ fun NudgieDashboardContent(
     onUpdatePetName: (String) -> Unit,
     onUpdatePetType: (PetType) -> Unit,
     onArchiveHabit: (HabitEntity) -> Unit,
-    onRestoreHabit: (HabitEntity) -> Unit
+    onRestoreHabit: (HabitEntity) -> Unit,
+    onBuyAccessory: (AccessoryItem) -> Unit,
+    onEquipAccessory: (AccessoryItem) -> Unit
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     var showPetSelection by remember { mutableStateOf(false) }
+    var showShopDialog by remember { mutableStateOf(false) }
 
     if (showPetSelection) {
         PetSelectionDialog(
             onDismissRequest = { showPetSelection = false },
             onPetSelected = onUpdatePetType,
             currentPetType = uiState.currentPetType
+        )
+    }
+
+    if (showShopDialog) {
+        ShopDialog(
+            currency = uiState.petStats.currency,
+            accessories = uiState.petStats.accessories,
+            onBuy = onBuyAccessory,
+            onEquip = onEquipAccessory,
+            onDismiss = { showShopDialog = false }
         )
     }
 
@@ -285,7 +301,7 @@ fun NudgieDashboardContent(
                         navController.navigate("tasks?openSlider=true")
                     },
                     streak = 12, // For demo, can be linked to viewModel later
-                    currency = 250 // For demo, can be linked to viewModel later
+                    currency = uiState.petStats.currency
                 )
             }
             composable(Screen.Pet.route) {
@@ -293,7 +309,8 @@ fun NudgieDashboardContent(
                     petStats = uiState.petStats,
                     currentPetType = uiState.currentPetType,
                     onUpdatePetName = onUpdatePetName,
-                    onCustomizeClick = { showPetSelection = true }
+                    onCustomizeClick = { showPetSelection = true },
+                    onShopClick = { showShopDialog = true }
                 )
             }
             composable(
@@ -399,6 +416,7 @@ fun PetActionButton(
 @Composable
 fun PetActionButtons(
     onCustomizeClick: () -> Unit,
+    onShopClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -408,9 +426,9 @@ fun PetActionButtons(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         PetActionButton("Customize", R.drawable.zustomize, onClick = onCustomizeClick)
+        PetActionButton("Shop", android.R.drawable.ic_menu_manage, onClick = onShopClick)
         PetActionButton("Food", R.drawable.feed)
         PetActionButton("Play", R.drawable.play)
-        PetActionButton("Bath", R.drawable.bath)
     }
 }
 
@@ -419,7 +437,8 @@ fun NudgiePetScreen(
     petStats: PetStats,
     currentPetType: PetType,
     onUpdatePetName: (String) -> Unit,
-    onCustomizeClick: () -> Unit
+    onCustomizeClick: () -> Unit,
+    onShopClick: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -435,9 +454,6 @@ fun NudgiePetScreen(
                 .statusBarsPadding()
                 .padding(bottom = 32.dp)
         ) {
-            // Header
-
-
             Spacer(modifier = Modifier.height(8.dp))
 
             // Pet Info Card
@@ -456,21 +472,23 @@ fun NudgiePetScreen(
                     .weight(2f),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = PetAssetManager.getPetDrawable(currentPetType)),
-                    contentDescription = "Nudgie Character",
+                DressedUpPet(
+                    basePetRes = PetAssetManager.getPetDrawable(currentPetType),
+                    equippedAccessories = petStats.accessories.filter { it.isEquipped },
                     modifier = Modifier
                         .size(280.dp)
                         .offset(x = (-70).dp, y = 15.dp)
-                        .graphicsLayer { scaleX = -1f }, // Flip horizontally
-                    contentScale = ContentScale.Fit
+                        .graphicsLayer { scaleX = -1f } // Flip horizontally
                 )
             }
 
             Spacer(modifier = Modifier.weight(0.5f))
 
             // Action Buttons
-            PetActionButtons(onCustomizeClick = onCustomizeClick)
+            PetActionButtons(
+                onCustomizeClick = onCustomizeClick,
+                onShopClick = onShopClick
+            )
         }
     }
 }
@@ -624,7 +642,8 @@ fun NudgiePetScreenPreview() {
             petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
             currentPetType = PetType.BLUE,
             onUpdatePetName = {},
-            onCustomizeClick = {}
+            onCustomizeClick = {},
+            onShopClick = {}
         )
     }
 }
@@ -925,13 +944,14 @@ fun PetFrame(
         // Interactive Bottom Strip - Enlarged Pet
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
             Spacer(Modifier.weight(1f))
-            // Pixel Art Pet
-            Image(
-                painter = painterResource(id = PetAssetManager.getPetDrawable(currentPetType)),
-                contentDescription = "Your Pet",
-                modifier = Modifier.size(225.dp),
-                contentScale = ContentScale.Fit
+
+            // Pixel Art Pet (Now supports clothes!)
+            DressedUpPet(
+                basePetRes = PetAssetManager.getPetDrawable(currentPetType),
+                equippedAccessories = petStats.accessories.filter { it.isEquipped },
+                modifier = Modifier.size(225.dp)
             )
+
             Spacer(Modifier.weight(3f))
         }
 
@@ -1296,7 +1316,7 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun NudgieDashboardPreview() {
-    // Generate some mock activities to match your Figma mockup
+
     val mockActivities = listOf(
         ActivityItem(id = 1, icon = "</>", description = "Coding Lesson", category = CozyCategory.MIND_SPACE.name, time = "10:00 AM", isCompleted = true, targetCount = 1, currentCount = 1),
         ActivityItem(id = 2, icon = "📖", description = "Read 20 Pages", category = CozyCategory.MIND_SPACE.name, time = "1:00 PM", isCompleted = true, targetCount = 1, currentCount = 1),
@@ -1304,7 +1324,6 @@ fun NudgieDashboardPreview() {
         ActivityItem(id = 4, icon = "🧘", description = "Meditate 10 Minutes", category = CozyCategory.MIND_SPACE.name, time = "8:00 PM", isCompleted = false, targetCount = 1, currentCount = 0)
     )
 
-    // Group them into a mock category
     val categorizedActivities = mapOf(
         CozyCategory.MIND_SPACE to mockActivities
     )
@@ -1319,7 +1338,6 @@ fun NudgieDashboardPreview() {
         isLoading = false
     )
 
-    // Wrap the preview in the NudgieTheme targeting the RETRO_SPACE look
     NudgieTheme(appTheme = AppTheme.RETRO_SPACE) {
         NudgieDashboardContent(
             uiState = sampleUiState,
@@ -1332,7 +1350,38 @@ fun NudgieDashboardPreview() {
             onUpdatePetName = {},
             onUpdatePetType = {},
             onArchiveHabit = {},
-            onRestoreHabit = {}
+            onRestoreHabit = {},
+            onBuyAccessory = {},
+            onEquipAccessory = {}
         )
+    }
+}
+
+@Composable
+fun DressedUpPet(
+    basePetRes: Int,
+    equippedAccessories: List<AccessoryItem>,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+    ) {
+        // The Base Pet
+        Image(
+            painter = painterResource(id = basePetRes),
+            contentDescription = "Nudgie Character",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Fit
+        )
+
+        equippedAccessories.forEach { accessory ->
+            Image(
+                painter = painterResource(id = accessory.assetResId),
+                contentDescription = accessory.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        }
     }
 }
