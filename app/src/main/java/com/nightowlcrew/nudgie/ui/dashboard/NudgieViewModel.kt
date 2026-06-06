@@ -50,6 +50,7 @@ data class DashboardUiState(
     val currentTheme: AppTheme = AppTheme.RETRO_SPACE,
     val petStats: PetStats = PetStats(),
     val currentPetType: PetType = PetType.BLUE,
+    val totalTasksDone: Int = 0,
     val isLoading: Boolean = true
 )
 
@@ -122,6 +123,8 @@ class NudgieViewModel(
                     activities.filter { it.category == category.name }
                 }.filterValues { it.isNotEmpty() }
 
+                val tasksDone = activities.sumOf { it.currentCount }
+
                 DashboardUiState(
                     activities = activities,
                     categorizedActivities = categorized,
@@ -130,6 +133,7 @@ class NudgieViewModel(
                     petStats = petStats,
                     currentTheme = theme,
                     currentPetType = petType,
+                    totalTasksDone = tasksDone,
                     isLoading = false
                 )
             }.collect { updatedState ->
