@@ -7,8 +7,8 @@ data class AccessoryItem(
     val iconResId: Int, // The icon to display in the shop
     val assetResId: Int, // The actual transparent PNG that goes on the pet
     val category: AccessoryCategory,
-    var isPurchased: Boolean = false,
-    var isEquipped: Boolean = false
+    val isPurchased: Boolean = false,
+    val isEquipped: Boolean = false
 )
 
 enum class AccessoryCategory {

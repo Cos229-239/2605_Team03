@@ -19,6 +19,12 @@ interface HabitDao {
     @Query("SELECT * FROM habits WHERE isArchived = 1 ORDER BY archivedAt DESC")
     fun getArchivedHabits(): Flow<List<HabitEntity>>
 
+    @Query("SELECT * FROM habits")
+    fun getAllHabits(): Flow<List<HabitEntity>>
+
+    @Query("SELECT * FROM habit_logs")
+    fun getAllLogs(): Flow<List<HabitLogEntity>>
+
     @Query("UPDATE habits SET isArchived = 1, archivedAt = :timestamp WHERE id = :habitId")
     suspend fun archiveHabit(habitId: Int, timestamp: Long = System.currentTimeMillis())
 

@@ -7,39 +7,31 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.nightowlcrew.nudgie.NudgieApplication
-import com.nightowlcrew.nudgie.data.AccessoryCategory
-import com.nightowlcrew.nudgie.data.AccessoryItem
-import com.nightowlcrew.nudgie.data.ActivityItem
-import com.nightowlcrew.nudgie.data.CozyCategory
-import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
-import com.nightowlcrew.nudgie.data.HabitEntity
-import com.nightowlcrew.nudgie.data.HabitLogEntity
-import com.nightowlcrew.nudgie.data.HabitRepository
-import com.nightowlcrew.nudgie.data.HabitRepositoryImpl
-import com.nightowlcrew.nudgie.utils.IconSwitcherManager
-import com.nightowlcrew.nudgie.utils.PetAssetManager
+import com.nightowlcrew.nudgie.data.*
 import com.nightowlcrew.nudgie.utils.PetType
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK, GOTH, RETRO_SPACE }
 
+/**
+ * REFACTORED: Represents the available app icon themes.
+ * Used to decouple the ViewModel from Android Context.
+ */
+enum class AppIconTheme { BLUE, FOX, AXOLOTL, DRAGON }
+
 data class PetStats(
-    val name: String = "Your Pet",
+    val name: String = "Adnap Hsart",
     val level: Int = 1,
     val xp: Int = 0,
     val happiness: Int = 100,
     val energy: Int = 100,
-    val currency: Int = 250, // <-- Added Currency here
-    val accessories: List<AccessoryItem> = emptyList() // <-- Added Accessories here
+    val currency: Int = 250,
+    val accessories: List<AccessoryItem> = emptyList(),
 )
 
 data class DashboardUiState(
@@ -54,6 +46,14 @@ data class DashboardUiState(
     val isLoading: Boolean = true
 )
 
+data class StatsUiState(
+    val activeStreak: Int = 0,
+    val totalTasksDone: Int = 0,
+    val categoryProgress: Map<String, Float> = emptyMap(),
+    val petStats: PetStats = PetStats(),
+    val isLoading: Boolean = true
+)
+
 class NudgieViewModel(
     private val repository: HabitRepository,
     private val sharedPreferences: SharedPreferences
@@ -61,6 +61,92 @@ class NudgieViewModel(
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    // Analytics: Asynchronously calculated stats exposed via stateIn
+    val statsUiState: StateFlow<StatsUiState> = combine(
+        repository.getAllHabits(),
+        repository.getAllLogs(),
+        _uiState.map { it.petStats }
+    ) { habits: List<HabitEntity>, logs: List<HabitLogEntity>, petStats: PetStats ->
+        val completedLogs = logs.filter { it.isCompleted }
+        val totalTasks = completedLogs.size
+        
+        // Streak calculation logic
+        val streak = calculateStreak(completedLogs)
+        
+        // Category progress calculation
+        val catProgress = CozyCategory.values().associate { category ->
+            val habitsInCat = habits.filter { it.category == category.name }
+            val habitIds = habitsInCat.map { it.id }.toSet()
+            val completedInCat = completedLogs.filter { it.habitId in habitIds }.size
+            val targetInCat = habitsInCat.sumOf { it.targetFrequencyPerDay } * 7 // Weekly context
+            
+            val progress = if (targetInCat > 0) {
+                (completedInCat.toFloat() / targetInCat.toFloat()).coerceIn(0f, 1f)
+            } else 0f
+            category.name to progress
+        }
+
+        StatsUiState(
+            activeStreak = streak,
+            totalTasksDone = totalTasks,
+            categoryProgress = catProgress,
+            petStats = petStats,
+            isLoading = false
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = StatsUiState()
+    )
+
+    private fun calculateStreak(completedLogs: List<HabitLogEntity>): Int {
+        if (completedLogs.isEmpty()) return 0
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        
+        // Use a set to handle distinct dates
+        val dateSet = mutableSetOf<String>()
+        for (log in completedLogs) {
+            if (log.date.isNotEmpty()) {
+                dateSet.add(log.date)
+            }
+        }
+        
+        val completedDates = dateSet.toList().sortedDescending()
+        if (completedDates.isEmpty()) return 0
+        
+        var streak = 0
+        val calendar = Calendar.getInstance()
+        val today = sdf.format(calendar.time)
+        
+        calendar.add(Calendar.DAY_OF_YEAR, -1)
+        val yesterday = sdf.format(calendar.time)
+        
+        val latestDate = completedDates[0]
+        if (latestDate != today && latestDate != yesterday) return 0
+        
+        val streakCalendar = Calendar.getInstance()
+        try {
+            val date = sdf.parse(latestDate)
+            if (date != null) {
+                streakCalendar.time = date
+            } else {
+                return 0
+            }
+        } catch (e: Exception) {
+            return 0
+        }
+        
+        for (dateStr in completedDates) {
+            if (dateStr == sdf.format(streakCalendar.time)) {
+                streak++
+                streakCalendar.add(Calendar.DAY_OF_YEAR, -1)
+            } else {
+                break
+            }
+        }
+        return streak
+    }
 
     val archivedHabits: StateFlow<List<HabitEntity>> = repository.getArchivedHabits()
         .stateIn(
@@ -82,6 +168,32 @@ class NudgieViewModel(
         try { PetType.valueOf(sharedPreferences.getString("pet_type", PetType.BLUE.name) ?: PetType.BLUE.name) }
         catch (e: Exception) { PetType.BLUE }
     )
+
+    /**
+     * REFACTORED: Expose the app icon theme as a reactive StateFlow.
+     * This allows the UI to handle the platform-specific icon switching.
+     */
+    val appIconTheme: StateFlow<AppIconTheme> = _currentPetType
+        .map { petType ->
+            when (petType) {
+                PetType.BLUE -> AppIconTheme.BLUE
+                PetType.FOX -> AppIconTheme.FOX
+                PetType.AXOLOTL -> AppIconTheme.AXOLOTL
+                PetType.DRAGON -> AppIconTheme.DRAGON
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = when (_currentPetType.value) {
+                PetType.BLUE -> AppIconTheme.BLUE
+                PetType.FOX -> AppIconTheme.FOX
+                PetType.AXOLOTL -> AppIconTheme.AXOLOTL
+                PetType.DRAGON -> AppIconTheme.DRAGON
+                else -> AppIconTheme.BLUE // Fallback
+            }
+        )
+
     private val _happiness = MutableStateFlow(85)
     private val _energy = MutableStateFlow(62)
     private val _petLevel = MutableStateFlow(5)
@@ -89,7 +201,6 @@ class NudgieViewModel(
 
     private val _currency = MutableStateFlow(sharedPreferences.getInt("pet_currency", 250))
 
-    // Dummy Shop Items (Using generic Android icons temporarily until you add your PNGs)
     private val _accessories = MutableStateFlow(
         listOf(
             AccessoryItem("hat_1", "Cowboy Hat", 50, com.nightowlcrew.nudgie.R.drawable.zustomize, com.nightowlcrew.nudgie.R.drawable.zustomize, AccessoryCategory.HAT),
@@ -104,10 +215,9 @@ class NudgieViewModel(
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
             val petStatsFlow = combine(_petName, _happiness, _energy, _petLevel, _petXP) { name, h, e, l, xp ->
-                PetStats(name, l, xp, h, e) // Currency and Accessories added in the next step
+                PetStats(name, l, xp, h, e)
             }
 
-            // Combine the pet stats with the shop data
             val extendedPetStatsFlow = combine(petStatsFlow, _currency, _accessories) { stats, currency, accessories ->
                 stats.copy(currency = currency, accessories = accessories)
             }
@@ -115,11 +225,11 @@ class NudgieViewModel(
             combine(
                 repository.getAllHabitsWithLogs(),
                 repository.getScreenTimeForDate(today),
-                extendedPetStatsFlow, // <--- Using the combined state
+                extendedPetStatsFlow,
                 _currentTheme,
                 _currentPetType
             ) { activities, screenTime, petStats, theme, petType ->
-                val categorized = CozyCategory.entries.associateWith { category ->
+                val categorized = CozyCategory.values().associateWith { category ->
                     activities.filter { it.category == category.name }
                 }.filterValues { it.isNotEmpty() }
 
@@ -136,9 +246,9 @@ class NudgieViewModel(
                     totalTasksDone = tasksDone,
                     isLoading = false
                 )
-            }.collect { updatedState ->
+            }.onEach { updatedState ->
                 _uiState.value = updatedState
-            }
+            }.launchIn(viewModelScope)
         }
     }
 
@@ -148,7 +258,6 @@ class NudgieViewModel(
             _currency.value = currentCurrency - accessory.cost
             sharedPreferences.edit().putInt("pet_currency", _currency.value).apply()
 
-            // Update list to trigger UI recomposition
             _accessories.value = _accessories.value.map {
                 if (it.id == accessory.id) it.copy(isPurchased = true) else it
             }
@@ -158,7 +267,6 @@ class NudgieViewModel(
     fun equipAccessory(accessory: AccessoryItem) {
         if (accessory.isPurchased) {
             _accessories.value = _accessories.value.map {
-                // Un-equip other items of the same category so they don't stack
                 if (it.category == accessory.category) {
                     it.copy(isEquipped = it.id == accessory.id)
                 } else {
@@ -167,8 +275,6 @@ class NudgieViewModel(
             }
         }
     }
-
-    // --- EVERYTHING BELOW HERE REMAINS UNCHANGED ---
 
     fun updateTheme(theme: AppTheme) {
         _currentTheme.value = theme
@@ -183,10 +289,6 @@ class NudgieViewModel(
     fun updatePetType(newType: PetType) {
         _currentPetType.value = newType
         sharedPreferences.edit().putString("pet_type", newType.name).apply()
-    }
-
-    fun syncAppIcon(context: Context) {
-        IconSwitcherManager.switchToIcon(context, PetAssetManager.getNudgieIcon(_currentPetType.value))
     }
 
     private fun prepopulateDefaultHabits() {
@@ -255,7 +357,7 @@ class NudgieViewModel(
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val limitMillis = newGoalHours.toLong() * 3600000L
             val currentRecord = _uiState.value
-            val record = com.nightowlcrew.nudgie.data.ScreenTimeRecord(date = today, targetLimitMillis = limitMillis, actualDurationMillis = currentRecord.currentScreenTimeMillis)
+            val record = ScreenTimeRecord(date = today, targetLimitMillis = limitMillis, actualDurationMillis = currentRecord.currentScreenTimeMillis)
             repository.insertOrUpdateScreenTime(record)
         }
     }

@@ -168,11 +168,13 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 @Composable
 fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val statsUiState by viewModel.statsUiState.collectAsStateWithLifecycle()
     val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     NudgieDashboardContent(
         uiState = uiState,
+        statsUiState = statsUiState,
         archivedHabits = archivedHabits,
         onToggleHabit = { viewModel.toggleHabitCompletion(it) },
         onAddHabit = { title, category, frequency, isStock -> viewModel.addNewHabit(title, category, frequency, isStock) },
@@ -192,6 +194,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
 @Composable
 fun NudgieDashboardContent(
     uiState: DashboardUiState,
+    statsUiState: StatsUiState,
     archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
     onAddHabit: (String, String, Int, Boolean) -> Unit,
@@ -330,7 +333,7 @@ fun NudgieDashboardContent(
                     initialOpenSlider = openSlider
                 )
             }
-            composable(Screen.Stats.route) { ComingSoonScreen("Stats") }
+            composable(Screen.Stats.route) { StatsContent(statsUiState) }
             composable(Screen.Profile.route) { ComingSoonScreen("Profile") }
             composable(Screen.Settings.route) {
                 SettingsContent(
@@ -1344,6 +1347,7 @@ fun NudgieDashboardPreview() {
     NudgieTheme(appTheme = AppTheme.RETRO_SPACE) {
         NudgieDashboardContent(
             uiState = sampleUiState,
+            statsUiState = StatsUiState(),
             archivedHabits = emptyList(),
             onToggleHabit = {},
             onAddHabit = { _, _, _, _ -> },

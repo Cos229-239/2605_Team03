@@ -40,6 +40,14 @@ class HabitRepositoryImpl(
         return habitDao.getArchivedHabits()
     }
 
+    override fun getAllHabits(): Flow<List<HabitEntity>> {
+        return habitDao.getAllHabits()
+    }
+
+    override fun getAllLogs(): Flow<List<HabitLogEntity>> {
+        return habitDao.getAllLogs()
+    }
+
     override suspend fun archiveHabit(habitId: Int, timestamp: Long) {
         habitDao.archiveHabit(habitId, timestamp)
     }

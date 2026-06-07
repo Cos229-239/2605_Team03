@@ -52,7 +52,7 @@ import com.nightowlcrew.nudgie.ui.theme.SpaceSecondaryText
 import com.nightowlcrew.nudgie.ui.theme.VT323
 
 @Composable
-fun StatsContent(uiState: DashboardUiState) {
+fun StatsContent(statsState: StatsUiState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -74,7 +74,7 @@ fun StatsContent(uiState: DashboardUiState) {
         Spacer(modifier = Modifier.height(24.dp))
 
         // Level Card
-        LevelCard(petStats = uiState.petStats)
+        LevelCard(petStats = statsState.petStats)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -87,14 +87,14 @@ fun StatsContent(uiState: DashboardUiState) {
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.FlashOn,
                 iconTint = Color(0xFFFFB703),
-                value = "12", // Placeholder for actual streak
+                value = statsState.activeStreak.toString(),
                 label = "Day Streak"
             )
             StatGridCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.Check,
                 iconTint = Color(0xFFE1BEE7),
-                value = uiState.totalTasksDone.toString(),
+                value = statsState.totalTasksDone.toString(),
                 label = "Tasks Done"
             )
         }
@@ -114,7 +114,7 @@ fun StatsContent(uiState: DashboardUiState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Categories List
-        CategoryProgressList(uiState = uiState)
+        CategoryProgressList(statsState = statsState)
         
         Spacer(modifier = Modifier.height(32.dp))
     }
@@ -246,7 +246,7 @@ fun StatGridCard(
 }
 
 @Composable
-fun CategoryProgressList(uiState: DashboardUiState) {
+fun CategoryProgressList(statsState: StatsUiState) {
     val categories = listOf(
         CategoryInfo("Learning", Color(0xFF916BFF), CozyCategory.MIND_SPACE),
         CategoryInfo("Health", Color(0xFF6BCB77), CozyCategory.BODY_VITALITY),
@@ -256,10 +256,7 @@ fun CategoryProgressList(uiState: DashboardUiState) {
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         categories.forEach { info ->
-            val activitiesInCat = uiState.categorizedActivities[info.category] ?: emptyList()
-            val total = activitiesInCat.sumOf { it.targetCount }
-            val completed = activitiesInCat.sumOf { it.currentCount }
-            val progress = if (total > 0) completed.toFloat() / total else 0.5f // Default to 50% for demo if empty
+            val progress = statsState.categoryProgress[info.category.name] ?: 0f
 
             CategoryProgressRow(
                 name = info.name,
@@ -326,7 +323,7 @@ fun CategoryProgressRow(name: String, progress: Float, color: Color) {
 fun StatsContentPreview() {
     NudgieTheme {
         StatsContent(
-            uiState = DashboardUiState(
+            statsState = StatsUiState(
                 petStats = PetStats(level = 5, xp = 450),
                 totalTasksDone = 25
             )
