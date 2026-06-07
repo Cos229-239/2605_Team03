@@ -22,6 +22,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.ui.dashboard.NudgieDashboard
 import com.nightowlcrew.nudgie.ui.dashboard.NudgieViewModel
 import com.nightowlcrew.nudgie.ui.theme.NudgieTheme
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import com.nightowlcrew.nudgie.services.NudgieOverlayService
 
 class  MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,7 +58,18 @@ class  MainActivity : ComponentActivity() {
                         permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }
+                if (!Settings.canDrawOverlays(this@MainActivity)) {
+                    val overlayIntent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName")
+                    )
+                    startActivity(overlayIntent)
+                } else {
+                    startService(Intent(this@MainActivity, NudgieOverlayService::class.java))
+                }
             }
+
+
 
             NudgieTheme(appTheme = uiState.currentTheme) {
                 Box(modifier = Modifier.fillMaxSize()) {
