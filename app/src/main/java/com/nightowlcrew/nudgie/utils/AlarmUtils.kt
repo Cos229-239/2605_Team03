@@ -11,6 +11,7 @@ import com.nightowlcrew.nudgie.data.AlarmEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Calendar // <-- Added the missing import for Calendar
 
 /**
  * Utility object for scheduling and managing exact alarms.
@@ -32,14 +33,15 @@ object AlarmUtils {
             putExtra("EXTRA_TIME", triggerAtMillis)
         }
 
+        val uniqueRequestCode = System.currentTimeMillis().toInt()
+
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            triggerAtMillis.toInt(), // Use time as requestCode for uniqueness
+            uniqueRequestCode, // <--- Use the unique ID here
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Set the alarm to wake the device and trigger precisely
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             triggerAtMillis,
@@ -86,6 +88,73 @@ object AlarmUtils {
             alarmManager.canScheduleExactAlarms()
         } else {
             true
+        } // <-- Fixed missing closing bracket
+    }
+
+    /**
+     * Schedules a daily morning reminder at the specified hour and minute.
+     * Kenneth's 'on_wake_up' implementation.
+     */
+    fun setWakeUpAlarm(context: Context, hour: Int, minute: Int) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            // Using our existing receiver logic by just passing the label!
+            putExtra("EXTRA_LABEL", "Good Morning! Check on your Nudgie ☀️")
         }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            1001, // Unique ID so it doesn't overwrite your individual task alarms
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+
+            // If the time has already passed today, set it for tomorrow morning
+            if (timeInMillis <= System.currentTimeMillis()) {
+                add(Calendar.DAY_OF_MONTH, 1)
+            }
+        }
+
+        // Sets it to fire every day at exactly that time
+        alarmManager.setRepeating(
+            AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            AlarmManager.INTERVAL_DAY,
+            pendingIntent
+        )
+    }
+
+    /**
+     * Schedules a repeating inexact alarm to remind the user to drink water.
+     */
+    fun setWaterReminders(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra("EXTRA_LABEL", "Stay Hydrated! Time for a glass of water 💧")
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            1002, // Unique ID for water reminders
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Set to trigger roughly every 2 hours
+        val intervalMillis = AlarmManager.INTERVAL_HOUR * 2
+
+        // InexactRepeating is vastly more battery-efficient for interval reminders
+        alarmManager.setInexactRepeating(
+            AlarmManager.RTC_WAKEUP,
+            System.currentTimeMillis() + intervalMillis,
+            intervalMillis,
+            pendingIntent
+        )
     }
 }

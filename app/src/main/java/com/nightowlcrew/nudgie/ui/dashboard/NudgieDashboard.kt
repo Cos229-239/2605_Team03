@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -34,6 +35,10 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.HourglassBottom
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Settings
@@ -51,6 +56,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,11 +77,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -90,6 +98,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.nightowlcrew.nudgie.R
+import com.nightowlcrew.nudgie.data.AccessoryItem
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.data.HabitEntity
@@ -124,9 +133,10 @@ import com.nightowlcrew.nudgie.ui.theme.spStatEnergy
 import com.nightowlcrew.nudgie.ui.theme.spStatHappiness
 import com.nightowlcrew.nudgie.ui.theme.spStatLevel
 import com.nightowlcrew.nudgie.ui.theme.spStatSuccess
+import com.nightowlcrew.nudgie.utils.AlarmUtils
 import com.nightowlcrew.nudgie.utils.PetAssetManager
 import com.nightowlcrew.nudgie.utils.PetType
-import androidx.compose.ui.platform.LocalContext
+import java.util.Calendar
 
 // Helper class to hold dynamic stat colors based on the current theme
 data class StatColors(
@@ -163,7 +173,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    
+
     NudgieDashboardContent(
         uiState = uiState,
         archivedHabits = archivedHabits,
@@ -173,9 +183,11 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
         onUpdatePetName = { viewModel.updatePetName(it) },
-        onUpdatePetType = { viewModel.updatePetType(it, context) },
+        onUpdatePetType = { viewModel.updatePetType(it) },
         onArchiveHabit = { viewModel.archiveHabit(it) },
-        onRestoreHabit = { viewModel.restoreHabit(it) }
+        onRestoreHabit = { viewModel.restoreHabit(it) },
+        onBuyAccessory = { viewModel.buyAccessory(it) },
+        onEquipAccessory = { viewModel.equipAccessory(it) }
     )
 }
 
@@ -192,18 +204,31 @@ fun NudgieDashboardContent(
     onUpdatePetName: (String) -> Unit,
     onUpdatePetType: (PetType) -> Unit,
     onArchiveHabit: (HabitEntity) -> Unit,
-    onRestoreHabit: (HabitEntity) -> Unit
+    onRestoreHabit: (HabitEntity) -> Unit,
+    onBuyAccessory: (AccessoryItem) -> Unit,
+    onEquipAccessory: (AccessoryItem) -> Unit
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     var showPetSelection by remember { mutableStateOf(false) }
+    var showShopDialog by remember { mutableStateOf(false) }
 
     if (showPetSelection) {
         PetSelectionDialog(
             onDismissRequest = { showPetSelection = false },
             onPetSelected = onUpdatePetType,
             currentPetType = uiState.currentPetType
+        )
+    }
+
+    if (showShopDialog) {
+        ShopDialog(
+            currency = uiState.petStats.currency,
+            accessories = uiState.petStats.accessories,
+            onBuy = onBuyAccessory,
+            onEquip = onEquipAccessory,
+            onDismiss = { showShopDialog = false }
         )
     }
 
@@ -276,7 +301,7 @@ fun NudgieDashboardContent(
                         navController.navigate("tasks?openSlider=true")
                     },
                     streak = 12, // For demo, can be linked to viewModel later
-                    currency = 250 // For demo, can be linked to viewModel later
+                    currency = uiState.petStats.currency
                 )
             }
             composable(Screen.Pet.route) {
@@ -284,14 +309,15 @@ fun NudgieDashboardContent(
                     petStats = uiState.petStats,
                     currentPetType = uiState.currentPetType,
                     onUpdatePetName = onUpdatePetName,
-                    onCustomizeClick = { showPetSelection = true }
+                    onCustomizeClick = { showPetSelection = true },
+                    onShopClick = { showShopDialog = true }
                 )
             }
             composable(
                 route = "tasks?openSlider={openSlider}",
-                arguments = listOf(navArgument("openSlider") { 
+                arguments = listOf(navArgument("openSlider") {
                     type = NavType.BoolType
-                    defaultValue = false 
+                    defaultValue = false
                 })
             ) { backStackEntry ->
                 val openSlider = backStackEntry.arguments?.getBoolean("openSlider") ?: false
@@ -390,6 +416,7 @@ fun PetActionButton(
 @Composable
 fun PetActionButtons(
     onCustomizeClick: () -> Unit,
+    onShopClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -399,9 +426,9 @@ fun PetActionButtons(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         PetActionButton("Customize", R.drawable.zustomize, onClick = onCustomizeClick)
+        PetActionButton("Shop", android.R.drawable.ic_menu_manage, onClick = onShopClick)
         PetActionButton("Food", R.drawable.feed)
         PetActionButton("Play", R.drawable.play)
-        PetActionButton("Bath", R.drawable.bath)
     }
 }
 
@@ -410,7 +437,8 @@ fun NudgiePetScreen(
     petStats: PetStats,
     currentPetType: PetType,
     onUpdatePetName: (String) -> Unit,
-    onCustomizeClick: () -> Unit
+    onCustomizeClick: () -> Unit,
+    onShopClick: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -426,9 +454,6 @@ fun NudgiePetScreen(
                 .statusBarsPadding()
                 .padding(bottom = 32.dp)
         ) {
-            // Header
-
-
             Spacer(modifier = Modifier.height(8.dp))
 
             // Pet Info Card
@@ -447,21 +472,23 @@ fun NudgiePetScreen(
                     .weight(2f),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = PetAssetManager.getPetDrawable(currentPetType)),
-                    contentDescription = "Nudgie Character",
+                DressedUpPet(
+                    basePetRes = PetAssetManager.getPetDrawable(currentPetType),
+                    equippedAccessories = petStats.accessories.filter { it.isEquipped },
                     modifier = Modifier
                         .size(280.dp)
                         .offset(x = (-70).dp, y = 15.dp)
-                        .graphicsLayer { scaleX = -1f }, // Flip horizontally
-                    contentScale = ContentScale.Fit
+                        .graphicsLayer { scaleX = -1f } // Flip horizontally
                 )
             }
 
             Spacer(modifier = Modifier.weight(0.5f))
 
             // Action Buttons
-            PetActionButtons(onCustomizeClick = onCustomizeClick)
+            PetActionButtons(
+                onCustomizeClick = onCustomizeClick,
+                onShopClick = onShopClick
+            )
         }
     }
 }
@@ -615,7 +642,8 @@ fun NudgiePetScreenPreview() {
             petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
             currentPetType = PetType.BLUE,
             onUpdatePetName = {},
-            onCustomizeClick = {}
+            onCustomizeClick = {},
+            onShopClick = {}
         )
     }
 }
@@ -637,7 +665,7 @@ fun DashboardContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(NavyBackground) // Fix white background issue
+            .background(NavyBackground)
             .verticalScroll(rememberScrollState())
     ) {
         PetFrame(
@@ -651,7 +679,7 @@ fun DashboardContent(
             streak = streak,
             currency = currency
         )
-        Spacer(modifier = Modifier.height(48.dp)) // Move headers down more
+        Spacer(modifier = Modifier.height(48.dp))
         TasksSection(
             categorizedActivities = categorizedActivities,
             currentTheme = currentTheme,
@@ -679,7 +707,7 @@ fun PetFrame(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
-    androidx.compose.runtime.LaunchedEffect(isEditingName) {
+    LaunchedEffect(isEditingName) {
         if (isEditingName) {
             focusRequester.requestFocus()
         }
@@ -688,10 +716,8 @@ fun PetFrame(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(510.dp) // Slightly increased to accommodate Digital Balance
+            .height(510.dp)
     ) {
-        // ... (Header and Streak Logic remains same)
-        // ... (rest of the Box content remains largely the same until Level & XP Box)
         // Edge-to-edge Background Image
         Image(
             painter = painterResource(id = R.drawable.pethero_dashboard),
@@ -722,7 +748,7 @@ fun PetFrame(
             // Overlaid Streak and Currency Row
             Row(
                 modifier = Modifier
-                    .statusBarsPadding() // Add padding to avoid overlapping system icons
+                    .statusBarsPadding()
                     .fillMaxWidth()
                     .padding(bottom = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -735,7 +761,7 @@ fun PetFrame(
                         streak >= 5 -> "⭐"
                         else -> "•"
                     }
-                    val fontSize = if (streak >= 25) 22.sp else 20.sp // Increased font sizes
+                    val fontSize = if (streak >= 25) 22.sp else 20.sp
                     Text(text = streakIcon, fontSize = 24.sp)
                     Spacer(Modifier.width(6.dp))
                     Text(
@@ -754,7 +780,7 @@ fun PetFrame(
                         text = currency.toString(),
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp // Increased currency font size
+                        fontSize = 20.sp
                     )
                 }
             }
@@ -766,7 +792,7 @@ fun PetFrame(
                     modifier = Modifier
                         .width(320.dp)
                         .height(180.dp)
-                        .clip(RoundedCornerShape(50.dp)), // Mask corner artifacts from background asset
+                        .clip(RoundedCornerShape(50.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -774,29 +800,28 @@ fun PetFrame(
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Fit,
-
                     )
                     Column(
                         modifier = Modifier.padding(bottom = 1.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text("08:30", fontSize = 72.sp, fontWeight = FontWeight.ExtraBold, color = Color.White) // Prominent Time
+                            Text("08:30", fontSize = 72.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                             Text("AM", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
                         }
-                        Text("Thursday, May 7", fontSize = 18.sp, color = Color.White.copy(alpha = 0.8f)) // Increased font size
+                        Text("Thursday, May 7", fontSize = 18.sp, color = Color.White.copy(alpha = 0.8f))
                     }
                 }
 
                 // Pet Name Box centered and overlapping the bottom
                 Surface(
-                    color = SpaceSurface.copy(alpha = 1f), // Dark Purple
-                    shape = RoundedCornerShape(8.dp), // Rounded corners
+                    color = SpaceSurface.copy(alpha = 1f),
+                    shape = RoundedCornerShape(8.dp),
                     border = BorderStroke(2.dp, NavyOutline),
-                    modifier = Modifier.offset(y = 10.dp) // Overlap effect
+                    modifier = Modifier.offset(y = 10.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp), // WORD + 16 padding as requested
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (isEditingName) {
@@ -819,7 +844,7 @@ fun PetFrame(
                                     }
                                 ),
                                 modifier = Modifier
-                                    .width(IntrinsicSize.Min) // Expand to fit word
+                                    .width(IntrinsicSize.Min)
                                     .focusRequester(focusRequester)
                             )
                         } else {
@@ -855,7 +880,7 @@ fun PetFrame(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .padding(vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp) // Closer spacing
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // XP Bar Section
                 Column {
@@ -883,7 +908,7 @@ fun PetFrame(
                 // Digital Balance Bar Section
                 val goalHours = screenTimeGoalMillis / 3600000f
                 val currentHours = currentScreenTimeMillis / 3600000f
-                
+
                 Column(
                     modifier = Modifier.pointerInput(Unit) {
                         detectTapGestures(
@@ -914,46 +939,153 @@ fun PetFrame(
                     }
                 }
             }
-
-            Spacer(Modifier.weight(1f))
-
-            // Interactive Bottom Strip - Enlarged Pet
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                Spacer(Modifier.weight(1f))
-                // Pixel Art Pet
-                Image(
-                    painter = painterResource(id = PetAssetManager.getPetDrawable(currentPetType)),
-                    contentDescription = "Your Pet",
-                    modifier = Modifier.size(225.dp), // Enlarged to 225.dp
-                    contentScale = ContentScale.Fit
-                )
-                Spacer(Modifier.weight(3f))
-            }
-            Spacer(Modifier.height(32.dp)) // Cushion for overlaid card
         }
 
-        // Stats Box with solid background: 1/3 inside the frame, 2/3 outside
+        // Interactive Bottom Strip - Enlarged Pet
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Spacer(Modifier.weight(1f))
+
+            // Pixel Art Pet (Now supports clothes!)
+            DressedUpPet(
+                basePetRes = PetAssetManager.getPetDrawable(currentPetType),
+                equippedAccessories = petStats.accessories.filter { it.isEquipped },
+                modifier = Modifier.size(225.dp)
+            )
+
+            Spacer(Modifier.weight(3f))
+        }
+
+        // Stats Box with solid background
         Surface(
             color = NavySurface,
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(2.dp, NavyOutline),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 55.dp) // Narrow the card
+                .padding(horizontal = 55.dp)
                 .align(Alignment.BottomCenter)
-                .offset(y = 55.dp) // Adjusted offset for more "overlap" look
+                .offset(y = 55.dp)
                 .height(70.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 8.dp, vertical = 2.dp), // Minimal vertical padding
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatItem("Happiness", "${petStats.happiness}%", statColors.happiness, Icons.Default.Favorite)
                 StatItem("Energy", "${petStats.energy}%", statColors.energy, Icons.Default.FlashOn)
                 StatItem("Level", petStats.level.toString(), statColors.level, Icons.Default.Star)
+            }
+        }
+    }
+}
+
+@Composable
+fun ActivityLogItem(
+    activity: ActivityItem,
+    currentTheme: AppTheme,
+    onToggleHabit: (ActivityItem) -> Unit,
+) {
+    val context = LocalContext.current
+    val itemBgColor = MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val isCompleted = activity.currentCount >= activity.targetCount
+    val contentAlpha = if (isCompleted) 0.8f else 1.0f
+    val displayTime = remember {
+        mutableStateOf(activity.time)
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                if (activity.targetCount <= 1) {
+                    onToggleHabit(activity)
+                }
+            },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = itemBgColor)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Status Icon Box
+                if (activity.targetCount <= 1) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f), CircleShape)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (activity.isCompleted) {
+                            Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
+
+                // Emoji/Icon
+                if (activity.icon.length <= 2) {
+                    Text(text = activity.icon, fontSize = 20.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
+
+                // Description
+                Text(
+                    text = activity.description,
+                    color = contentColor.copy(alpha = contentAlpha),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Time
+                Text(
+                    text = displayTime.value,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                androidx.compose.material3.IconButton(
+                    onClick = {
+                        val calendar = Calendar.getInstance()
+                        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+                        val currentMinute = calendar.get(Calendar.MINUTE)
+
+                        android.app.TimePickerDialog(
+                            context,
+                            { _, selectedHour, selectedMinute ->
+                                val triggerTime = Calendar.getInstance().apply {
+                                    set(Calendar.HOUR_OF_DAY, selectedHour)
+                                    set(Calendar.MINUTE, selectedMinute)
+                                    set(Calendar.SECOND, 0)
+                                }.timeInMillis
+
+                                AlarmUtils.setExactAlarm(context, triggerTime)
+
+                                val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+                                displayTime.value = formattedTime
+                            },
+                            currentHour,
+                            currentMinute,
+                            false
+                        ).show()
+                    },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Set Reminder",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }
@@ -988,7 +1120,7 @@ fun TasksSection(
 ) {
     // Filter categories that have tasks
     val activeCategories = CozyCategory.entries.filter { categorizedActivities[it]?.isNotEmpty() == true }
-    
+
     if (activeCategories.isEmpty()) return
 
     var selectedCategory by remember { mutableStateOf(activeCategories.first()) }
@@ -1013,7 +1145,7 @@ fun TasksSection(
                 color = LavenderText, // Match mockup
                 fontSize = 18.sp, // Increased font size (Orange Line)
                 fontWeight = FontWeight.Normal
-                
+
             )
         }
 
@@ -1034,7 +1166,7 @@ fun TasksSection(
                     CozyCategory.SELF_CARE_RITUALS -> "✨"
                     CozyCategory.CONNECTIONS -> "🤝"
                 }
-                
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -1078,8 +1210,8 @@ fun TasksSection(
 fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (ActivityItem) -> Unit) {
     val isCompleted = task.isCompleted
     val statColors = getThemeStatColors(currentTheme)
-    val successColor = statColors.success 
-
+    val successColor = statColors.success
+    val context = LocalContext.current
     Card(
         colors = CardDefaults.cardColors(containerColor = NavySurface),
         shape = RoundedCornerShape(12.dp),
@@ -1121,14 +1253,14 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    task.description, 
-                    color = Color.White, 
+                    task.description,
+                    color = Color.White,
                     fontSize = 20.sp, // Increased font size (Orange Line)
                     fontWeight = FontWeight.SemiBold
                 )
-                
+
                 Spacer(Modifier.height(4.dp))
-                
+
                 // Task Progress Bar
                 val progress = if (task.targetCount > 0) task.currentCount.toFloat() / task.targetCount else 0f
                 LinearProgressIndicator(
@@ -1142,7 +1274,39 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
                     strokeCap = StrokeCap.Round
                 )
             }
+            androidx.compose.material3.IconButton(
+                onClick = {
+                    val calendar = Calendar.getInstance()
+                    val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+                    val currentMinute = calendar.get(Calendar.MINUTE)
 
+                    android.app.TimePickerDialog(
+                        context,
+                        { _, selectedHour, selectedMinute ->
+                            val triggerTime = Calendar.getInstance().apply {
+                                set(Calendar.HOUR_OF_DAY, selectedHour)
+                                set(Calendar.MINUTE, selectedMinute)
+                                set(Calendar.SECOND, 0)
+                            }.timeInMillis
+
+                            // Passes the actual task description to the notification!
+                            AlarmUtils.setExactAlarm(context, triggerTime, task.description)
+                        },
+                        currentHour,
+                        currentMinute,
+                        false
+                    ).show()
+                },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Set Reminder",
+                    tint = BrandGold // Makes the bell pop against the dark background
+                )
+            }
+
+            Spacer(Modifier.width(8.dp))
             // Reward
             Text("15 XP", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
@@ -1152,7 +1316,7 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun NudgieDashboardPreview() {
-    // Generate some mock activities to match your Figma mockup
+
     val mockActivities = listOf(
         ActivityItem(id = 1, icon = "</>", description = "Coding Lesson", category = CozyCategory.MIND_SPACE.name, time = "10:00 AM", isCompleted = true, targetCount = 1, currentCount = 1),
         ActivityItem(id = 2, icon = "📖", description = "Read 20 Pages", category = CozyCategory.MIND_SPACE.name, time = "1:00 PM", isCompleted = true, targetCount = 1, currentCount = 1),
@@ -1160,7 +1324,6 @@ fun NudgieDashboardPreview() {
         ActivityItem(id = 4, icon = "🧘", description = "Meditate 10 Minutes", category = CozyCategory.MIND_SPACE.name, time = "8:00 PM", isCompleted = false, targetCount = 1, currentCount = 0)
     )
 
-    // Group them into a mock category
     val categorizedActivities = mapOf(
         CozyCategory.MIND_SPACE to mockActivities
     )
@@ -1175,7 +1338,6 @@ fun NudgieDashboardPreview() {
         isLoading = false
     )
 
-    // Wrap the preview in the NudgieTheme targeting the RETRO_SPACE look
     NudgieTheme(appTheme = AppTheme.RETRO_SPACE) {
         NudgieDashboardContent(
             uiState = sampleUiState,
@@ -1188,7 +1350,38 @@ fun NudgieDashboardPreview() {
             onUpdatePetName = {},
             onUpdatePetType = {},
             onArchiveHabit = {},
-            onRestoreHabit = {}
+            onRestoreHabit = {},
+            onBuyAccessory = {},
+            onEquipAccessory = {}
         )
+    }
+}
+
+@Composable
+fun DressedUpPet(
+    basePetRes: Int,
+    equippedAccessories: List<AccessoryItem>,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+    ) {
+        // The Base Pet
+        Image(
+            painter = painterResource(id = basePetRes),
+            contentDescription = "Nudgie Character",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Fit
+        )
+
+        equippedAccessories.forEach { accessory ->
+            Image(
+                painter = painterResource(id = accessory.assetResId),
+                contentDescription = accessory.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        }
     }
 }
