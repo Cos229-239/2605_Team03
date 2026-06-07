@@ -10,6 +10,7 @@ import com.nightowlcrew.nudgie.NudgieApplication
 import com.nightowlcrew.nudgie.data.*
 import com.nightowlcrew.nudgie.utils.PetType
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -247,47 +248,55 @@ class NudgieViewModel(
                     isLoading = false
                 )
             }.onEach { updatedState ->
-                _uiState.value = updatedState
+                _uiState.update { updatedState }
             }.launchIn(viewModelScope)
         }
     }
 
     fun buyAccessory(accessory: AccessoryItem) {
-        val currentCurrency = _currency.value
-        if (currentCurrency >= accessory.cost && !accessory.isPurchased) {
-            _currency.value = currentCurrency - accessory.cost
-            sharedPreferences.edit().putInt("pet_currency", _currency.value).apply()
-
-            _accessories.value = _accessories.value.map {
-                if (it.id == accessory.id) it.copy(isPurchased = true) else it
+        _currency.update { currentCurrency ->
+            if (currentCurrency >= accessory.cost && !accessory.isPurchased) {
+                val newCurrency = currentCurrency - accessory.cost
+                sharedPreferences.edit().putInt("pet_currency", newCurrency).apply()
+                
+                _accessories.update { currentAccessories ->
+                    currentAccessories.map {
+                        if (it.id == accessory.id) it.copy(isPurchased = true) else it
+                    }
+                }
+                newCurrency
+            } else {
+                currentCurrency
             }
         }
     }
 
     fun equipAccessory(accessory: AccessoryItem) {
         if (accessory.isPurchased) {
-            _accessories.value = _accessories.value.map {
-                if (it.category == accessory.category) {
-                    it.copy(isEquipped = it.id == accessory.id)
-                } else {
-                    it
+            _accessories.update { currentAccessories ->
+                currentAccessories.map {
+                    if (it.category == accessory.category) {
+                        it.copy(isEquipped = it.id == accessory.id)
+                    } else {
+                        it
+                    }
                 }
             }
         }
     }
 
     fun updateTheme(theme: AppTheme) {
-        _currentTheme.value = theme
+        _currentTheme.update { theme }
         sharedPreferences.edit().putString("app_theme", theme.name).apply()
     }
 
     fun updatePetName(newName: String) {
-        _petName.value = newName
+        _petName.update { newName }
         sharedPreferences.edit().putString("pet_name", newName).apply()
     }
 
     fun updatePetType(newType: PetType) {
-        _currentPetType.value = newType
+        _currentPetType.update { newType }
         sharedPreferences.edit().putString("pet_type", newType.name).apply()
     }
 
@@ -365,22 +374,30 @@ class NudgieViewModel(
     fun missedHabit() {
         val penalty = 15
         val nonPunishmentFloor = 30
-        _happiness.value = (_happiness.value - penalty).coerceAtLeast(nonPunishmentFloor)
+        _happiness.update { (it - penalty).coerceAtLeast(nonPunishmentFloor) }
     }
 
     fun drainEnergy(amount: Int) {
-        _energy.value = (_energy.value - amount).coerceAtLeast(0)
+        _energy.update { (it - amount).coerceAtLeast(0) }
     }
 
     private fun completeHabit() {
-        _happiness.value = (_happiness.value + 20).coerceAtMost(100)
-        _petXP.value += 15
-        _currency.value += 5
-        sharedPreferences.edit().putInt("pet_currency", _currency.value).apply()
+        _happiness.update { (it + 20).coerceAtMost(100) }
+        
+        _currency.update { currentCurrency ->
+            val newCurrency = currentCurrency + 5
+            sharedPreferences.edit().putInt("pet_currency", newCurrency).apply()
+            newCurrency
+        }
 
-        if (_petXP.value >= 800) {
-            _petLevel.value += 1
-            _petXP.value -= 800
+        _petXP.update { currentXP ->
+            val nextXP = currentXP + 15
+            if (nextXP >= 800) {
+                _petLevel.update { it + 1 }
+                nextXP - 800
+            } else {
+                nextXP
+            }
         }
     }
 
