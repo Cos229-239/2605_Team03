@@ -324,7 +324,7 @@ fun StatsContentPreview() {
     NudgieTheme {
         StatsContent(
             statsState = StatsUiState(
-                petStats = PetStats(level = 5, xp = 450),
+                petStats = PetStats(level = 1, xp = 0),
                 totalTasksDone = 25
             )
         )

@@ -646,7 +646,7 @@ fun NudgieTopCard(
 fun NudgiePetScreenPreview() {
     NudgieTheme {
         NudgiePetScreen(
-            petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
+            petStats = PetStats(name = "Zorg", level = 1, xp = 0, happiness = 80, energy = 65),
             currentPetType = PetType.BLUE,
             onUpdatePetName = {},
             onCustomizeClick = {},
@@ -1329,7 +1329,7 @@ fun NudgieDashboardPreview() {
         currentScreenTimeMillis = 3600000L,
         screenTimeGoalMillis = 14400000L,
         currentTheme = AppTheme.RETRO_SPACE,
-        petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
+        petStats = PetStats(name = "Zorg", level = 1, xp = 0, happiness = 80, energy = 65),
         isLoading = false
     )
 

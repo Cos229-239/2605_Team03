@@ -219,8 +219,8 @@ class NudgieViewModel(
 
     private val _happiness = MutableStateFlow(85)
     private val _energy = MutableStateFlow(62)
-    private val _petLevel = MutableStateFlow(5)
-    private val _petXP = MutableStateFlow(450)
+    private val _petLevel = MutableStateFlow(1)
+    private val _petXP = MutableStateFlow(0)
 
     private val _currency = MutableStateFlow(sharedPreferences.getInt("pet_currency", 250))
 
@@ -238,18 +238,26 @@ class NudgieViewModel(
         )
     )
 
+    private val petStatsFlow = combine(_petName, _happiness, _energy, _petLevel, _petXP) { name, h, e, l, xp ->
+        PetStats(name, l, xp, h, e)
+    }
+
+    private val extendedPetStatsFlow = combine(petStatsFlow, _currency, _accessories) { stats, currency, accessories ->
+        stats.copy(currency = currency, accessories = accessories)
+    }
+
     init {
         viewModelScope.launch {
             prepopulateDefaultHabits()
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
-            val petStatsFlow = combine(_petName, _happiness, _energy, _petLevel, _petXP) { name, h, e, l, xp ->
-                PetStats(name, l, xp, h, e)
-            }
-
-            val extendedPetStatsFlow = combine(petStatsFlow, _currency, _accessories) { stats, currency, accessories ->
-                stats.copy(currency = currency, accessories = accessories)
-            }
+            // Sync XP and Level with the database record
+            repository.getAllLogs().onEach { logs ->
+                val completedCount = logs.count { it.isCompleted }
+                val totalXp = completedCount * 15
+                _petLevel.update { (totalXp / 800) + 1 }
+                _petXP.update { totalXp % 800 }
+            }.launchIn(viewModelScope)
 
             val profileStateFlow = combine(_profileUserName, _profileBio, _profileJoinDate, _profileAvatarRes) { name, bio, joinDate, avatar ->
                 Triple(name, bio, Pair(joinDate, avatar))
@@ -260,6 +268,7 @@ class NudgieViewModel(
                 repository.getScreenTimeForDate(today),
                 extendedPetStatsFlow,
                 profileStateFlow,
+                repository.getAllLogs(),
                 _currentTheme,
                 _currentPetType
             ) { flows: Array<Any?> ->
@@ -267,14 +276,15 @@ class NudgieViewModel(
                 val screenTime = flows[1] as ScreenTimeRecord?
                 val petStats = flows[2] as PetStats
                 val profile = flows[3] as Triple<String, String, Pair<String, Int>>
-                val theme = flows[4] as AppTheme
-                val petType = flows[5] as PetType
+                val allLogs = flows[4] as List<HabitLogEntity>
+                val theme = flows[5] as AppTheme
+                val petType = flows[6] as PetType
 
                 val categorized = CozyCategory.values().associateWith { category ->
                     activities.filter { it.category == category.name }
                 }.filterValues { it.isNotEmpty() }
 
-                val tasksDone = activities.sumOf { it.currentCount }
+                val tasksDone = allLogs.count { it.isCompleted }
 
                 DashboardUiState(
                     activities = activities,
