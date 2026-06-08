@@ -7,9 +7,26 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.nightowlcrew.nudgie.NudgieApplication
-import com.nightowlcrew.nudgie.data.*
+import com.nightowlcrew.nudgie.data.AccessoryCategory
+import com.nightowlcrew.nudgie.data.AccessoryItem
+import com.nightowlcrew.nudgie.data.ActivityItem
+import com.nightowlcrew.nudgie.data.CozyCategory
+import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
+import com.nightowlcrew.nudgie.data.HabitEntity
+import com.nightowlcrew.nudgie.data.HabitLogEntity
+import com.nightowlcrew.nudgie.data.HabitRepository
+import com.nightowlcrew.nudgie.data.HabitRepositoryImpl
+import com.nightowlcrew.nudgie.data.ScreenTimeRecord
 import com.nightowlcrew.nudgie.utils.PetType
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -44,7 +61,12 @@ data class DashboardUiState(
     val petStats: PetStats = PetStats(),
     val currentPetType: PetType = PetType.BLUE,
     val totalTasksDone: Int = 0,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    // Additive Profile Properties
+    val profileUserName: String = "Alex",
+    val profileBio: String = "Cozy Nudger",
+    val profileJoinDate: String = "October 2023",
+    val profileAvatarRes: Int = com.nightowlcrew.nudgie.R.drawable.zustomize
 )
 
 data class StatsUiState(
@@ -71,17 +93,17 @@ class NudgieViewModel(
     ) { habits: List<HabitEntity>, logs: List<HabitLogEntity>, petStats: PetStats ->
         val completedLogs = logs.filter { it.isCompleted }
         val totalTasks = completedLogs.size
-        
+
         // Streak calculation logic
         val streak = calculateStreak(completedLogs)
-        
+
         // Category progress calculation
         val catProgress = CozyCategory.values().associate { category ->
             val habitsInCat = habits.filter { it.category == category.name }
             val habitIds = habitsInCat.map { it.id }.toSet()
             val completedInCat = completedLogs.filter { it.habitId in habitIds }.size
             val targetInCat = habitsInCat.sumOf { it.targetFrequencyPerDay } * 7 // Weekly context
-            
+
             val progress = if (targetInCat > 0) {
                 (completedInCat.toFloat() / targetInCat.toFloat()).coerceIn(0f, 1f)
             } else 0f
@@ -202,6 +224,12 @@ class NudgieViewModel(
 
     private val _currency = MutableStateFlow(sharedPreferences.getInt("pet_currency", 250))
 
+    // Profile States
+    private val _profileUserName = MutableStateFlow(sharedPreferences.getString("profile_user_name", "Alex") ?: "Alex")
+    private val _profileBio = MutableStateFlow(sharedPreferences.getString("profile_bio", "Cozy Nudger") ?: "Cozy Nudger")
+    private val _profileJoinDate = MutableStateFlow(sharedPreferences.getString("profile_join_date", "October 2023") ?: "October 2023")
+    private val _profileAvatarRes = MutableStateFlow(sharedPreferences.getInt("profile_avatar_res", com.nightowlcrew.nudgie.R.drawable.zustomize))
+
     private val _accessories = MutableStateFlow(
         listOf(
             AccessoryItem("hat_1", "Cowboy Hat", 50, com.nightowlcrew.nudgie.R.drawable.zustomize, com.nightowlcrew.nudgie.R.drawable.zustomize, AccessoryCategory.HAT),
@@ -223,13 +251,25 @@ class NudgieViewModel(
                 stats.copy(currency = currency, accessories = accessories)
             }
 
+            val profileStateFlow = combine(_profileUserName, _profileBio, _profileJoinDate, _profileAvatarRes) { name, bio, joinDate, avatar ->
+                Triple(name, bio, Pair(joinDate, avatar))
+            }
+
             combine(
                 repository.getAllHabitsWithLogs(),
                 repository.getScreenTimeForDate(today),
                 extendedPetStatsFlow,
+                profileStateFlow,
                 _currentTheme,
                 _currentPetType
-            ) { activities, screenTime, petStats, theme, petType ->
+            ) { flows: Array<Any?> ->
+                val activities = flows[0] as List<ActivityItem>
+                val screenTime = flows[1] as ScreenTimeRecord?
+                val petStats = flows[2] as PetStats
+                val profile = flows[3] as Triple<String, String, Pair<String, Int>>
+                val theme = flows[4] as AppTheme
+                val petType = flows[5] as PetType
+
                 val categorized = CozyCategory.values().associateWith { category ->
                     activities.filter { it.category == category.name }
                 }.filterValues { it.isNotEmpty() }
@@ -245,7 +285,11 @@ class NudgieViewModel(
                     currentTheme = theme,
                     currentPetType = petType,
                     totalTasksDone = tasksDone,
-                    isLoading = false
+                    isLoading = false,
+                    profileUserName = profile.first,
+                    profileBio = profile.second,
+                    profileJoinDate = profile.third.first,
+                    profileAvatarRes = profile.third.second
                 )
             }.onEach { updatedState ->
                 _uiState.update { updatedState }
@@ -298,6 +342,21 @@ class NudgieViewModel(
     fun updatePetType(newType: PetType) {
         _currentPetType.update { newType }
         sharedPreferences.edit().putString("pet_type", newType.name).apply()
+    }
+
+    fun updateProfileUserName(newName: String) {
+        _profileUserName.update { newName }
+        sharedPreferences.edit().putString("profile_user_name", newName).apply()
+    }
+
+    fun updateProfileBio(newBio: String) {
+        _profileBio.update { newBio }
+        sharedPreferences.edit().putString("profile_bio", newBio).apply()
+    }
+
+    fun updateProfileAvatar(avatarResId: Int) {
+        _profileAvatarRes.update { avatarResId }
+        sharedPreferences.edit().putInt("profile_avatar_res", avatarResId).apply()
     }
 
     private fun prepopulateDefaultHabits() {
