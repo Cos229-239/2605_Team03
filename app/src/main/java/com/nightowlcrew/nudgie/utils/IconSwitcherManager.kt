@@ -37,6 +37,9 @@ object IconSwitcherManager {
         val packageManager = context.packageManager
         val packageName = context.packageName
 
+        // Check if the target is already enabled to avoid unnecessary restarts
+        if (getCurrentIcon(context) == targetIcon) return
+
         NudgieIcon.entries.forEach { icon ->
             val componentName = ComponentName(packageName, icon.aliasClassName)
             val state = if (icon == targetIcon) {

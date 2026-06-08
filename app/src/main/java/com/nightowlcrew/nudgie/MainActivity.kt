@@ -10,20 +10,24 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.ui.dashboard.NudgieDashboard
 import com.nightowlcrew.nudgie.ui.dashboard.NudgieViewModel
 import com.nightowlcrew.nudgie.ui.theme.NudgieTheme
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import com.nightowlcrew.nudgie.services.NudgieOverlayService
 
-class MainActivity : ComponentActivity() {
+class  MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -54,7 +58,18 @@ class MainActivity : ComponentActivity() {
                         permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }
+                if (!Settings.canDrawOverlays(this@MainActivity)) {
+                    val overlayIntent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName")
+                    )
+                    startActivity(overlayIntent)
+                } else {
+                    startService(Intent(this@MainActivity, NudgieOverlayService::class.java))
+                }
             }
+
+
 
             NudgieTheme(appTheme = uiState.currentTheme) {
                 Box(modifier = Modifier.fillMaxSize()) {
