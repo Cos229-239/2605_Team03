@@ -206,7 +206,8 @@ fun NudgieDashboardContent(
     onArchiveHabit: (HabitEntity) -> Unit,
     onRestoreHabit: (HabitEntity) -> Unit,
     onBuyAccessory: (AccessoryItem) -> Unit,
-    onEquipAccessory: (AccessoryItem) -> Unit
+    onEquipAccessory: (AccessoryItem) -> Unit,
+    startDestination: String = Screen.Splash.route
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -277,7 +278,7 @@ fun NudgieDashboardContent(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Splash.route,
+            startDestination = startDestination,
             modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()) // Only apply bottom padding
         ) {
             composable(Screen.Splash.route) {
@@ -334,7 +335,13 @@ fun NudgieDashboardContent(
                 )
             }
             composable(Screen.Stats.route) { StatsContent(statsUiState) }
-            composable(Screen.Profile.route) { ComingSoonScreen("Profile") }
+            composable(Screen.Profile.route) {
+                ProfileContent(
+                    uiState = uiState,
+                    statsUiState = statsUiState,
+                    onUpdatePetName = onUpdatePetName
+                )
+            }
             composable(Screen.Settings.route) {
                 SettingsContent(
                     activities = uiState.activities,
@@ -662,30 +669,35 @@ fun DashboardContent(
     streak: Int,
     currency: Int
 ) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(NavyBackground)
-            .verticalScroll(rememberScrollState())
     ) {
-        PetFrame(
-            petStats = petStats,
-            currentTheme = currentTheme,
-            currentPetType = currentPetType,
-            currentScreenTimeMillis = currentScreenTimeMillis,
-            screenTimeGoalMillis = screenTimeGoalMillis,
-            onUpdatePetName = onUpdatePetName,
-            onDigitalBalanceDoubleTap = onDigitalBalanceDoubleTap,
-            streak = streak,
-            currency = currency
-        )
-        Spacer(modifier = Modifier.height(48.dp))
-        TasksSection(
-            categorizedActivities = categorizedActivities,
-            currentTheme = currentTheme,
-            onToggleHabit = onToggleHabit
-        )
-        Spacer(modifier = Modifier.height(24.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            PetFrame(
+                petStats = petStats,
+                currentTheme = currentTheme,
+                currentPetType = currentPetType,
+                currentScreenTimeMillis = currentScreenTimeMillis,
+                screenTimeGoalMillis = screenTimeGoalMillis,
+                onUpdatePetName = onUpdatePetName,
+                onDigitalBalanceDoubleTap = onDigitalBalanceDoubleTap,
+                streak = streak,
+                currency = currency
+            )
+            Spacer(modifier = Modifier.height(48.dp))
+            TasksSection(
+                categorizedActivities = categorizedActivities,
+                currentTheme = currentTheme,
+                onToggleHabit = onToggleHabit
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+        }
     }
 }
 
@@ -716,7 +728,8 @@ fun PetFrame(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(510.dp)
+            .height(480.dp) // Reduced height
+            .background(NavyBackground)
     ) {
         // Edge-to-edge Background Image
         Image(
@@ -742,15 +755,14 @@ fun PetFrame(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(horizontal = 4.dp, vertical = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Overlaid Streak and Currency Row
             Row(
                 modifier = Modifier
-                    .statusBarsPadding()
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                    .padding(horizontal = 8.dp, vertical = 2.dp), // Reduced padding and removed statusBarsPadding
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -761,9 +773,9 @@ fun PetFrame(
                         streak >= 5 -> "⭐"
                         else -> "•"
                     }
-                    val fontSize = if (streak >= 25) 22.sp else 20.sp
-                    Text(text = streakIcon, fontSize = 24.sp)
-                    Spacer(Modifier.width(6.dp))
+                    val fontSize = if (streak >= 25) 22.sp else 18.sp // Tighter font size
+                    Text(text = streakIcon, fontSize = 20.sp)
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         text = "$streak Day Streak!",
                         color = Color.White,
@@ -774,13 +786,13 @@ fun PetFrame(
 
                 // Currency
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "💎", fontSize = 22.sp)
-                    Spacer(Modifier.width(6.dp))
+                    Text(text = "💎", fontSize = 18.sp)
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         text = currency.toString(),
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
+                        fontSize = 18.sp
                     )
                 }
             }
@@ -791,7 +803,7 @@ fun PetFrame(
                 Box(
                     modifier = Modifier
                         .width(320.dp)
-                        .height(180.dp)
+                        .height(160.dp) // Reduced height from 180
                         .clip(RoundedCornerShape(50.dp)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -806,10 +818,10 @@ fun PetFrame(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text("08:30", fontSize = 72.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                            Text("AM", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
+                            Text("08:30", fontSize = 64.sp, fontWeight = FontWeight.ExtraBold, color = Color.White) // Slightly smaller font
+                            Text("AM", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(bottom = 8.dp, start = 4.dp))
                         }
-                        Text("Thursday, May 7", fontSize = 18.sp, color = Color.White.copy(alpha = 0.8f))
+                        Text("Thursday, May 7", fontSize = 16.sp, color = Color.White.copy(alpha = 0.8f))
                     }
                 }
 
@@ -818,7 +830,7 @@ fun PetFrame(
                     color = SpaceSurface.copy(alpha = 1f),
                     shape = RoundedCornerShape(8.dp),
                     border = BorderStroke(2.dp, NavyOutline),
-                    modifier = Modifier.offset(y = 10.dp)
+                    modifier = Modifier.offset(y = 8.dp) // Reduced offset
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
@@ -946,7 +958,7 @@ fun PetFrame(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .offset(y = (-40).dp),
+                .offset(y = (60).dp), // Moved further down from 40
             verticalAlignment = Alignment.Bottom
         ) {
             Spacer(Modifier.weight(1f))
@@ -961,30 +973,7 @@ fun PetFrame(
             Spacer(Modifier.weight(3f))
         }
 
-        // Stats Box with solid background
-        Surface(
-            color = NavySurface,
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(2.dp, NavyOutline),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 55.dp)
-                .align(Alignment.BottomCenter)
-                .offset(y = 55.dp)
-                .height(70.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                StatItem("Happiness", "${petStats.happiness}%", statColors.happiness, Icons.Default.Favorite)
-                StatItem("Energy", "${petStats.energy}%", statColors.energy, Icons.Default.FlashOn)
-                StatItem("Level", petStats.level.toString(), statColors.level, Icons.Default.Star)
-            }
-        }
+        // Stats Box removed as per request
     }
 }
 
@@ -1359,7 +1348,8 @@ fun NudgieDashboardPreview() {
             onArchiveHabit = {},
             onRestoreHabit = {},
             onBuyAccessory = {},
-            onEquipAccessory = {}
+            onEquipAccessory = {},
+            startDestination = Screen.Home.route
         )
     }
 }

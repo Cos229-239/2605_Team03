@@ -66,7 +66,7 @@ data class DashboardUiState(
     val profileUserName: String = "Alex",
     val profileBio: String = "Cozy Nudger",
     val profileJoinDate: String = "October 2023",
-    val profileAvatarRes: Int = com.nightowlcrew.nudgie.R.drawable.zustomize
+    val profileAvatarRes: Int = com.nightowlcrew.nudgie.R.drawable.nudgie
 )
 
 data class StatsUiState(
@@ -228,7 +228,7 @@ class NudgieViewModel(
     private val _profileUserName = MutableStateFlow(sharedPreferences.getString("profile_user_name", "Alex") ?: "Alex")
     private val _profileBio = MutableStateFlow(sharedPreferences.getString("profile_bio", "Cozy Nudger") ?: "Cozy Nudger")
     private val _profileJoinDate = MutableStateFlow(sharedPreferences.getString("profile_join_date", "October 2023") ?: "October 2023")
-    private val _profileAvatarRes = MutableStateFlow(sharedPreferences.getInt("profile_avatar_res", com.nightowlcrew.nudgie.R.drawable.zustomize))
+    private val _profileAvatarRes = MutableStateFlow(sharedPreferences.getInt("profile_avatar_res", com.nightowlcrew.nudgie.R.drawable.nudgie))
 
     private val _accessories = MutableStateFlow(
         listOf(
