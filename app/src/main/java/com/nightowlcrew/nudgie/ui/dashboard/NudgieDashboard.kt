@@ -130,9 +130,9 @@ import com.nightowlcrew.nudgie.ui.theme.spStatEnergy
 import com.nightowlcrew.nudgie.ui.theme.spStatHappiness
 import com.nightowlcrew.nudgie.ui.theme.spStatLevel
 import com.nightowlcrew.nudgie.ui.theme.spStatSuccess
-import com.nightowlcrew.nudgie.utils.AlarmUtils
 import com.nightowlcrew.nudgie.utils.PetAssetManager
 import com.nightowlcrew.nudgie.utils.PetType
+import com.nightowlcrew.nudgie.utils.showReminderTimePicker
 import java.util.Calendar
 
 // Helper class to hold dynamic stat colors based on the current theme
@@ -1050,28 +1050,9 @@ fun ActivityLogItem(
                 Spacer(modifier = Modifier.width(8.dp))
                 androidx.compose.material3.IconButton(
                     onClick = {
-                        val calendar = Calendar.getInstance()
-                        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-                        val currentMinute = calendar.get(Calendar.MINUTE)
-
-                        android.app.TimePickerDialog(
-                            context,
-                            { _, selectedHour, selectedMinute ->
-                                val triggerTime = Calendar.getInstance().apply {
-                                    set(Calendar.HOUR_OF_DAY, selectedHour)
-                                    set(Calendar.MINUTE, selectedMinute)
-                                    set(Calendar.SECOND, 0)
-                                }.timeInMillis
-
-                                AlarmUtils.setExactAlarm(context, triggerTime)
-
-                                val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
-                                displayTime.value = formattedTime
-                            },
-                            currentHour,
-                            currentMinute,
-                            false
-                        ).show()
+                        showReminderTimePicker(context, activity.description) { formattedTime ->
+                            displayTime.value = formattedTime
+                        }
                     },
                     modifier = Modifier.size(24.dp)
                 ) {
@@ -1271,26 +1252,7 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
             }
             androidx.compose.material3.IconButton(
                 onClick = {
-                    val calendar = Calendar.getInstance()
-                    val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-                    val currentMinute = calendar.get(Calendar.MINUTE)
-
-                    android.app.TimePickerDialog(
-                        context,
-                        { _, selectedHour, selectedMinute ->
-                            val triggerTime = Calendar.getInstance().apply {
-                                set(Calendar.HOUR_OF_DAY, selectedHour)
-                                set(Calendar.MINUTE, selectedMinute)
-                                set(Calendar.SECOND, 0)
-                            }.timeInMillis
-
-                            // Passes the actual task description to the notification!
-                            AlarmUtils.setExactAlarm(context, triggerTime, task.description)
-                        },
-                        currentHour,
-                        currentMinute,
-                        false
-                    ).show()
+                    showReminderTimePicker(context, task.description)
                 },
                 modifier = Modifier.size(32.dp)
             ) {
