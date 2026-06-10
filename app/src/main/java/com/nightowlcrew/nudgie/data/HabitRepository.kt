@@ -14,6 +14,8 @@ interface HabitRepository {
     suspend fun deleteHabit(habit: HabitEntity)
 
     fun getArchivedHabits(): Flow<List<HabitEntity>>
+    fun getAllHabits(): Flow<List<HabitEntity>>
+    fun getAllLogs(): Flow<List<HabitLogEntity>>
     suspend fun archiveHabit(habitId: Int, timestamp: Long = System.currentTimeMillis())
     suspend fun restoreHabit(habitId: Int)
 

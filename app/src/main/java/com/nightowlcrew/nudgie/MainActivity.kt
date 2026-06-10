@@ -19,32 +19,49 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.nightowlcrew.nudgie.ui.dashboard.AppIconTheme
 import com.nightowlcrew.nudgie.ui.dashboard.NudgieDashboard
 import com.nightowlcrew.nudgie.ui.dashboard.NudgieViewModel
 import com.nightowlcrew.nudgie.ui.theme.NudgieTheme
+<<<<<<< HEAD
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import com.nightowlcrew.nudgie.services.NudgieOverlayService
+=======
+import com.nightowlcrew.nudgie.utils.IconSwitcherManager
+import com.nightowlcrew.nudgie.utils.NudgieIcon
+>>>>>>> bb070ed7b0b4e0510b4b7ff027ecc2666aaa5669
 
-class  MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
         setContent {
             val viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val appIconTheme by viewModel.appIconTheme.collectAsStateWithLifecycle()
+
+            // Handle App Icon switching reactively in Activity scope to prevent memory leaks in ViewModel
+            LaunchedEffect(appIconTheme) {
+                val targetIcon = when (appIconTheme) {
+                    AppIconTheme.BLUE -> NudgieIcon.BLUE
+                    AppIconTheme.FOX -> NudgieIcon.FOX
+                    AppIconTheme.AXOLOTL -> NudgieIcon.AXOLOTL
+                    AppIconTheme.DRAGON -> NudgieIcon.DRAGON
+                }
+                IconSwitcherManager.switchToIcon(this@MainActivity, targetIcon)
+            }
 
             // 1. Create the permission launcher for Android 13+
             val permissionLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.RequestPermission(),
-                onResult = { isGranted ->
-                    // Optionally log or handle denial here
-                }
-            )
+                contract = ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                // Handle permission result if needed
+            }
 
             // 2. Check and request the permission on launch
             LaunchedEffect(Unit) {

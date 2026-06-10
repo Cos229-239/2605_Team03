@@ -35,10 +35,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.HourglassBottom
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Settings
@@ -171,11 +168,13 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 @Composable
 fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val statsUiState by viewModel.statsUiState.collectAsStateWithLifecycle()
     val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     NudgieDashboardContent(
         uiState = uiState,
+        statsUiState = statsUiState,
         archivedHabits = archivedHabits,
         onToggleHabit = { viewModel.toggleHabitCompletion(it) },
         onAddHabit = { title, category, frequency, isStock -> viewModel.addNewHabit(title, category, frequency, isStock) },
@@ -195,6 +194,7 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
 @Composable
 fun NudgieDashboardContent(
     uiState: DashboardUiState,
+    statsUiState: StatsUiState,
     archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
     onAddHabit: (String, String, Int, Boolean) -> Unit,
@@ -333,7 +333,7 @@ fun NudgieDashboardContent(
                     initialOpenSlider = openSlider
                 )
             }
-            composable(Screen.Stats.route) { ComingSoonScreen("Stats") }
+            composable(Screen.Stats.route) { StatsContent(statsUiState) }
             composable(Screen.Profile.route) { ComingSoonScreen("Profile") }
             composable(Screen.Settings.route) {
                 SettingsContent(
@@ -942,7 +942,13 @@ fun PetFrame(
         }
 
         // Interactive Bottom Strip - Enlarged Pet
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .offset(y = (-40).dp),
+            verticalAlignment = Alignment.Bottom
+        ) {
             Spacer(Modifier.weight(1f))
 
             // Pixel Art Pet (Now supports clothes!)
@@ -1341,6 +1347,7 @@ fun NudgieDashboardPreview() {
     NudgieTheme(appTheme = AppTheme.RETRO_SPACE) {
         NudgieDashboardContent(
             uiState = sampleUiState,
+            statsUiState = StatsUiState(),
             archivedHabits = emptyList(),
             onToggleHabit = {},
             onAddHabit = { _, _, _, _ -> },
