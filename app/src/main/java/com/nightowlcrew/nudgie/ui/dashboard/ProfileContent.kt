@@ -61,7 +61,8 @@ import com.nightowlcrew.nudgie.ui.theme.VT323
 fun ProfileContent(
     uiState: DashboardUiState,
     statsUiState: StatsUiState,
-    onUpdatePetName: (String) -> Unit
+    onUpdatePetName: (String) -> Unit,
+    onSettingsClick: () -> Unit = {}
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
     var nameInput by remember { mutableStateOf(uiState.petStats.name) }
@@ -209,7 +210,7 @@ fun ProfileContent(
         ) {
             ProfileMenuItem("Achievements", Icons.Default.Star)
             ProfileMenuItem("Friends", Icons.Default.Person)
-            ProfileMenuItem("Settings", Icons.Default.Settings)
+            ProfileMenuItem("Settings", Icons.Default.Settings, onClick = onSettingsClick)
             ProfileMenuItem("Notifications", Icons.Default.Notifications)
         }
 
@@ -241,12 +242,12 @@ fun ProfileContent(
 }
 
 @Composable
-fun ProfileMenuItem(label: String, icon: ImageVector) {
+fun ProfileMenuItem(label: String, icon: ImageVector, onClick: () -> Unit = {}) {
     Surface(
         color = NavySurface,
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, NavyOutline),
-        modifier = Modifier.fillMaxWidth().height(64.dp).clickable { /* Future Navigation */ }
+        modifier = Modifier.fillMaxWidth().height(64.dp).clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),

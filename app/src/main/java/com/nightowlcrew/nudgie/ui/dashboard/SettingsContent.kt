@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +62,10 @@ import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
 import com.nightowlcrew.nudgie.data.HabitEntity
 import com.nightowlcrew.nudgie.data.toEntity
+import com.nightowlcrew.nudgie.ui.theme.LavenderText
+import com.nightowlcrew.nudgie.ui.theme.NavyBackground
+import com.nightowlcrew.nudgie.ui.theme.NavyOutline
+import com.nightowlcrew.nudgie.ui.theme.NavySurface
 import com.nightowlcrew.nudgie.ui.theme.PressStart2P
 import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
 
@@ -109,6 +115,7 @@ fun SettingsContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(NavyBackground)
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -116,12 +123,14 @@ fun SettingsContent(
         Text(
             text = "MANAGEMENT CENTERS",
             style = MaterialTheme.typography.headlineMedium.copy(fontFamily = PressStart2P),
+            color = LavenderText,
             fontWeight = FontWeight.Bold
         )
 
         Text(
             text = "Active Habits",
             style = MaterialTheme.typography.titleLarge.copy(fontFamily = PressStart2P),
+            color = Color.White,
             fontWeight = FontWeight.SemiBold
         )
 
@@ -170,6 +179,29 @@ fun SettingsContent(
     }
 }
 
+@Composable
+fun NudgieSettingsCard(
+    currentTheme: AppTheme,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
+        colors = CardDefaults.cardColors(
+            containerColor = NavySurface
+        ),
+        border = BorderStroke(1.dp, NavyOutline)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSelectionCard(
@@ -178,53 +210,41 @@ fun ThemeSelectionCard(
     isExpanded: Boolean,
     onToggleExpand: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    NudgieSettingsCard(currentTheme = currentTheme) {
+        Text(
+            text = "App Theme",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
         )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "App Theme",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
 
-            ExposedDropdownMenuBox(
+        ExposedDropdownMenuBox(
+            expanded = isExpanded,
+            onExpandedChange = { onToggleExpand() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = currentTheme.name,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Select Theme") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
+                modifier = Modifier
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
                 expanded = isExpanded,
-                onExpandedChange = { onToggleExpand() },
-                modifier = Modifier.fillMaxWidth()
+                onDismissRequest = { onToggleExpand() },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
             ) {
-                OutlinedTextField(
-                    value = currentTheme.name,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Select Theme") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-                    modifier = Modifier
-                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                        .fillMaxWidth()
-                )
-                ExposedDropdownMenu(
-                    expanded = isExpanded,
-                    onDismissRequest = { onToggleExpand() },
-                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                ) {
-                    AppTheme.entries.forEach { theme ->
-                        DropdownMenuItem(
-                            text = { Text(theme.name) },
-                            onClick = {
-                                onUpdateTheme(theme)
-                                onToggleExpand()
-                            }
-                        )
-                    }
+                AppTheme.entries.forEach { theme ->
+                    DropdownMenuItem(
+                        text = { Text(theme.name) },
+                        onClick = {
+                            onUpdateTheme(theme)
+                            onToggleExpand()
+                        }
+                    )
                 }
             }
         }
@@ -248,42 +268,31 @@ fun HabitCreatorSection(
     val emojis = listOf("💧", "💊", "🧘", "🪥", "☕", "🏃", "📚", "🧹")
     var isDropdownExpanded by remember { mutableStateOf(value = false) }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+    NudgieSettingsCard(currentTheme = currentTheme) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onToggleExpand() },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onToggleExpand() },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Add New Habit",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = if (isExpanded) "Collapse" else "Expand",
-                    modifier = Modifier.rotate(if (isExpanded) 45f else 0f)
-                )
-            }
+            Text(
+                text = "Add New Habit",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                modifier = Modifier.rotate(if (isExpanded) 45f else 0f)
+            )
+        }
 
-            AnimatedVisibility(visible = isExpanded) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+        AnimatedVisibility(visible = isExpanded) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                     ExposedDropdownMenuBox(
                         expanded = isDropdownExpanded,
                         onExpandedChange = { isDropdownExpanded = !isDropdownExpanded },
@@ -430,7 +439,6 @@ fun HabitCreatorSection(
             }
         }
     }
-}
 
 @Composable
 fun CategorizedHabitList(
@@ -496,35 +504,29 @@ private fun ExpandableCategorySection(
     )
 
     Column(modifier = Modifier.fillMaxWidth()) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
-                    .clickable { onToggleExpand() },
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                shape = MaterialTheme.shapes.medium,
+        NudgieSettingsCard(
+            currentTheme = currentTheme,
+            modifier = Modifier.clickable { onToggleExpand() }
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Row(
-                    modifier = Modifier
-                        .padding(vertical = 12.dp, horizontal = 16.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = categoryTitle,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (expanded) "Collapse" else "Expand",
-                        modifier = Modifier.rotate(rotationState),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text(
+                    text = categoryTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold,
+                )
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (expanded) "Collapse" else "Expand",
+                    modifier = Modifier.rotate(rotationState),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
+        }
 
         AnimatedVisibility(visible = expanded) {
             Column(
@@ -591,19 +593,12 @@ fun TemplateOptionRow(
     onClick: () -> Unit
 ) {
     val contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        )
+    NudgieSettingsCard(
+        currentTheme = currentTheme,
+        modifier = Modifier.clickable { onClick() }
     ) {
         Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -629,18 +624,9 @@ fun ActivityRow(
     onDelete: () -> Unit
 ) {
     val contentColor = MaterialTheme.colorScheme.onSurface
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
+    NudgieSettingsCard(currentTheme = currentTheme) {
         Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -672,50 +658,38 @@ fun DigitalBalanceCard(
     currentTheme: AppTheme,
     onUsageChange: (Float) -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .nudgieCardShadow(currentTheme, 4.dp, MaterialTheme.shapes.medium),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    NudgieSettingsCard(currentTheme = currentTheme) {
+        Text(
+            text = "Digital Balance",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
         )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "Digital Balance",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Slider(
-                value = usageHours,
-                onValueChange = onUsageChange,
-                valueRange = 0f..8f,
-                steps = 15 // 0.5 hour increments
-            )
-            
-            val goalText = if (usageHours >= 8f) {
-                "Goal: 8+ hours today"
-            } else {
-                "Goal: Less than ${"%.1f".format(usageHours)} hours today"
-            }
-
-            Text(
-                text = goalText,
-                style = MaterialTheme.typography.bodyMedium,
-                fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = "Track and log your estimated daily screen usage manually.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        
+        Slider(
+            value = usageHours,
+            onValueChange = onUsageChange,
+            valueRange = 0f..8f,
+            steps = 15 // 0.5 hour increments
+        )
+        
+        val goalText = if (usageHours >= 8f) {
+            "Goal: 8+ hours today"
+        } else {
+            "Goal: Less than ${"%.1f".format(usageHours)} hours today"
         }
+
+        Text(
+            text = goalText,
+            style = MaterialTheme.typography.bodyMedium,
+            fontStyle = FontStyle.Italic,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Text(
+            text = "Track and log your estimated daily screen usage manually.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

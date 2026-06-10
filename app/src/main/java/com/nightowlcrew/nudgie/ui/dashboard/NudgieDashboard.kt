@@ -339,7 +339,8 @@ fun NudgieDashboardContent(
                 ProfileContent(
                     uiState = uiState,
                     statsUiState = statsUiState,
-                    onUpdatePetName = onUpdatePetName
+                    onUpdatePetName = onUpdatePetName,
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) }
                 )
             }
             composable(Screen.Settings.route) {
