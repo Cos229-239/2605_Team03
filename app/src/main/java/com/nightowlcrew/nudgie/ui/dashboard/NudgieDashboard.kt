@@ -107,6 +107,7 @@ import com.nightowlcrew.nudgie.ui.theme.LevelUpBlue
 import com.nightowlcrew.nudgie.ui.theme.NavyBackground
 import com.nightowlcrew.nudgie.ui.theme.NavyOutline
 import com.nightowlcrew.nudgie.ui.theme.NavySurface
+import com.nightowlcrew.nudgie.ui.theme.NudgiePurple
 import com.nightowlcrew.nudgie.ui.theme.NudgieTheme
 import com.nightowlcrew.nudgie.ui.theme.SpaceAccent
 import com.nightowlcrew.nudgie.ui.theme.SpaceEnergy
@@ -152,6 +153,28 @@ fun getThemeStatColors(theme: AppTheme): StatColors {
         AppTheme.RETRO_SPACE -> StatColors(SpaceHappiness, SpaceEnergy, SpaceLevel, SpaceSuccess)
         else -> StatColors(HeartRed, ElectricYellow, LevelUpBlue, SuccessGreen) // Default
     }
+}
+
+/**
+ * Reusable progress bar with consistent styling for the Nudgie app.
+ * Applies rounded corners and consistent track transparency.
+ */
+@Composable
+fun NudgieProgressBar(
+    progress: Float,
+    color: Color,
+    modifier: Modifier = Modifier,
+    trackColor: Color = color.copy(alpha = 0.2f)
+) {
+    LinearProgressIndicator(
+        progress = { progress.coerceIn(0f, 1f) },
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(50)),
+        color = color,
+        trackColor = trackColor,
+        strokeCap = StrokeCap.Round
+    )
 }
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
@@ -263,11 +286,11 @@ fun NudgieDashboardContent(
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color.White,
-                                selectedTextColor = Color.White,
+                                selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                                selectedTextColor = MaterialTheme.colorScheme.onSurface,
                                 unselectedIconColor = LavenderText,
                                 unselectedTextColor = LavenderText,
-                                indicatorColor = Color(0xFF6200EE).copy(alpha = 0.5f) // Glowing purple highlight
+                                indicatorColor = NudgiePurple.copy(alpha = 0.5f) // Glowing purple highlight
                             )
                         )
                     }
@@ -364,7 +387,7 @@ fun NudgieDashboardContent(
 @Composable
 fun ComingSoonScreen(title: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(title.uppercase(), style = MaterialTheme.typography.headlineMedium, color = Color.Gray)
+        Text(title.uppercase(), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
     }
 }
 
@@ -376,7 +399,7 @@ fun HeartsRow(happiness: Int, modifier: Modifier = Modifier) {
             Icon(
                 imageVector = if (isFilled) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                 contentDescription = null,
-                tint = if (isFilled) HeartRed else Color.Gray.copy(alpha = 0.5f),
+                tint = if (isFilled) HeartRed else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.size(28.dp)
             )
             if (index < 2) Spacer(modifier = Modifier.width(4.dp))
@@ -414,7 +437,7 @@ fun PetActionButton(
                 style = TextStyle(
                     fontFamily = VT323,
                     fontSize = 14.sp,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             )
         }
@@ -532,10 +555,10 @@ fun NudgieTopCard(
                         textStyle = TextStyle(
                             fontFamily = VT323,
                             fontSize = 32.sp,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
                         ),
-                        cursorBrush = SolidColor(Color.White),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(
                             onDone = {
@@ -554,7 +577,7 @@ fun NudgieTopCard(
                         style = TextStyle(
                             fontFamily = VT323,
                             fontSize = 32.sp,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
                         )
                     )
@@ -589,7 +612,7 @@ fun NudgieTopCard(
                     style = TextStyle(
                         fontFamily = VT323,
                         fontSize = 32.sp,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
                 HeartsRow(happiness = petStats.happiness)
@@ -606,7 +629,7 @@ fun NudgieTopCard(
                         style = TextStyle(
                             fontFamily = VT323,
                             fontSize = 20.sp,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -622,20 +645,16 @@ fun NudgieTopCard(
                     style = TextStyle(
                         fontFamily = VT323,
                         fontSize = 18.sp,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
-            LinearProgressIndicator(
-                progress = { petStats.xp.toFloat() / maxXp.toFloat() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(12.dp)
-                    .clip(RoundedCornerShape(6.dp)),
+            NudgieProgressBar(
+                progress = petStats.xp.toFloat() / maxXp.toFloat(),
                 color = SuccessGreen,
-                trackColor = Color.White.copy(alpha = 0.2f),
-                strokeCap = StrokeCap.Round
+                modifier = Modifier.height(12.dp),
+                trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
             )
         }
     }
@@ -779,7 +798,7 @@ fun PetFrame(
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = "$streak Day Streak!",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = fontSize,
                         fontWeight = FontWeight.Bold
                     )
@@ -791,7 +810,7 @@ fun PetFrame(
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = currency.toString(),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
@@ -819,10 +838,10 @@ fun PetFrame(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text("08:30", fontSize = 64.sp, fontWeight = FontWeight.ExtraBold, color = Color.White) // Slightly smaller font
-                            Text("AM", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(bottom = 8.dp, start = 4.dp))
+                            Text("08:30", fontSize = 64.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface) // Slightly smaller font
+                            Text("AM", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 8.dp, start = 4.dp))
                         }
-                        Text("Thursday, May 7", fontSize = 16.sp, color = Color.White.copy(alpha = 0.8f))
+                        Text("Thursday, May 7", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
                     }
                 }
 
@@ -902,19 +921,15 @@ fun PetFrame(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Level ${petStats.level}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("${petStats.xp} / 800 XP", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                        Text("Level ${petStats.level}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("${petStats.xp} / 800 XP", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f), fontSize = 14.sp)
                     }
                     Spacer(Modifier.height(4.dp))
-                    LinearProgressIndicator(
-                        progress = { petStats.xp / 800f },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
+                    NudgieProgressBar(
+                        progress = petStats.xp / 800f,
                         color = MaterialTheme.colorScheme.primary,
-                        trackColor = Color.White.copy(alpha = 0.3f),
-                        strokeCap = StrokeCap.Round
+                        trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        modifier = Modifier.height(8.dp)
                     )
                 }
 
@@ -931,15 +946,11 @@ fun PetFrame(
                         )
                     }
                 ) {
-                    LinearProgressIndicator(
-                        progress = { (currentHours / goalHours.coerceAtLeast(0.1f)).coerceIn(0f, 1f) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = if (currentHours > goalHours) Color.Red else statColors.success,
-                        trackColor = Color.White.copy(alpha = 0.3f),
-                        strokeCap = StrokeCap.Round
+                    NudgieProgressBar(
+                        progress = (currentHours / goalHours.coerceAtLeast(0.1f)).coerceIn(0f, 1f),
+                        color = if (currentHours > goalHours) MaterialTheme.colorScheme.error else statColors.success,
+                        trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        modifier = Modifier.height(8.dp)
                     )
                     Spacer(Modifier.height(4.dp))
                     Row(
@@ -947,8 +958,8 @@ fun PetFrame(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Digital Balance", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("${"%.1f".format(currentHours)}h / ${"%.1f".format(goalHours)}h", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                        Text("Digital Balance", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("${"%.1f".format(currentHours)}h / ${"%.1f".format(goalHours)}h", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f), fontSize = 14.sp)
                     }
                 }
             }
@@ -1074,17 +1085,16 @@ fun StatItem(label: String, value: String, color: Color, icon: ImageVector) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp)) // Restored icon size
             Spacer(Modifier.width(5.dp))
-            Text(label, color = Color.White, fontSize = 16.sp) // White labels as requested
+            Text(label, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp) // White labels as requested
         }
         Spacer(Modifier.height((-8).dp))
-        Text(value, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 18.sp, modifier = Modifier.offset(y = (-4).dp)) // Prominent value, now White and larger
+        Text(value, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, fontSize = 18.sp, modifier = Modifier.offset(y = (-4).dp)) // Prominent value, now White and larger
         Spacer(Modifier.height(1.dp))
-        LinearProgressIndicator(
-            progress = { value.replace("%", "").toFloatOrNull()?.div(100f) ?: 1f },
-            modifier = Modifier.width(32.dp).height(2.dp).clip(RoundedCornerShape(1.dp)), // Very slim and short bars
+        NudgieProgressBar(
+            progress = value.replace("%", "").toFloatOrNull()?.div(100f) ?: 1f,
             color = color,
             trackColor = MaterialTheme.colorScheme.background,
-            strokeCap = StrokeCap.Round
+            modifier = Modifier.width(32.dp).height(2.dp)
         )
     }
 }
@@ -1209,7 +1219,7 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
                 contentAlignment = Alignment.Center
             ) {
                 if (isCompleted) {
-                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
                 }
             }
 
@@ -1231,7 +1241,7 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     task.description,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 20.sp, // Increased font size (Orange Line)
                     fontWeight = FontWeight.SemiBold
                 )
@@ -1240,15 +1250,11 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
 
                 // Task Progress Bar
                 val progress = if (task.targetCount > 0) task.currentCount.toFloat() / task.targetCount else 0f
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp)),
+                NudgieProgressBar(
+                    progress = progress,
                     color = if (isCompleted) successColor else MaterialTheme.colorScheme.primary,
                     trackColor = NavyOutline.copy(alpha = 0.3f),
-                    strokeCap = StrokeCap.Round
+                    modifier = Modifier.fillMaxWidth(0.8f).height(4.dp)
                 )
             }
             androidx.compose.material3.IconButton(
