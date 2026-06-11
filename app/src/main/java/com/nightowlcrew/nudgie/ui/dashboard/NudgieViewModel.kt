@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.nightowlcrew.nudgie.NudgieApplication
 import com.nightowlcrew.nudgie.data.*
 import com.nightowlcrew.nudgie.utils.PetType
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -18,10 +19,6 @@ import java.util.Locale
 
 enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK, GOTH, RETRO_SPACE }
 
-/**
- * REFACTORED: Represents the available app icon themes.
- * Used to decouple the ViewModel from Android Context.
- */
 enum class AppIconTheme { BLUE, FOX, AXOLOTL, DRAGON }
 
 data class PetStats(
@@ -32,6 +29,7 @@ data class PetStats(
     val energy: Int = 100,
     val currency: Int = 250,
     val accessories: List<AccessoryItem> = emptyList(),
+    val message: String? = null // Powers the Speech Bubble!
 )
 
 data class DashboardUiState(
@@ -62,6 +60,10 @@ class NudgieViewModel(
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
+    // --- Dialog/Speech Bubble State ---
+    private val _petMessage = MutableStateFlow<String?>(null)
+    private var messageJob: kotlinx.coroutines.Job? = null
+
     // Analytics: Asynchronously calculated stats exposed via stateIn
     val statsUiState: StateFlow<StatsUiState> = combine(
         repository.getAllHabits(),
@@ -70,17 +72,15 @@ class NudgieViewModel(
     ) { habits: List<HabitEntity>, logs: List<HabitLogEntity>, petStats: PetStats ->
         val completedLogs = logs.filter { it.isCompleted }
         val totalTasks = completedLogs.size
-        
-        // Streak calculation logic
+
         val streak = calculateStreak(completedLogs)
-        
-        // Category progress calculation
+
         val catProgress = CozyCategory.values().associate { category ->
             val habitsInCat = habits.filter { it.category == category.name }
             val habitIds = habitsInCat.map { it.id }.toSet()
             val completedInCat = completedLogs.filter { it.habitId in habitIds }.size
-            val targetInCat = habitsInCat.sumOf { it.targetFrequencyPerDay } * 7 // Weekly context
-            
+            val targetInCat = habitsInCat.sumOf { it.targetFrequencyPerDay } * 7
+
             val progress = if (targetInCat > 0) {
                 (completedInCat.toFloat() / targetInCat.toFloat()).coerceIn(0f, 1f)
             } else 0f
@@ -103,28 +103,27 @@ class NudgieViewModel(
     private fun calculateStreak(completedLogs: List<HabitLogEntity>): Int {
         if (completedLogs.isEmpty()) return 0
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        
-        // Use a set to handle distinct dates
+
         val dateSet = mutableSetOf<String>()
         for (log in completedLogs) {
             if (log.date.isNotEmpty()) {
                 dateSet.add(log.date)
             }
         }
-        
+
         val completedDates = dateSet.toList().sortedDescending()
         if (completedDates.isEmpty()) return 0
-        
+
         var streak = 0
         val calendar = Calendar.getInstance()
         val today = sdf.format(calendar.time)
-        
+
         calendar.add(Calendar.DAY_OF_YEAR, -1)
         val yesterday = sdf.format(calendar.time)
-        
+
         val latestDate = completedDates[0]
         if (latestDate != today && latestDate != yesterday) return 0
-        
+
         val streakCalendar = Calendar.getInstance()
         try {
             val date = sdf.parse(latestDate)
@@ -136,7 +135,7 @@ class NudgieViewModel(
         } catch (e: Exception) {
             return 0
         }
-        
+
         for (dateStr in completedDates) {
             if (dateStr == sdf.format(streakCalendar.time)) {
                 streak++
@@ -169,10 +168,6 @@ class NudgieViewModel(
         catch (e: Exception) { PetType.BLUE }
     )
 
-    /**
-     * REFACTORED: Expose the app icon theme as a reactive StateFlow.
-     * This allows the UI to handle the platform-specific icon switching.
-     */
     val appIconTheme: StateFlow<AppIconTheme> = _currentPetType
         .map { petType ->
             when (petType) {
@@ -190,7 +185,7 @@ class NudgieViewModel(
                 PetType.FOX -> AppIconTheme.FOX
                 PetType.AXOLOTL -> AppIconTheme.AXOLOTL
                 PetType.DRAGON -> AppIconTheme.DRAGON
-                else -> AppIconTheme.BLUE // Fallback
+                else -> AppIconTheme.BLUE
             }
         )
 
@@ -205,7 +200,11 @@ class NudgieViewModel(
         listOf(
             AccessoryItem("hat_1", "Cowboy Hat", 50, com.nightowlcrew.nudgie.R.drawable.zustomize, com.nightowlcrew.nudgie.R.drawable.zustomize, AccessoryCategory.HAT),
             AccessoryItem("glasses_1", "Cool Shades", 100, com.nightowlcrew.nudgie.R.drawable.feed, com.nightowlcrew.nudgie.R.drawable.feed, AccessoryCategory.GLASSES),
-            AccessoryItem("outfit_1", "Space Suit", 250, com.nightowlcrew.nudgie.R.drawable.play, com.nightowlcrew.nudgie.R.drawable.play, AccessoryCategory.OUTFIT)
+            AccessoryItem("outfit_1", "Space Suit", 250, com.nightowlcrew.nudgie.R.drawable.play, com.nightowlcrew.nudgie.R.drawable.play, AccessoryCategory.OUTFIT),
+            AccessoryItem("toy_1", "Squeaky Bone", 75, com.nightowlcrew.nudgie.R.drawable.play, com.nightowlcrew.nudgie.R.drawable.play, AccessoryCategory.TOY),
+            AccessoryItem("toy_2", "Yarn Ball", 40, com.nightowlcrew.nudgie.R.drawable.zustomize, com.nightowlcrew.nudgie.R.drawable.zustomize, AccessoryCategory.TOY),
+            AccessoryItem("food_1", "Mega Burger", 20, com.nightowlcrew.nudgie.R.drawable.feed, com.nightowlcrew.nudgie.R.drawable.feed, AccessoryCategory.FOOD),
+            AccessoryItem("food_2", "Health Potion", 35, com.nightowlcrew.nudgie.R.drawable.play, com.nightowlcrew.nudgie.R.drawable.play, AccessoryCategory.FOOD)
         )
     )
 
@@ -214,12 +213,66 @@ class NudgieViewModel(
             prepopulateDefaultHabits()
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
+            // 1. Time of Day Greeting on Launch
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val greeting = when (hour) {
+                in 5..11 -> listOf(
+                    "Good morning! ☀️ Ready to conquer the day?",
+                    "Morning! Did you sleep well? 🛌",
+                    "Rise and shine! Let's get some tasks done! ☕"
+                ).random()
+                in 12..17 -> listOf(
+                    "Good afternoon! 🌤️ Halfway through the day!",
+                    "Afternoon check-in! Don't forget to stretch. 🧘",
+                    "Hope your day is going great so far! ✨"
+                ).random()
+                in 18..21 -> listOf(
+                    "Good evening! 🌙 Time to wind down soon.",
+                    "Great job surviving the day! Ready to relax? 🛋️",
+                    "Sunset vibes. Let's finish strong! 🌆"
+                ).random()
+                else -> listOf(
+                    "You're up late! 🦉 Rest is a habit too, you know.",
+                    "Night owl mode activated! 🌙",
+                    "Past midnight... go to sleep soon! 💤"
+                ).random()
+            }
+            showMessage(greeting, 6000L)
+
+            // 2. The Automatic Idle/Situational Timer
+            launch {
+                delay(15000L) // Wait 15 seconds after app launch before starting the idle loop
+                while (true) {
+                    delay(30000L) // Trigger every 30 seconds
+
+                    // Only speak if there isn't already a message on the screen
+                    if (_petMessage.value == null) {
+                        val happiness = _happiness.value
+                        val energy = _energy.value
+
+                        val message = when {
+                            happiness < 50 -> "I'm feeling a bit sad... let's complete a task! 💔"
+                            energy < 40 -> "Yawn... running low on energy. Time for a break? 🔋"
+                            else -> listOf(
+                                "Just hanging out... 🦠",
+                                "Did you drink water today? 💧",
+                                "You're doing great! ✨",
+                                "I wonder what level 20 looks like... 🤔",
+                                "Nudgie loves you! ❤️",
+                                "A clean to-do list is a happy to-do list! 📋"
+                            ).random()
+                        }
+                        showMessage(message, 5000L)
+                    }
+                }
+            }
+
             val petStatsFlow = combine(_petName, _happiness, _energy, _petLevel, _petXP) { name, h, e, l, xp ->
                 PetStats(name, l, xp, h, e)
             }
 
-            val extendedPetStatsFlow = combine(petStatsFlow, _currency, _accessories) { stats, currency, accessories ->
-                stats.copy(currency = currency, accessories = accessories)
+            val extendedPetStatsFlow = combine(petStatsFlow, _currency, _accessories, _petMessage) { stats, currency, accessories, msg ->
+                stats.copy(currency = currency, accessories = accessories, message = msg)
             }
 
             combine(
@@ -252,6 +305,16 @@ class NudgieViewModel(
         }
     }
 
+    // Helper function to show messages and automatically clear them
+    private fun showMessage(message: String, durationMillis: Long = 4000L) {
+        messageJob?.cancel() // Cancel any existing timer so they don't overlap
+        _petMessage.value = message
+        messageJob = viewModelScope.launch {
+            delay(durationMillis)
+            _petMessage.value = null
+        }
+    }
+
     fun buyAccessory(accessory: AccessoryItem) {
         val currentCurrency = _currency.value
         if (currentCurrency >= accessory.cost && !accessory.isPurchased) {
@@ -266,11 +329,15 @@ class NudgieViewModel(
 
     fun equipAccessory(accessory: AccessoryItem) {
         if (accessory.isPurchased) {
-            _accessories.value = _accessories.value.map {
-                if (it.category == accessory.category) {
-                    it.copy(isEquipped = it.id == accessory.id)
+            _accessories.value = _accessories.value.map { item ->
+                if (item.category == accessory.category) {
+                    if (item.id == accessory.id) {
+                        item.copy(isEquipped = !item.isEquipped)
+                    } else {
+                        item.copy(isEquipped = false)
+                    }
                 } else {
-                    it
+                    item
                 }
             }
         }
@@ -378,10 +445,48 @@ class NudgieViewModel(
         _currency.value += 5
         sharedPreferences.edit().putInt("pet_currency", _currency.value).apply()
 
+        // 3. Dynamic Praise Options
+        val praisePhrases = listOf(
+            "Great job! 🌟",
+            "Way to go! 🚀",
+            "Keep it up! 🔥",
+            "XP get! 💎",
+            "You're crushing it today! ⚡",
+            "Task complete! Proud of you. 😎",
+            "Boom! Another one bites the dust. 💥"
+        )
+        showMessage(praisePhrases.random())
+
         if (_petXP.value >= 800) {
             _petLevel.value += 1
             _petXP.value -= 800
+
+            val levelUpPhrases = listOf(
+                "I Leveled Up!! 🎊 We are getting stronger!",
+                "Level UP! 🌟 Look at my stats now!",
+                "Powering up! 🔋 Thanks for the hard work!"
+            )
+            showMessage(levelUpPhrases.random(), 6000L)
         }
+    }
+
+    fun petTheNudgie() {
+        if (_happiness.value < 100) {
+            _happiness.value += 1
+        }
+
+        // 4. Fun Tap Reactions
+        val petPhrases = listOf(
+            "Purrrrr...",
+            "Happy!",
+            "❤️",
+            "Yay!",
+            "Hehehe that tickles! 🤭",
+            "Aha! Keep the pats coming. 🥰",
+            "Mutually assured happiness! ✨",
+            "You're my favorite human. 🥺"
+        )
+        showMessage(petPhrases.random(), 2000L)
     }
 
     companion object {

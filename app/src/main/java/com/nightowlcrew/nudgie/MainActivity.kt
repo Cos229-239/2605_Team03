@@ -23,15 +23,15 @@ import com.nightowlcrew.nudgie.ui.dashboard.AppIconTheme
 import com.nightowlcrew.nudgie.ui.dashboard.NudgieDashboard
 import com.nightowlcrew.nudgie.ui.dashboard.NudgieViewModel
 import com.nightowlcrew.nudgie.ui.theme.NudgieTheme
-<<<<<<< HEAD
+
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import com.nightowlcrew.nudgie.services.NudgieOverlayService
-=======
+
 import com.nightowlcrew.nudgie.utils.IconSwitcherManager
 import com.nightowlcrew.nudgie.utils.NudgieIcon
->>>>>>> bb070ed7b0b4e0510b4b7ff027ecc2666aaa5669
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

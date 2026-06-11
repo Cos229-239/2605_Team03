@@ -1,25 +1,37 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.nightowlcrew.nudgie.data.AccessoryCategory
 import com.nightowlcrew.nudgie.data.AccessoryItem
-import com.nightowlcrew.nudgie.ui.theme.*
+import com.nightowlcrew.nudgie.ui.theme.BrandGold
+import com.nightowlcrew.nudgie.ui.theme.NavyBackground
+import com.nightowlcrew.nudgie.ui.theme.NavyOutline
+import com.nightowlcrew.nudgie.ui.theme.NavySurface
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShopDialog(
     currency: Int,
@@ -28,44 +40,94 @@ fun ShopDialog(
     onEquip: (AccessoryItem) -> Unit,
     onDismiss: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val tabs = listOf("Outfits", "Toys", "Food")
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = NavySurface,
-            modifier = Modifier.fillMaxWidth().height(500.dp)
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .fillMaxHeight(0.85f),
+            shape = RoundedCornerShape(24.dp),
+            color = NavyBackground,
+            border = BorderStroke(2.dp, NavyOutline)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 // Header
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Nudgie Shop", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = VT323)
+                    Text("Nudgie Mart", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("💎", fontSize = 20.sp)
-                        Spacer(Modifier.width(4.dp))
-                        Text("$currency", color = BrandGold, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("💎 $currency", color = BrandGold, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.width(16.dp))
+                        IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Items List
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(accessories) { item ->
-                        ShopItemRow(item, currentCurrency = currency, onBuy = { onBuy(item) }, onEquip = { onEquip(item) })
+                // Custom Tab Row
+                TabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = NavySurface,
+                    contentColor = BrandGold,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                            color = BrandGold,
+                            height = 3.dp
+                        )
                     }
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyOutline)
                 ) {
-                    Text("Close", color = Color.White)
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            text = {
+                                Text(
+                                    text = title,
+                                    color = if (selectedTabIndex == index) BrandGold else Color.Gray,
+                                    fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        )
+                    }
+                }
+
+                // Filter Items based on Tab
+                val currentItems = when (selectedTabIndex) {
+                    0 -> accessories.filter { it.category in listOf(AccessoryCategory.HAT, AccessoryCategory.GLASSES, AccessoryCategory.OUTFIT) }
+                    1 -> accessories.filter { it.category == AccessoryCategory.TOY }
+                    2 -> accessories.filter { it.category == AccessoryCategory.FOOD }
+                    else -> emptyList()
+                }
+
+                // Shop Grid
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(currentItems) { item ->
+                        ShopItemCard(
+                            item = item,
+                            canAfford = currency >= item.cost,
+                            onBuy = { onBuy(item) },
+                            onEquip = { onEquip(item) },
+                            isConsumable = item.category == AccessoryCategory.FOOD // Changes "Equip" to "Use"
+                        )
+                    }
                 }
             }
         }
@@ -73,57 +135,72 @@ fun ShopDialog(
 }
 
 @Composable
-fun ShopItemRow(
+fun ShopItemCard(
     item: AccessoryItem,
-    currentCurrency: Int,
+    canAfford: Boolean,
     onBuy: () -> Unit,
-    onEquip: () -> Unit
+    onEquip: () -> Unit,
+    isConsumable: Boolean
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(NavyBackground)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        colors = CardDefaults.cardColors(containerColor = NavySurface),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, if (item.isEquipped) BrandGold else NavyOutline)
     ) {
-        // Temporary Generic Icons until you add your real transparent PNGs
-        Box(
-            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(painter = painterResource(id = item.iconResId), contentDescription = item.name, modifier = Modifier.size(32.dp))
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // Info
-        Column(modifier = Modifier.weight(1f)) {
-            Text(item.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            if (!item.isPurchased) {
-                Text("Cost: ${item.cost} 💎", color = if (currentCurrency >= item.cost) SuccessGreen else Color.Red, fontSize = 14.sp)
-            } else {
-                Text("Owned", color = BrandGold, fontSize = 14.sp)
-            }
-        }
-
-        // Action Button
-        if (!item.isPurchased) {
-            Button(
-                onClick = onBuy,
-                enabled = currentCurrency >= item.cost,
-                colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen)
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(NavyBackground.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
             ) {
-                Text("Buy")
-            }
-        } else {
-            Button(
-                onClick = onEquip,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (item.isEquipped) NavyOutline else MaterialTheme.colorScheme.primary
+                Image(
+                    painter = painterResource(id = item.iconResId),
+                    contentDescription = item.name,
+                    modifier = Modifier.size(60.dp)
                 )
-            ) {
-                Text(if (item.isEquipped) "Equipped" else "Equip")
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                text = item.name,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.height(40.dp) // Ensures buttons align nicely
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            if (!item.isPurchased) {
+                Button(
+                    onClick = onBuy,
+                    enabled = canAfford,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (canAfford) "💎 ${item.cost}" else "Locked")
+                }
+            } else {
+                Button(
+                    onClick = onEquip,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (item.isEquipped) NavyOutline else BrandGold
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val actionText = if (isConsumable) "Use" else "Equip"
+                    Text(
+                        text = if (item.isEquipped) "Equipped" else actionText,
+                        color = if (item.isEquipped) Color.White else NavyBackground
+                    )
+                }
             }
         }
     }
