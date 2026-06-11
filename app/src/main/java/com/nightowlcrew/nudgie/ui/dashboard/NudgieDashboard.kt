@@ -1342,10 +1342,15 @@ fun DressedUpPet(
         )
 
         equippedAccessories.forEach { accessory ->
+            val accessoryModifier = when (accessory.name) {
+                "Space Ball" -> Modifier.size(40.dp).align(Alignment.BottomEnd).offset(x = (-10).dp, y = (-10).dp)
+                "Bowl" -> Modifier.size(40.dp).align(Alignment.BottomStart).offset(x = 10.dp, y = (-10).dp)
+                else -> Modifier.fillMaxSize()
+            }
             Image(
                 painter = painterResource(id = accessory.assetResId),
                 contentDescription = accessory.name,
-                modifier = Modifier.fillMaxSize(),
+                modifier = accessoryModifier,
                 contentScale = ContentScale.Fit
             )
         }

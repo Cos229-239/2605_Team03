@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -232,9 +233,9 @@ class NudgieViewModel(
 
     private val _accessories = MutableStateFlow(
         listOf(
-            AccessoryItem("hat_1", "Cowboy Hat", 50, com.nightowlcrew.nudgie.R.drawable.zustomize, com.nightowlcrew.nudgie.R.drawable.zustomize, AccessoryCategory.HAT),
-            AccessoryItem("glasses_1", "Cool Shades", 100, com.nightowlcrew.nudgie.R.drawable.feed, com.nightowlcrew.nudgie.R.drawable.feed, AccessoryCategory.GLASSES),
-            AccessoryItem("outfit_1", "Space Suit", 250, com.nightowlcrew.nudgie.R.drawable.play, com.nightowlcrew.nudgie.R.drawable.play, AccessoryCategory.OUTFIT)
+            AccessoryItem("hat_1", "Nudgie Sweater", 50, com.nightowlcrew.nudgie.R.drawable.zustomize, com.nightowlcrew.nudgie.R.drawable.zustomize, AccessoryCategory.HAT),
+            AccessoryItem("glasses_1", "Bowl", 100, com.nightowlcrew.nudgie.R.drawable.feed, com.nightowlcrew.nudgie.R.drawable.feed, AccessoryCategory.GLASSES),
+            AccessoryItem("outfit_1", "Space Ball", 250, com.nightowlcrew.nudgie.R.drawable.play, com.nightowlcrew.nudgie.R.drawable.play, AccessoryCategory.OUTFIT)
         )
     )
 
@@ -370,17 +371,22 @@ class NudgieViewModel(
     }
 
     private fun prepopulateDefaultHabits() {
-        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v7_added", false)
+        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v8_added", false)
         if (!alreadyAdded) {
             viewModelScope.launch {
+                val existingHabits = repository.getAllHabits().first()
+                val existingTitles = existingHabits.map { it.title }.toSet()
+
                 HABIT_TEMPLATES.forEach { (category, templates) ->
                     templates.forEach { template ->
-                        repository.insertHabit(
-                            HabitEntity(title = template.title, icon = "📌", category = category.name, targetFrequencyPerDay = template.defaultFrequency, isStock = true)
-                        )
+                        if (template.title !in existingTitles) {
+                            repository.insertHabit(
+                                HabitEntity(title = template.title, icon = "📌", category = category.name, targetFrequencyPerDay = template.defaultFrequency, isStock = true)
+                            )
+                        }
                     }
                 }
-                sharedPreferences.edit().putBoolean("default_habits_v7_added", true).apply()
+                sharedPreferences.edit().putBoolean("default_habits_v8_added", true).apply()
             }
         }
     }

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -102,140 +103,157 @@ fun ProfileContent(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(NavyBackground)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Avatar and Name Row
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Avatar (Placeholder image from mockup)
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(NavySurface)
-            ) {
-                Image(
-                    painter = painterResource(id = uiState.profileAvatarRes),
-                    contentDescription = "Avatar",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            Spacer(modifier = Modifier.width(20.dp))
-
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = uiState.petStats.name,
-                        style = TextStyle(
-                            fontFamily = VT323,
-                            fontSize = 32.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit Name",
-                        tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clickable {
-                                nameInput = uiState.petStats.name
-                                showEditDialog = true
-                            }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Level and XP Section
-        Surface(
-            color = NavySurface.copy(alpha = 0.5f),
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Level ${uiState.petStats.level} 🪙",
-                        color = Color.White,
-                        fontFamily = VT323,
-                        fontSize = 20.sp
-                    )
-                    Text(
-                        text = "${uiState.petStats.xp} / 800 XP",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontFamily = VT323,
-                        fontSize = 18.sp
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                LinearProgressIndicator(
-                    progress = { uiState.petStats.xp / 800f },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp)
-                        .clip(RoundedCornerShape(5.dp)),
-                    color = BrandGold,
-                    trackColor = Color.White.copy(alpha = 0.1f),
-                    strokeCap = StrokeCap.Round
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Menu Options List
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .background(NavyBackground)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ProfileMenuItem("Achievements", Icons.Default.Star)
-            ProfileMenuItem("Friends", Icons.Default.Person)
-            ProfileMenuItem("Settings", Icons.Default.Settings, onClick = onSettingsClick)
-            ProfileMenuItem("Notifications", Icons.Default.Notifications)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Avatar and Name Row
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Avatar (Placeholder image from mockup)
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(NavySurface)
+                ) {
+                    Image(
+                        painter = painterResource(id = uiState.profileAvatarRes),
+                        contentDescription = "Avatar",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(20.dp))
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = uiState.petStats.name,
+                            style = TextStyle(
+                                fontFamily = VT323,
+                                fontSize = 32.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Name",
+                            tint = Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable {
+                                    nameInput = uiState.petStats.name
+                                    showEditDialog = true
+                                }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Level and XP Section
+            Surface(
+                color = NavySurface.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Level ${uiState.petStats.level} 🪙",
+                            color = Color.White,
+                            fontFamily = VT323,
+                            fontSize = 20.sp
+                        )
+                        Text(
+                            text = "${uiState.petStats.xp} / 800 XP",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontFamily = VT323,
+                            fontSize = 18.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = { uiState.petStats.xp / 800f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(5.dp)),
+                        color = BrandGold,
+                        trackColor = Color.White.copy(alpha = 0.1f),
+                        strokeCap = StrokeCap.Round
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Menu Options List
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ProfileMenuItem("Achievements", Icons.Default.Star)
+                ProfileMenuItem("Friends", Icons.Default.Person)
+                ProfileMenuItem("Settings", Icons.Default.Settings, onClick = onSettingsClick)
+                ProfileMenuItem("Notifications", Icons.Default.Notifications)
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Streak Info (Floating at bottom of content)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "🔥 ${statsUiState.activeStreak} Day Streak!",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = "✅ ${statsUiState.totalTasksDone} Tasks",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Streak Info (Floating at bottom of content)
-        Row(
+        // Settings Gear Icon in corner
+        IconButton(
+            onClick = onSettingsClick,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
         ) {
-            Text(
-                text = "🔥 ${statsUiState.activeStreak} Day Streak!",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = "✅ ${statsUiState.totalTasksDone} Tasks",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Settings",
+                tint = Color.White,
+                modifier = Modifier.size(28.dp)
             )
         }
     }
