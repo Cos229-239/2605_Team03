@@ -135,6 +135,7 @@ import com.nightowlcrew.nudgie.ui.theme.spStatEnergy
 import com.nightowlcrew.nudgie.ui.theme.spStatHappiness
 import com.nightowlcrew.nudgie.ui.theme.spStatLevel
 import com.nightowlcrew.nudgie.ui.theme.spStatSuccess
+import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
 import com.nightowlcrew.nudgie.utils.PetAssetManager
 import com.nightowlcrew.nudgie.utils.PetType
 import com.nightowlcrew.nudgie.utils.showReminderTimePicker
@@ -340,6 +341,7 @@ fun NudgieDashboardContent(
                 NudgiePetScreen(
                     petStats = uiState.petStats,
                     currentPetType = uiState.currentPetType,
+                    currentTheme = uiState.currentTheme,
                     onUpdatePetName = onUpdatePetName,
                     onCustomizeClick = { showPetSelection = true },
                     onShopClick = { showShopDialog = true },
@@ -471,6 +473,7 @@ fun PetActionButtons(
 fun NudgiePetScreen(
     petStats: PetStats,
     currentPetType: PetType,
+    currentTheme: AppTheme,
     onUpdatePetName: (String) -> Unit,
     onCustomizeClick: () -> Unit,
     onShopClick: () -> Unit,
@@ -529,6 +532,7 @@ fun NudgiePetScreen(
                 if (petStats.message != null) {
                     SpeechBubble(
                         message = petStats.message,
+                        currentTheme = currentTheme,
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .offset(x = 90.dp, y = 40.dp)
@@ -691,6 +695,7 @@ fun NudgiePetScreenPreview() {
         NudgiePetScreen(
             petStats = PetStats(name = "Zorg", level = 1, xp = 0, happiness = 80, energy = 65),
             currentPetType = PetType.BLUE,
+            currentTheme = AppTheme.DEFAULT,
             onUpdatePetName = {},
             onCustomizeClick = {},
             onShopClick = {},
@@ -1011,6 +1016,7 @@ fun PetFrame(
                 if (petStats.message != null) {
                     SpeechBubble(
                         message = petStats.message,
+                        currentTheme = currentTheme,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .offset(x = 40.dp, y = (-20).dp)
@@ -1414,17 +1420,27 @@ fun DressedUpPet(
     }
 }
 
-//THE NEW SPEECH BUBBLE UI
+//THE UNIFIED SPEECH BUBBLE UI (merged from BuddyDialogueBox)
 @Composable
-fun SpeechBubble(message: String, modifier: Modifier = Modifier) {
-    Box(
+fun SpeechBubble(
+    message: String, 
+    currentTheme: AppTheme,
+    modifier: Modifier = Modifier
+) {
+    Card(
         modifier = modifier
-            .background(Color.White, RoundedCornerShape(20.dp, 20.dp, 20.dp, 0.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .width(280.dp)
+            .nudgieCardShadow(currentTheme, 4.dp, RoundedCornerShape(8.dp)),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = NavySurface
+        ),
+        border = BorderStroke(2.dp, NavyOutline)
     ) {
         Text(
-            text = message,
-            color = NavyBackground,
+            text = message.uppercase(),
+            modifier = Modifier.padding(16.dp),
+            color = Color.White,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
             fontFamily = VT323
