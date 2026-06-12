@@ -358,6 +358,7 @@ fun NudgieDashboardContent(
                     activities = uiState.activities,
                     archivedHabits = archivedHabits,
                     screenTimeGoalMillis = uiState.screenTimeGoalMillis,
+                    currentTheme = uiState.currentTheme,
                     onToggleHabit = onToggleHabit,
                     onAddHabit = onAddHabit,
                     onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
@@ -377,18 +378,10 @@ fun NudgieDashboardContent(
             }
             composable(Screen.Settings.route) {
                 SettingsContent(
-                    activities = uiState.activities,
-                    archivedHabits = archivedHabits,
-                    screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     currentTheme = uiState.currentTheme,
                     overlayEnabled = uiState.overlayEnabled,
-                    onAddHabit = { title, category, freq, isStock -> onAddHabit(title, category, freq, isStock) },
-                    onDeleteHabit = onDeleteHabit,
-                    onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
                     onUpdateTheme = onUpdateTheme,
-                    onUpdateOverlayEnabled = onUpdateOverlayEnabled,
-                    onArchiveHabit = onArchiveHabit,
-                    onRestoreHabit = onRestoreHabit
+                    onUpdateOverlayEnabled = onUpdateOverlayEnabled
                 )
             }
         }

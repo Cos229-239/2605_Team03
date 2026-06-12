@@ -91,7 +91,7 @@ class NudgieViewModel(
 
         val streak = calculateStreak(completedLogs)
 
-        val catProgress = CozyCategory.values().associate { category ->
+        val catProgress = CozyCategory.entries.associate { category ->
             val habitsInCat = habits.filter { it.category == category.name }
             val habitIds = habitsInCat.map { it.id }.toSet()
             val completedInCat = completedLogs.filter { it.habitId in habitIds }.size
@@ -307,8 +307,8 @@ class NudgieViewModel(
                 stats.copy(currency = currency, accessories = accessories, message = msg)
             }
 
-            val profileStateFlow = combine(_profileUserName, _profileBio, _profileJoinDate, _profileAvatarRes) { name, bio, joinDate, avatar ->
-                Triple(name, bio, Pair(joinDate, avatar))
+            val profileStateFlow = combine(_profileUserName, _profileBio, _profileJoinDate, _profileAvatarRes) { name, bio, date, avatar ->
+                Triple(name, bio, Pair(date, avatar))
             }
 
             combine(
@@ -330,7 +330,7 @@ class NudgieViewModel(
                 val petType = flows[6] as PetType
                 val overlayEnabled = flows[7] as Boolean
 
-                val categorized = CozyCategory.values().associateWith { category ->
+                val categorized = CozyCategory.entries.associateWith { category ->
                     activities.filter { it.category == category.name }
                 }.filterValues { it.isNotEmpty() }
 
