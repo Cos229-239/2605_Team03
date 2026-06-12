@@ -51,6 +51,8 @@ data class DashboardUiState(
     val currentPetType: PetType = PetType.BLUE,
     val totalTasksDone: Int = 0,
     val isLoading: Boolean = true,
+    /** Whether the "Draw over other apps" overlay is user-enabled in Settings */
+    val overlayEnabled: Boolean = false,
     // Additive Profile Properties
     val profileUserName: String = "Alex",
     val profileBio: String = "Cozy Nudger",
@@ -175,6 +177,8 @@ class NudgieViewModel(
         try { AppTheme.valueOf(sharedPreferences.getString("app_theme", AppTheme.RETRO_SPACE.name) ?: AppTheme.RETRO_SPACE.name) }
         catch (e: Exception) { AppTheme.RETRO_SPACE }
     )
+
+    private val _overlayEnabled = MutableStateFlow(sharedPreferences.getBoolean("overlay_enabled", false))
 
     private val _petName = MutableStateFlow(sharedPreferences.getString("pet_name", "Your Pet") ?: "Your Pet")
     private val _currentPetType = MutableStateFlow(
@@ -314,7 +318,8 @@ class NudgieViewModel(
                 profileStateFlow,
                 repository.getAllLogs(),
                 _currentTheme,
-                _currentPetType
+                _currentPetType,
+                _overlayEnabled
             ) { flows: Array<Any?> ->
                 val activities = flows[0] as List<ActivityItem>
                 val screenTime = flows[1] as ScreenTimeRecord?
@@ -323,6 +328,7 @@ class NudgieViewModel(
                 val allLogs = flows[4] as List<HabitLogEntity>
                 val theme = flows[5] as AppTheme
                 val petType = flows[6] as PetType
+                val overlayEnabled = flows[7] as Boolean
 
                 val categorized = CozyCategory.values().associateWith { category ->
                     activities.filter { it.category == category.name }
@@ -340,6 +346,7 @@ class NudgieViewModel(
                     currentPetType = petType,
                     totalTasksDone = tasksDone,
                     isLoading = false,
+                    overlayEnabled = overlayEnabled,
                     profileUserName = profile.first,
                     profileBio = profile.second,
                     profileJoinDate = profile.third.first,
@@ -400,6 +407,14 @@ class NudgieViewModel(
     fun updateTheme(theme: AppTheme) {
         _currentTheme.update { theme }
         sharedPreferences.edit().putString("app_theme", theme.name).apply()
+    }
+
+    /**
+     * Updates the user preference for the overlay feature and persists it.
+     */
+    fun updateOverlayEnabled(enabled: Boolean) {
+        _overlayEnabled.update { enabled }
+        sharedPreferences.edit().putBoolean("overlay_enabled", enabled).apply()
     }
 
     fun updatePetName(newName: String) {

@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.ui.dashboard.AppIconTheme
 import com.nightowlcrew.nudgie.ui.dashboard.NudgieDashboard
@@ -25,8 +26,10 @@ import com.nightowlcrew.nudgie.ui.dashboard.NudgieViewModel
 import com.nightowlcrew.nudgie.ui.theme.NudgieTheme
 
 import android.content.Intent
-import android.net.Uri
 import android.provider.Settings
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.nightowlcrew.nudgie.services.NudgieOverlayService
 
 import com.nightowlcrew.nudgie.utils.IconSwitcherManager
@@ -75,14 +78,32 @@ class MainActivity : ComponentActivity() {
                         permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }
-                if (!Settings.canDrawOverlays(this@MainActivity)) {
-                    val overlayIntent = Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:$packageName")
-                    )
-                    startActivity(overlayIntent)
-                } else {
+                // NOTE: SYSTEM_ALERT_WINDOW (Draw over apps) request removed from here
+                // and moved to Settings screen for better UX.
+            }
+
+            // Handle Overlay Service reactively based on user setting and permission
+            LaunchedEffect(uiState.overlayEnabled) {
+                if (uiState.overlayEnabled && Settings.canDrawOverlays(this@MainActivity)) {
                     startService(Intent(this@MainActivity, NudgieOverlayService::class.java))
+                } else {
+                    stopService(Intent(this@MainActivity, NudgieOverlayService::class.java))
+                }
+            }
+
+            // Re-check overlay when returning to app (e.g. after granting permission in system settings)
+            val lifecycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        if (uiState.overlayEnabled && Settings.canDrawOverlays(this@MainActivity)) {
+                            startService(Intent(this@MainActivity, NudgieOverlayService::class.java))
+                        }
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
                 }
             }
 

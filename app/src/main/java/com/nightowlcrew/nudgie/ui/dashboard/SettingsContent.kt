@@ -1,5 +1,8 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
@@ -11,8 +14,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -39,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -85,12 +92,14 @@ fun SettingsScreen(
         archivedHabits = archivedHabits,
         screenTimeGoalMillis = uiState.screenTimeGoalMillis,
         currentTheme = uiState.currentTheme,
+        overlayEnabled = uiState.overlayEnabled,
         onAddHabit = { title, category, frequency, isStock -> 
             viewModel.addNewHabit(title, category, frequency, isStock)
         },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
+        onUpdateOverlayEnabled = { viewModel.updateOverlayEnabled(it) },
         onArchiveHabit = { viewModel.archiveHabit(it) },
         onRestoreHabit = { viewModel.restoreHabit(it) },
     )
@@ -102,10 +111,12 @@ fun SettingsContent(
     archivedHabits: List<HabitEntity>,
     screenTimeGoalMillis: Long,
     currentTheme: AppTheme,
+    overlayEnabled: Boolean,
     onAddHabit: (String, String, Int, Boolean) -> Unit,
     onDeleteHabit: (Int) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
     onUpdateTheme: (AppTheme) -> Unit,
+    onUpdateOverlayEnabled: (Boolean) -> Unit,
     onArchiveHabit: (HabitEntity) -> Unit,
     onRestoreHabit: (HabitEntity) -> Unit,
     modifier: Modifier = Modifier
@@ -176,6 +187,63 @@ fun SettingsContent(
                 expandedSection = if (expandedSection == "theme") null else "theme"
             }
         )
+
+        OverlaySettingsCard(
+            overlayEnabled = overlayEnabled,
+            onUpdateOverlayEnabled = onUpdateOverlayEnabled,
+            currentTheme = currentTheme
+        )
+    }
+}
+
+/**
+ * UI Card to toggle the "Draw over other apps" overlay.
+ * Handles permission checking and navigation to system settings if permission is missing.
+ */
+@Composable
+fun OverlaySettingsCard(
+    overlayEnabled: Boolean,
+    onUpdateOverlayEnabled: (Boolean) -> Unit,
+    currentTheme: AppTheme
+) {
+    val context = LocalContext.current
+    NudgieSettingsCard(currentTheme = currentTheme) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Nudgie Overlay",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Show Nudgie over other apps to help you stay focused.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = overlayEnabled,
+                onCheckedChange = { enabled ->
+                    if (enabled) {
+                        if (!Settings.canDrawOverlays(context)) {
+                            val intent = Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:${context.packageName}")
+                            )
+                            context.startActivity(intent)
+                        } else {
+                            onUpdateOverlayEnabled(true)
+                        }
+                    } else {
+                        onUpdateOverlayEnabled(false)
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -710,10 +778,12 @@ fun SettingsContentPreview() {
                 archivedHabits = emptyList(),
                 screenTimeGoalMillis = 7200000L,
                 currentTheme = AppTheme.DEFAULT,
+                overlayEnabled = false,
                 onAddHabit = { _, _, _, _ -> },
                 onDeleteHabit = { },
                 onUpdateScreenTimeGoal = { },
                 onUpdateTheme = { },
+                onUpdateOverlayEnabled = { },
                 onArchiveHabit = { },
                 onRestoreHabit = { }
             )
