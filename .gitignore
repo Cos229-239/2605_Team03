@@ -25,6 +25,11 @@ build/
 *.iml
 local.properties
 .DS_Store
+captures/
+*.hprof
+.navigation/
+*.keystore
+*.jks
 
 # Android C++ / NDK build artifacts
 .cxx/
