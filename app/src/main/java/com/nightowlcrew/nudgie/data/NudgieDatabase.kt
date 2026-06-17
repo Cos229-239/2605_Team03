@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 // Note: .fallbackToDestructiveMigration() is active for local sandbox testing during schema changes.
-@Database(entities = [HabitEntity::class, HabitLogEntity::class, ScreenTimeRecord::class, AlarmEntity::class], version = 6, exportSchema = false)
+@Database(entities = [HabitEntity::class, HabitLogEntity::class, ScreenTimeRecord::class, AlarmEntity::class], version = 7, exportSchema = false)
 abstract class NudgieDatabase : RoomDatabase() {
 
     abstract fun habitDao(): HabitDao

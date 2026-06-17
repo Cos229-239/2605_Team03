@@ -154,19 +154,22 @@ fun ExpandableCategorySection(
                 val templates = HABIT_TEMPLATES[category] ?: emptyList()
                 
                 templates.forEach { template ->
-                    val activeHabit = habits.find { it.description == template.title }
-                    val archivedHabit = archivedHabits.find { it.title == template.title }
-                    val isActive = activeHabit != null
-                    val isArchived = archivedHabit != null
+                    // Extract title from template if it has an emoji prefix (matches ViewModel logic)
+                    val emojiRegex = Regex("^(\\p{So}|\\p{Sk})\\s+(.*)$")
+                    val matchResult = emojiRegex.find(template.title)
+                    val templateTitleOnly = matchResult?.groupValues?.get(2) ?: template.title
+
+                    val activeHabit = habits.find { it.originalTitle == templateTitleOnly || it.description == templateTitleOnly }
+                    val archivedHabit = archivedHabits.find { it.title == templateTitleOnly }
                     
                     TemplateOptionRow(
                         title = template.title,
-                        icon = if (isActive) Icons.Default.Delete else Icons.Default.Add,
+                        icon = if (activeHabit != null) Icons.Default.Delete else Icons.Default.Add,
                         currentTheme = currentTheme,
                         onClick = {
                             when {
-                                isActive -> onArchiveHabit(activeHabit.toEntity())
-                                isArchived -> onRestoreHabit(archivedHabit)
+                                activeHabit != null -> onArchiveHabit(activeHabit.toEntity())
+                                archivedHabit != null -> onRestoreHabit(archivedHabit)
                                 else -> onAddTemplate(template.title, template.defaultFrequency, true)
                             }
                         }

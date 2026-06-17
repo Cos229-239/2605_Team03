@@ -735,7 +735,7 @@ fun DashboardContent(
                 currency = currency,
                 onPetTheNudgie = onPetTheNudgie
             )
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(80.dp))
             TasksSection(
                 categorizedActivities = categorizedActivities,
                 currentTheme = currentTheme,

@@ -430,7 +430,7 @@ class NudgieViewModel(
     }
 
     private fun prepopulateDefaultHabits() {
-        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v8_added", false)
+        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v11_added", false)
         if (!alreadyAdded) {
             viewModelScope.launch {
                 val existingHabits = repository.getAllHabits().first()
@@ -445,7 +445,7 @@ class NudgieViewModel(
                         }
                     }
                 }
-                sharedPreferences.edit().putBoolean("default_habits_v8_added", true).apply()
+                sharedPreferences.edit().putBoolean("default_habits_v11_added", true).apply()
             }
         }
     }
