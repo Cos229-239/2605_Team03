@@ -430,22 +430,26 @@ class NudgieViewModel(
     }
 
     private fun prepopulateDefaultHabits() {
-        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v11_added", false)
+        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v12_added", false)
         if (!alreadyAdded) {
             viewModelScope.launch {
                 val existingHabits = repository.getAllHabits().first()
                 val existingTitles = existingHabits.map { it.title }.toSet()
+                val emojiRegex = Regex("^(\\p{So}|\\p{Sk})\\s+(.*)$")
 
                 HABIT_TEMPLATES.forEach { (category, templates) ->
                     templates.forEach { template ->
-                        if (template.title !in existingTitles) {
+                        val matchResult = emojiRegex.find(template.title)
+                        val (icon, finalTitle) = if (matchResult != null) matchResult.groupValues[1] to matchResult.groupValues[2] else "📌" to template.title
+
+                        if (finalTitle !in existingTitles) {
                             repository.insertHabit(
-                                HabitEntity(title = template.title, icon = "📌", category = category.name, targetFrequencyPerDay = template.defaultFrequency, isStock = true)
+                                HabitEntity(title = finalTitle, icon = icon, category = category.name, targetFrequencyPerDay = template.defaultFrequency, isStock = true)
                             )
                         }
                     }
                 }
-                sharedPreferences.edit().putBoolean("default_habits_v11_added", true).apply()
+                sharedPreferences.edit().putBoolean("default_habits_v12_added", true).apply()
             }
         }
     }
