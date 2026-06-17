@@ -111,8 +111,8 @@ fun TasksContent(
 @Composable
 fun TasksContentPreview() {
     val mockActivities = listOf(
-        ActivityItem(1, "💪", "Morning Yoga", CozyCategory.BODY_VITALITY.name, "08:00", false),
-        ActivityItem(2, "💧", "Drink Water", CozyCategory.BODY_VITALITY.name, "10:00", true),
+        ActivityItem("1", "💪", "Morning Yoga", CozyCategory.BODY_VITALITY.name, "08:00", false),
+        ActivityItem("2", "💧", "Drink Water", CozyCategory.BODY_VITALITY.name, "10:00", true),
     )
 
     MaterialTheme {

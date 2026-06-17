@@ -27,7 +27,6 @@ import java.util.Date
 import java.util.Locale
 
 enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK, GOTH, RETRO_SPACE }
-
 enum class AppIconTheme { BLUE, FOX, AXOLOTL, DRAGON }
 
 data class PetStats(
@@ -38,7 +37,7 @@ data class PetStats(
     val energy: Int = 100,
     val currency: Int = 250,
     val accessories: List<AccessoryItem> = emptyList(),
-    val message: String? = null // Powers the Speech Bubble!
+    val message: String? = null
 )
 
 data class DashboardUiState(
@@ -51,9 +50,7 @@ data class DashboardUiState(
     val currentPetType: PetType = PetType.BLUE,
     val totalTasksDone: Int = 0,
     val isLoading: Boolean = true,
-    /** Whether the "Draw over other apps" overlay is user-enabled in Settings */
     val overlayEnabled: Boolean = false,
-    // Additive Profile Properties
     val profileUserName: String = "Alex",
     val profileBio: String = "Cozy Nudger",
     val profileJoinDate: String = "October 2023",
@@ -76,11 +73,9 @@ class NudgieViewModel(
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
-    // --- Dialog/Speech Bubble State ---
     private val _petMessage = MutableStateFlow<String?>(null)
     private var messageJob: kotlinx.coroutines.Job? = null
 
-    // Analytics: Asynchronously calculated stats exposed via stateIn
     val statsUiState: StateFlow<StatsUiState> = combine(
         repository.getAllHabits(),
         repository.getAllLogs(),
@@ -95,7 +90,7 @@ class NudgieViewModel(
             val habitsInCat = habits.filter { it.category == category.name }
             val habitIds = habitsInCat.map { it.id }.toSet()
             val completedInCat = completedLogs.filter { it.habitId in habitIds }.size
-            val targetInCat = habitsInCat.sumOf { it.targetFrequencyPerDay } * 7 // Weekly context
+            val targetInCat = habitsInCat.sumOf { it.targetFrequencyPerDay } * 7
 
             val progress = if (targetInCat > 0) {
                 (completedInCat.toFloat() / targetInCat.toFloat()).coerceIn(0f, 1f)
@@ -163,11 +158,12 @@ class NudgieViewModel(
         return streak
     }
 
+    // FIXED: Added <HabitEntity> generic parameter
     val archivedHabits: StateFlow<List<HabitEntity>> = repository.getArchivedHabits()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
+            initialValue = emptyList<HabitEntity>()
         )
 
     val isOverScreenTimeLimit: Boolean
@@ -214,7 +210,6 @@ class NudgieViewModel(
 
     private val _currency = MutableStateFlow(sharedPreferences.getInt("pet_currency", 250))
 
-    // Profile States
     private val _profileUserName = MutableStateFlow(sharedPreferences.getString("profile_user_name", "Alex") ?: "Alex")
     private val _profileBio = MutableStateFlow(sharedPreferences.getString("profile_bio", "Cozy Nudger") ?: "Cozy Nudger")
     private val _profileJoinDate = MutableStateFlow(sharedPreferences.getString("profile_join_date", "October 2023") ?: "October 2023")
@@ -237,7 +232,6 @@ class NudgieViewModel(
             prepopulateDefaultHabits()
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
-            // 1. Time of Day Greeting on Launch
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             val greeting = when (hour) {
                 in 5..11 -> listOf(
@@ -263,13 +257,11 @@ class NudgieViewModel(
             }
             showMessage(greeting, 6000L)
 
-            // 2. The Automatic Idle/Situational Timer
             launch {
-                delay(15000L) // Wait 15 seconds after app launch before starting the idle loop
+                delay(15000L)
                 while (true) {
-                    delay(30000L) // Trigger every 30 seconds
+                    delay(30000L)
 
-                    // Only speak if there isn't already a message on the screen
                     if (_petMessage.value == null) {
                         val happiness = _happiness.value
                         val energy = _energy.value
@@ -291,7 +283,6 @@ class NudgieViewModel(
                 }
             }
 
-            // Sync XP and Level with the database record
             repository.getAllLogs().onEach { logs ->
                 val completedCount = logs.count { it.isCompleted }
                 val totalXp = completedCount * 15
@@ -358,9 +349,8 @@ class NudgieViewModel(
         }
     }
 
-    // Helper function to show messages and automatically clear them
     private fun showMessage(message: String, durationMillis: Long = 4000L) {
-        messageJob?.cancel() // Cancel any existing timer so they don't overlap
+        messageJob?.cancel()
         _petMessage.value = message
         messageJob = viewModelScope.launch {
             delay(durationMillis)
@@ -373,7 +363,7 @@ class NudgieViewModel(
             if (currentCurrency >= accessory.cost && !accessory.isPurchased) {
                 val newCurrency = currentCurrency - accessory.cost
                 sharedPreferences.edit().putInt("pet_currency", newCurrency).apply()
-                
+
                 _accessories.update { currentAccessories ->
                     currentAccessories.map {
                         if (it.id == accessory.id) it.copy(isPurchased = true) else it
@@ -409,9 +399,6 @@ class NudgieViewModel(
         sharedPreferences.edit().putString("app_theme", theme.name).apply()
     }
 
-    /**
-     * Updates the user preference for the overlay feature and persists it.
-     */
     fun updateOverlayEnabled(enabled: Boolean) {
         _overlayEnabled.update { enabled }
         sharedPreferences.edit().putBoolean("overlay_enabled", enabled).apply()
@@ -485,19 +472,23 @@ class NudgieViewModel(
             val (icon, finalTitle) = if (matchResult != null) matchResult.groupValues[1] to matchResult.groupValues[2] else "📌" to title
 
             val habit = HabitEntity(title = finalTitle, icon = icon, category = category, targetFrequencyPerDay = frequency, isStock = isStock)
-            val habitId = repository.insertHabit(habit).toInt()
+
+            repository.insertHabit(habit)
 
             if (markAsCompleted) {
                 val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(now)
-                val log = HabitLogEntity(habitId = habitId, completedAtTime = currentTime, date = todayDate, isCompleted = true)
+                val log = HabitLogEntity(habitId = habit.id, completedAtTime = currentTime, date = todayDate, isCompleted = true)
                 repository.insertLog(log)
                 completeHabit()
             }
         }
     }
 
-    fun deleteHabit(id: Int) {
-        viewModelScope.launch { repository.deleteHabit(HabitEntity(id = id, title = "", icon = "", targetFrequencyPerDay = 0)) }
+    // FIXED: Added missing parameter (category = "")
+    fun deleteHabit(id: String) {
+        viewModelScope.launch {
+            repository.deleteHabit(HabitEntity(id = id, title = "", icon = "", category = "", targetFrequencyPerDay = 0))
+        }
     }
 
     fun archiveHabit(habit: HabitEntity) {
@@ -530,14 +521,13 @@ class NudgieViewModel(
 
     private fun completeHabit() {
         _happiness.update { (it + 20).coerceAtMost(100) }
-        
+
         _currency.update { currentCurrency ->
             val newCurrency = currentCurrency + 5
             sharedPreferences.edit().putInt("pet_currency", newCurrency).apply()
             newCurrency
         }
 
-        // 3. Dynamic Praise Options
         val praisePhrases = listOf(
             "Great job! 🌟",
             "Way to go! 🚀",
@@ -549,8 +539,6 @@ class NudgieViewModel(
         )
         showMessage(praisePhrases.random())
 
-        // XP and Level are handled by the repository collector in init{}
-        // But we check for Level UP message here
         viewModelScope.launch {
             val currentXp = _petXP.value
             if (currentXp + 15 >= 800) {
@@ -569,7 +557,6 @@ class NudgieViewModel(
             _happiness.update { it + 1 }
         }
 
-        // 4. Fun Tap Reactions
         val petPhrases = listOf(
             "Purrrrr...",
             "Happy!",

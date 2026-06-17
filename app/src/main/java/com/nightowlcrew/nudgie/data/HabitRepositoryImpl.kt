@@ -5,10 +5,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
-/**
- * Concrete implementation of the HabitRepository.
- * Bridges Room DAO operations with the UI domain models.
- */
 class HabitRepositoryImpl(
     private val habitDao: HabitDao,
     private val screenTimeDao: ScreenTimeDao
@@ -24,12 +20,12 @@ class HabitRepositoryImpl(
         return habitDao.getLogsByDate(date)
     }
 
-    override suspend fun insertHabit(habit: HabitEntity): Long {
-        return habitDao.insertHabit(habit)
+    override suspend fun insertHabit(habit: HabitEntity) {
+        habitDao.insertHabit(habit)
     }
 
-    override suspend fun insertLog(log: HabitLogEntity): Long {
-        return habitDao.insertHabitLog(log)
+    override suspend fun insertLog(log: HabitLogEntity) {
+        habitDao.insertHabitLog(log)
     }
 
     override suspend fun deleteHabit(habit: HabitEntity) {
@@ -48,11 +44,11 @@ class HabitRepositoryImpl(
         return habitDao.getAllLogs()
     }
 
-    override suspend fun archiveHabit(habitId: Int, timestamp: Long) {
+    override suspend fun archiveHabit(habitId: String, timestamp: Long) {
         habitDao.archiveHabit(habitId, timestamp)
     }
 
-    override suspend fun restoreHabit(habitId: Int) {
+    override suspend fun restoreHabit(habitId: String) {
         habitDao.restoreHabit(habitId)
     }
 

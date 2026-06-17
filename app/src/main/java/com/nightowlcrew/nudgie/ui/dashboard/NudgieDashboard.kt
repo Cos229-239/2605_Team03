@@ -139,7 +139,6 @@ import com.nightowlcrew.nudgie.utils.PetAssetManager
 import com.nightowlcrew.nudgie.utils.PetType
 import com.nightowlcrew.nudgie.utils.showReminderTimePicker
 import kotlinx.coroutines.delay
-import java.util.Calendar
 
 data class StatColors(
     val happiness: Color,
@@ -226,7 +225,7 @@ fun NudgieDashboardContent(
     archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
     onAddHabit: (String, String, Int, Boolean) -> Unit,
-    onDeleteHabit: (Int) -> Unit,
+    onDeleteHabit: (String) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
     onUpdateTheme: (AppTheme) -> Unit,
     onUpdateOverlayEnabled: (Boolean) -> Unit,
@@ -1308,10 +1307,10 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
 fun NudgieDashboardPreview() {
 
     val mockActivities = listOf(
-        ActivityItem(id = 1, icon = "</>", description = "Coding Lesson", category = CozyCategory.MIND_SPACE.name, time = "10:00 AM", isCompleted = true, targetCount = 1, currentCount = 1),
-        ActivityItem(id = 2, icon = "📖", description = "Read 20 Pages", category = CozyCategory.MIND_SPACE.name, time = "1:00 PM", isCompleted = true, targetCount = 1, currentCount = 1),
-        ActivityItem(id = 3, icon = "💧", description = "Drink 8 Glasses of Water", category = CozyCategory.BODY_VITALITY.name, time = "All Day", isCompleted = false, targetCount = 8, currentCount = 0),
-        ActivityItem(id = 4, icon = "🧘", description = "Meditate 10 Minutes", category = CozyCategory.MIND_SPACE.name, time = "8:00 PM", isCompleted = false, targetCount = 1, currentCount = 0)
+        ActivityItem(id = "1", icon = "</>", description = "Coding Lesson", category = CozyCategory.MIND_SPACE.name, time = "10:00 AM", isCompleted = true, targetCount = 1, currentCount = 1),
+        ActivityItem(id = "2", icon = "📖", description = "Read 20 Pages", category = CozyCategory.MIND_SPACE.name, time = "1:00 PM", isCompleted = true, targetCount = 1, currentCount = 1),
+        ActivityItem(id = "3", icon = "💧", description = "Drink 8 Glasses of Water", category = CozyCategory.BODY_VITALITY.name, time = "All Day", isCompleted = false, targetCount = 8, currentCount = 0),
+        ActivityItem(id = "4", icon = "🧘", description = "Meditate 10 Minutes", category = CozyCategory.MIND_SPACE.name, time = "8:00 PM", isCompleted = false, targetCount = 1, currentCount = 0)
     )
 
     val categorizedActivities = mapOf(
