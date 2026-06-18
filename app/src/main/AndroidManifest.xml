@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" tools:ignore="UseExactAlarm" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:name=".NudgieApplication"
@@ -24,21 +25,14 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.App.Starting">
-        </activity>
-
-        <activity-alias
-            android:name=".MainActivityBlue"
-            android:enabled="true"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_round"
-            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity-alias>
+        </activity>
+
+        <!-- Use activity-aliases ONLY for secondary/alternate icons to avoid IDE launch issues -->
+
 
         <activity-alias
             android:name=".MainActivityFox"
@@ -81,6 +75,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+
+        <service
+            android:name=".services.NudgieOverlayService"
+            android:exported="false" />
+
+
+
+
         <receiver android:name=".utils.AlarmReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

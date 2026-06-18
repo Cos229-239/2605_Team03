@@ -10,6 +10,7 @@ val LevelUpBlue = Color(0xFF29B6F6)    // Level stat color
 val SuccessGreen = Color(0xFF00C853)   // Completion/Success color
 val LogicPurple = Color(0xFFE1BEE7)    // AI/Thinking dialogue color
 val DarkGreyScale = Color(0xFF333333)  // Used for tactile depth
+val NudgiePurple = Color(0xFF6200EE)   // Standard Purple for buttons/indicators
 
 // UI Specific Colors
 val DarkBackground = Color(0xFF1F2937)

@@ -51,21 +51,159 @@
     "p_footer": true
   },
   "branches": {
-    "main": false,
-    "gh-pages": false,
-    "Alec's-chore": true,
-    "BaileyPersonal": true,
-    "dev": true,
-    "jared-personal": true,
-    "jaredpersonal": true,
-    "kenneth-personal/chore/setup-room-dependencies": true,
-    "kenneth-personal/feature/implement-repository-viewmodel": true,
-    "kenneth-personal/feature/implement-room-daos": true,
-    "kenneth-personal/feature/screentime": true,
-    "kenneth-personal/feature/settings": true,
-    "kennethpersonal": true,
-    "master": true,
-    "PatrickPersonal": false
+    "main": {
+      "push": false,
+      "nightly": false,
+      "weekly": false,
+      "diverged": false,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "gh-pages": {
+      "push": false,
+      "nightly": false,
+      "weekly": false,
+      "diverged": false,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "Alec's-chore": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Alec Duncan",
+      "owner_discord_user_id": "818600362599514122"
+    },
+    "BaileyPersonal": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Bailey Kimmel",
+      "owner_discord_user_id": "1222729338542358549"
+    },
+    "dev": {
+      "push": true,
+      "nightly": false,
+      "weekly": false,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "jared-personal": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Jared Delgado",
+      "owner_discord_user_id": "715371895918297200"
+    },
+    "jaredpersonal": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Jared Delgado",
+      "owner_discord_user_id": "715371895918297200"
+    },
+    "kenneth-personal/chore/setup-room-dependencies": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
+    },
+    "kenneth-personal/feature/goth": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
+    },
+    "kenneth-personal/feature/implement-repository-viewmodel": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
+    },
+    "kenneth-personal/feature/implement-room-daos": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
+    },
+    "kenneth-personal/feature/screentime": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
+    },
+    "kenneth-personal/feature/settings": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
+    },
+    "kenneth-personal/feature/themes": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
+    },
+    "kennethpersonal": {
+      "push": true,
+      "nightly": true,
+      "weekly": true,
+      "diverged": true,
+      "mention": true,
+      "owner_name": "Kenneth Hanks",
+      "owner_discord_user_id": "376916830201053194"
+    },
+    "master": {
+      "push": true,
+      "nightly": false,
+      "weekly": false,
+      "diverged": false,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    },
+    "PatrickPersonal": {
+      "push": false,
+      "nightly": false,
+      "weekly": false,
+      "diverged": false,
+      "mention": false,
+      "owner_name": "",
+      "owner_discord_user_id": ""
+    }
   },
   "nightly_branches": {
     "main": false,
@@ -76,10 +214,12 @@
     "jared-personal": true,
     "jaredpersonal": true,
     "kenneth-personal/chore/setup-room-dependencies": true,
+    "kenneth-personal/feature/goth": true,
     "kenneth-personal/feature/implement-repository-viewmodel": true,
     "kenneth-personal/feature/implement-room-daos": true,
     "kenneth-personal/feature/screentime": true,
     "kenneth-personal/feature/settings": true,
+    "kenneth-personal/feature/themes": true,
     "kennethpersonal": true,
     "master": false,
     "PatrickPersonal": false
@@ -87,17 +227,19 @@
   "weekly_branches": {
     "main": false,
     "gh-pages": false,
-    "Alec's-chore": false,
-    "BaileyPersonal": false,
+    "Alec's-chore": true,
+    "BaileyPersonal": true,
     "dev": false,
-    "jared-personal": false,
-    "jaredpersonal": false,
-    "kenneth-personal/chore/setup-room-dependencies": false,
-    "kenneth-personal/feature/implement-repository-viewmodel": false,
-    "kenneth-personal/feature/implement-room-daos": false,
-    "kenneth-personal/feature/screentime": false,
-    "kenneth-personal/feature/settings": false,
-    "kennethpersonal": false,
+    "jared-personal": true,
+    "jaredpersonal": true,
+    "kenneth-personal/chore/setup-room-dependencies": true,
+    "kenneth-personal/feature/goth": true,
+    "kenneth-personal/feature/implement-repository-viewmodel": true,
+    "kenneth-personal/feature/implement-room-daos": true,
+    "kenneth-personal/feature/screentime": true,
+    "kenneth-personal/feature/settings": true,
+    "kenneth-personal/feature/themes": true,
+    "kennethpersonal": true,
     "master": false,
     "PatrickPersonal": false
   },

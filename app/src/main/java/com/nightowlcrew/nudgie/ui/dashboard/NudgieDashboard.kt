@@ -1,17 +1,23 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,18 +41,18 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.HourglassBottom
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -85,8 +91,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -98,6 +106,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.nightowlcrew.nudgie.R
+import com.nightowlcrew.nudgie.data.AccessoryCategory
+import com.nightowlcrew.nudgie.data.AccessoryItem
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.data.HabitEntity
@@ -109,6 +119,7 @@ import com.nightowlcrew.nudgie.ui.theme.LevelUpBlue
 import com.nightowlcrew.nudgie.ui.theme.NavyBackground
 import com.nightowlcrew.nudgie.ui.theme.NavyOutline
 import com.nightowlcrew.nudgie.ui.theme.NavySurface
+import com.nightowlcrew.nudgie.ui.theme.NudgiePurple
 import com.nightowlcrew.nudgie.ui.theme.NudgieTheme
 import com.nightowlcrew.nudgie.ui.theme.SpaceAccent
 import com.nightowlcrew.nudgie.ui.theme.SpaceEnergy
@@ -132,34 +143,47 @@ import com.nightowlcrew.nudgie.ui.theme.spStatEnergy
 import com.nightowlcrew.nudgie.ui.theme.spStatHappiness
 import com.nightowlcrew.nudgie.ui.theme.spStatLevel
 import com.nightowlcrew.nudgie.ui.theme.spStatSuccess
-import com.nightowlcrew.nudgie.utils.AlarmUtils
 import com.nightowlcrew.nudgie.utils.PetAssetManager
 import com.nightowlcrew.nudgie.utils.PetType
+import com.nightowlcrew.nudgie.utils.showReminderTimePicker
+import kotlinx.coroutines.delay
 import java.util.Calendar
+import kotlin.math.roundToInt
 
-// Helper class to hold dynamic stat colors based on the current theme
-data class StatColors(
-    val happiness: Color,
-    val energy: Color,
-    val level: Color,
-    val success: Color,
-)
+data class StatColors(val happiness: Color, val energy: Color, val level: Color, val success: Color)
 
-// Maps the active app theme to its distinct semantic stat colors
 fun getThemeStatColors(theme: AppTheme): StatColors {
     return when (theme) {
         AppTheme.CYBERPUNK -> StatColors(cpStatHappiness, cpStatEnergy, cpStatLevel, cpStatSuccess)
         AppTheme.STEAMPUNK -> StatColors(spStatHappiness, spStatEnergy, spStatLevel, spStatSuccess)
         AppTheme.GOTH -> StatColors(gothStatHappiness, gothStatEnergy, gothStatLevel, gothStatSuccess)
         AppTheme.RETRO_SPACE -> StatColors(SpaceHappiness, SpaceEnergy, SpaceLevel, SpaceSuccess)
-        else -> StatColors(HeartRed, ElectricYellow, LevelUpBlue, SuccessGreen) // Default
+        else -> StatColors(HeartRed, ElectricYellow, LevelUpBlue, SuccessGreen)
     }
+}
+
+@Composable
+fun NudgieProgressBar(
+    progress: Float,
+    color: Color,
+    modifier: Modifier = Modifier,
+    trackColor: Color = color.copy(alpha = 0.2f)
+) {
+    LinearProgressIndicator(
+        progress = { progress.coerceIn(0f, 1f) },
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(50)),
+        color = color,
+        trackColor = trackColor,
+        strokeCap = StrokeCap.Round
+    )
 }
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Splash : Screen("splash", "Splash", Icons.Default.FlashOn)
     object Home : Screen("home", "Home", Icons.Filled.Home)
-    object Pet : Screen("pet", "Pet", Icons.Filled.Favorite) // New Pet tab
+    object Pet : Screen("pet", "Pet", Icons.Filled.Favorite)
     object Tasks : Screen("tasks", "Tasks", Icons.Filled.CheckCircle)
     object Stats : Screen("stats", "Stats", Icons.Filled.Star)
     object Profile : Screen("profile", "Profile", Icons.Filled.Person)
@@ -170,21 +194,27 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 @Composable
 fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val statsUiState by viewModel.statsUiState.collectAsStateWithLifecycle()
     val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
     NudgieDashboardContent(
         uiState = uiState,
+        statsUiState = statsUiState,
         archivedHabits = archivedHabits,
         onToggleHabit = { viewModel.toggleHabitCompletion(it) },
         onAddHabit = { title, category, frequency, isStock -> viewModel.addNewHabit(title, category, frequency, isStock) },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
         onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
+        onUpdateOverlayEnabled = { viewModel.updateOverlayEnabled(it) },
         onUpdatePetName = { viewModel.updatePetName(it) },
-        onUpdatePetType = { viewModel.updatePetType(it, context) },
+        onUpdatePetType = { viewModel.updatePetType(it) },
         onArchiveHabit = { viewModel.archiveHabit(it) },
-        onRestoreHabit = { viewModel.restoreHabit(it) }
+        onRestoreHabit = { viewModel.restoreHabit(it) },
+        onBuyAccessory = { viewModel.buyAccessory(it) },
+        onEquipAccessory = { viewModel.equipAccessory(it) },
+        onPetTheNudgie = { viewModel.petTheNudgie() },
+        onReplyToPet = { viewModel.replyToPet(it) }
     )
 }
 
@@ -192,21 +222,29 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
 @Composable
 fun NudgieDashboardContent(
     uiState: DashboardUiState,
+    statsUiState: StatsUiState,
     archivedHabits: List<HabitEntity>,
     onToggleHabit: (ActivityItem) -> Unit,
     onAddHabit: (String, String, Int, Boolean) -> Unit,
-    onDeleteHabit: (Int) -> Unit,
+    onDeleteHabit: (String) -> Unit,
     onUpdateScreenTimeGoal: (Int) -> Unit,
     onUpdateTheme: (AppTheme) -> Unit,
+    onUpdateOverlayEnabled: (Boolean) -> Unit,
     onUpdatePetName: (String) -> Unit,
     onUpdatePetType: (PetType) -> Unit,
     onArchiveHabit: (HabitEntity) -> Unit,
-    onRestoreHabit: (HabitEntity) -> Unit
+    onRestoreHabit: (HabitEntity) -> Unit,
+    onBuyAccessory: (AccessoryItem) -> Unit,
+    onEquipAccessory: (AccessoryItem) -> Unit,
+    onPetTheNudgie: () -> Unit,
+    onReplyToPet: (String) -> Unit,
+    startDestination: String = Screen.Splash.route
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     var showPetSelection by remember { mutableStateOf(false) }
+    var showShopDialog by remember { mutableStateOf(false) }
 
     if (showPetSelection) {
         PetSelectionDialog(
@@ -216,22 +254,23 @@ fun NudgieDashboardContent(
         )
     }
 
-    val screens = listOf(
-        Screen.Home,
-        Screen.Pet,
-        Screen.Profile,
-        Screen.Stats,
-        Screen.Tasks,
-    )
+    if (showShopDialog) {
+        ShopDialog(
+            currency = uiState.petStats.currency,
+            accessories = uiState.petStats.accessories,
+            onBuy = onBuyAccessory,
+            onEquip = onEquipAccessory,
+            onDismiss = { showShopDialog = false }
+        )
+    }
+
+    val screens = listOf(Screen.Home, Screen.Pet, Screen.Profile, Screen.Stats, Screen.Tasks)
 
     Scaffold(
         bottomBar = {
             val showBottomBar = currentDestination?.route != Screen.Splash.route
             if (showBottomBar) {
-                NavigationBar(
-                    containerColor = NavySurface,
-                    tonalElevation = 8.dp
-                ) {
+                NavigationBar(containerColor = NavySurface, tonalElevation = 8.dp) {
                     screens.forEach { screen ->
                         val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                         NavigationBarItem(
@@ -246,11 +285,11 @@ fun NudgieDashboardContent(
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color.White,
-                                selectedTextColor = Color.White,
+                                selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                                selectedTextColor = MaterialTheme.colorScheme.onSurface,
                                 unselectedIconColor = LavenderText,
                                 unselectedTextColor = LavenderText,
-                                indicatorColor = Color(0xFF6200EE).copy(alpha = 0.5f) // Glowing purple highlight
+                                indicatorColor = NudgiePurple.copy(alpha = 0.5f)
                             )
                         )
                     }
@@ -261,15 +300,11 @@ fun NudgieDashboardContent(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Splash.route,
-            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()) // Only apply bottom padding
+            startDestination = startDestination,
+            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
         ) {
             composable(Screen.Splash.route) {
-                NudgieSplashScreen(onSplashFinished = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
-                    }
-                })
+                NudgieSplashScreen(onSplashFinished = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Splash.route) { inclusive = true } } })
             }
             composable(Screen.Home.route) {
                 DashboardContent(
@@ -281,55 +316,58 @@ fun NudgieDashboardContent(
                     screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     onToggleHabit = onToggleHabit,
                     onUpdatePetName = onUpdatePetName,
-                    onDigitalBalanceDoubleTap = {
-                        navController.navigate("tasks?openSlider=true")
-                    },
-                    streak = 12, // For demo, can be linked to viewModel later
-                    currency = 250 // For demo, can be linked to viewModel later
+                    onDigitalBalanceDoubleTap = { navController.navigate("tasks?openSlider=true") },
+                    streak = 12,
+                    currency = uiState.petStats.currency,
+                    onPetTheNudgie = onPetTheNudgie
                 )
             }
             composable(Screen.Pet.route) {
                 NudgiePetScreen(
                     petStats = uiState.petStats,
                     currentPetType = uiState.currentPetType,
+                    currentTheme = uiState.currentTheme,
                     onUpdatePetName = onUpdatePetName,
-                    onCustomizeClick = { showPetSelection = true }
+                    onCustomizeClick = { showPetSelection = true },
+                    onShopClick = { showShopDialog = true },
+                    onPetTheNudgie = onPetTheNudgie,
+                    onReplyToPet = onReplyToPet
                 )
             }
             composable(
                 route = "tasks?openSlider={openSlider}",
-                arguments = listOf(navArgument("openSlider") {
-                    type = NavType.BoolType
-                    defaultValue = false
-                })
+                arguments = listOf(navArgument("openSlider") { type = NavType.BoolType; defaultValue = false })
             ) { backStackEntry ->
                 val openSlider = backStackEntry.arguments?.getBoolean("openSlider") ?: false
                 TasksContent(
                     activities = uiState.activities,
                     archivedHabits = archivedHabits,
                     screenTimeGoalMillis = uiState.screenTimeGoalMillis,
+                    currentTheme = uiState.currentTheme,
                     onToggleHabit = onToggleHabit,
                     onAddHabit = onAddHabit,
                     onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
                     onArchiveHabit = onArchiveHabit,
                     onRestoreHabit = onRestoreHabit,
+                    onDeleteHabit = onDeleteHabit,
                     initialOpenSlider = openSlider
                 )
             }
-            composable(Screen.Stats.route) { ComingSoonScreen("Stats") }
-            composable(Screen.Profile.route) { ComingSoonScreen("Profile") }
+            composable(Screen.Stats.route) { StatsContent(statsUiState) }
+            composable(Screen.Profile.route) {
+                ProfileContent(
+                    uiState = uiState,
+                    statsUiState = statsUiState,
+                    onUpdatePetName = onUpdatePetName,
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                )
+            }
             composable(Screen.Settings.route) {
                 SettingsContent(
-                    activities = uiState.activities,
-                    archivedHabits = archivedHabits,
-                    screenTimeGoalMillis = uiState.screenTimeGoalMillis,
                     currentTheme = uiState.currentTheme,
-                    onAddHabit = { title, category, freq, isStock -> onAddHabit(title, category, freq, isStock) },
-                    onDeleteHabit = onDeleteHabit,
-                    onUpdateScreenTimeGoal = onUpdateScreenTimeGoal,
+                    overlayEnabled = uiState.overlayEnabled,
                     onUpdateTheme = onUpdateTheme,
-                    onArchiveHabit = onArchiveHabit,
-                    onRestoreHabit = onRestoreHabit
+                    onUpdateOverlayEnabled = onUpdateOverlayEnabled
                 )
             }
         }
@@ -339,7 +377,7 @@ fun NudgieDashboardContent(
 @Composable
 fun ComingSoonScreen(title: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(title.uppercase(), style = MaterialTheme.typography.headlineMedium, color = Color.Gray)
+        Text(title.uppercase(), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
     }
 }
 
@@ -351,7 +389,7 @@ fun HeartsRow(happiness: Int, modifier: Modifier = Modifier) {
             Icon(
                 imageVector = if (isFilled) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                 contentDescription = null,
-                tint = if (isFilled) HeartRed else Color.Gray.copy(alpha = 0.5f),
+                tint = if (isFilled) HeartRed else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.size(28.dp)
             )
             if (index < 2) Spacer(modifier = Modifier.width(4.dp))
@@ -360,29 +398,15 @@ fun HeartsRow(happiness: Int, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun PetActionButton(
-    label: String,
-    iconRes: Int,
-    onClick: () -> Unit = {}
-) {
+fun PetActionButton(label: String, iconRes: Int, onClick: () -> Unit = {}) {
     Surface(
         color = SpaceSurface.copy(alpha = 0.8f),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, SpaceOutline.copy(alpha = 0.5f)),
-        modifier = Modifier
-            .size(width = 85.dp, height = 100.dp)
-            .clickable { onClick() }
+        modifier = Modifier.size(width = 85.dp, height = 100.dp).clickable { onClick() }
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Image(
-                painter = painterResource(id = iconRes),
-                contentDescription = label,
-                modifier = Modifier.size(45.dp)
-            )
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.padding(8.dp)) {
+            Image(painter = painterResource(id = iconRes), contentDescription = label, modifier = Modifier.size(45.dp))
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = label,
@@ -397,20 +421,12 @@ fun PetActionButton(
 }
 
 @Composable
-fun PetActionButtons(
-    onCustomizeClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
+fun PetActionButtons(onCustomizeClick: () -> Unit, onShopClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
         PetActionButton("Customize", R.drawable.zustomize, onClick = onCustomizeClick)
+        PetActionButton("Shop", android.R.drawable.ic_menu_manage, onClick = onShopClick)
         PetActionButton("Food", R.drawable.feed)
         PetActionButton("Play", R.drawable.play)
-        PetActionButton("Bath", R.drawable.bath)
     }
 }
 
@@ -418,8 +434,12 @@ fun PetActionButtons(
 fun NudgiePetScreen(
     petStats: PetStats,
     currentPetType: PetType,
+    currentTheme: AppTheme,
     onUpdatePetName: (String) -> Unit,
-    onCustomizeClick: () -> Unit
+    onCustomizeClick: () -> Unit,
+    onShopClick: () -> Unit,
+    onPetTheNudgie: () -> Unit,
+    onReplyToPet: (String) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -429,202 +449,182 @@ fun NudgiePetScreen(
             contentScale = ContentScale.Crop
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .padding(bottom = 32.dp)
-        ) {
-            // Header
-
-
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().padding(bottom = 32.dp)) {
             Spacer(modifier = Modifier.height(8.dp))
-
-            // Pet Info Card
-            NudgieTopCard(
-                petStats = petStats,
-                maxXp = 800,
-                onUpdateName = onUpdatePetName
-            )
+            NudgieTopCard(petStats = petStats, maxXp = 800, onUpdateName = onUpdatePetName)
 
             Spacer(modifier = Modifier.weight(0.8f))
 
-            // Character
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(2f),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = PetAssetManager.getPetDrawable(currentPetType)),
-                    contentDescription = "Nudgie Character",
-                    modifier = Modifier
-                        .size(280.dp)
-                        .offset(x = (-70).dp, y = 15.dp)
-                        .graphicsLayer { scaleX = -1f }, // Flip horizontally
-                    contentScale = ContentScale.Fit
+            // THE NEW INTERACTIVE PLAYPEN
+            Box(modifier = Modifier.fillMaxWidth().weight(2f), contentAlignment = Alignment.Center) {
+                val isEvolved = petStats.level >= 10
+                val currentPetImage = if (isEvolved) R.drawable.zustomize else PetAssetManager.getPetDrawable(currentPetType)
+                val equippedClothes = petStats.accessories.filter { it.isEquipped && it.category == AccessoryCategory.CLOTHES }
+                val activeToy = petStats.accessories.firstOrNull { it.isEquipped && it.category == AccessoryCategory.TOYS }
+
+                InteractivePetPlaypen(
+                    basePetRes = currentPetImage,
+                    equippedClothes = equippedClothes,
+                    activeToy = activeToy,
+                    petMessage = petStats.message,
+                    currentTheme = currentTheme,
+                    onPetTheNudgie = onPetTheNudgie
                 )
             }
 
-            Spacer(modifier = Modifier.weight(0.5f))
+            if (petStats.isAwaitingReply) {
+                Spacer(modifier = Modifier.height(16.dp))
+                ChatInputBox(onSend = { replyText -> onReplyToPet(replyText) })
+            }
 
-            // Action Buttons
-            PetActionButtons(onCustomizeClick = onCustomizeClick)
+            Spacer(modifier = Modifier.weight(0.5f))
+            PetActionButtons(onCustomizeClick = onCustomizeClick, onShopClick = onShopClick)
         }
     }
 }
 
 @Composable
-fun NudgieTopCard(
-    petStats: PetStats,
-    maxXp: Int,
-    onUpdateName: (String) -> Unit,
-    modifier: Modifier = Modifier
+fun InteractivePetPlaypen(
+    basePetRes: Int,
+    equippedClothes: List<AccessoryItem>,
+    activeToy: AccessoryItem?,
+    petMessage: String?,
+    currentTheme: AppTheme,
+    onPetTheNudgie: () -> Unit
 ) {
-    var isEditingName by remember { mutableStateOf(false) }
-    var nameInput by remember { mutableStateOf(petStats.name) }
-    val focusRequester = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
+    var toyOffsetX by remember { mutableStateOf(150f) }
+    var toyOffsetY by remember { mutableStateOf(0f) }
 
-    Surface(
-        color = NavySurface.copy(alpha = 0.9f),
-        shape = RoundedCornerShape(20.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
+    val petOffsetX by animateFloatAsState(
+        targetValue = if (activeToy != null) toyOffsetX - 180f else 0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "petChaseX"
+    )
+    val petOffsetY by animateFloatAsState(
+        targetValue = if (activeToy != null) toyOffsetY else 0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "petChaseY"
+    )
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        // The Chasing Pet
+        Box(
+            modifier = Modifier.offset { IntOffset(petOffsetX.roundToInt(), petOffsetY.roundToInt()) },
+            contentAlignment = Alignment.Center
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isEditingName) {
-                    BasicTextField(
-                        value = nameInput,
-                        onValueChange = { if (it.length <= 13) nameInput = it },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            fontFamily = VT323,
-                            fontSize = 32.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        cursorBrush = SolidColor(Color.White),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                onUpdateName(nameInput)
-                                isEditingName = false
-                                focusManager.clearFocus()
-                            }
-                        ),
-                        modifier = Modifier
-                            .width(IntrinsicSize.Min)
-                            .focusRequester(focusRequester)
-                    )
-                } else {
-                    Text(
-                        text = petStats.name,
-                        style = TextStyle(
-                            fontFamily = VT323,
-                            fontSize = 32.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit Name",
-                    tint = SpaceSecondaryText,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {
-                            if (isEditingName) {
-                                onUpdateName(nameInput)
-                            } else {
-                                nameInput = petStats.name
-                            }
-                            isEditingName = !isEditingName
-                        }
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
+            DressedUpPet(
+                basePetRes = basePetRes,
+                equippedAccessories = equippedClothes,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Your Nudgie",
-                    style = TextStyle(
-                        fontFamily = VT323,
-                        fontSize = 32.sp,
-                        color = Color.White
-                    )
-                )
-                HeartsRow(happiness = petStats.happiness)
-            }
+                    .size(280.dp)
+                    .graphicsLayer { scaleX = -1f }, // Flips the pet horizontally
+                onClick = onPetTheNudgie
+            )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Level ${petStats.level}",
-                        style = TextStyle(
-                            fontFamily = VT323,
-                            fontSize = 20.sp,
-                            color = Color.White
-                        )
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Icon(
-                        imageVector = Icons.Default.Pets,
-                        contentDescription = null,
-                        tint = SpaceAccent,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                Text(
-                    text = "${petStats.xp} / $maxXp XP",
-                    style = TextStyle(
-                        fontFamily = VT323,
-                        fontSize = 18.sp,
-                        color = Color.White
-                    )
+            // The Speech Bubble
+            if (petMessage != null) {
+                SpeechBubble(
+                    message = petMessage,
+                    currentTheme = currentTheme,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(x = 90.dp, y = (-40).dp)
+                        .graphicsLayer { scaleX = -1f } // Unflip the text inside the flipped parent
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            LinearProgressIndicator(
-                progress = { petStats.xp.toFloat() / maxXp.toFloat() },
+        }
+
+        // The Draggable Toy
+        if (activeToy != null) {
+            Image(
+                painter = painterResource(id = activeToy.assetResId),
+                contentDescription = activeToy.name,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(12.dp)
-                    .clip(RoundedCornerShape(6.dp)),
-                color = SuccessGreen,
-                trackColor = Color.White.copy(alpha = 0.2f),
-                strokeCap = StrokeCap.Round
+                    .size(80.dp)
+                    .offset { IntOffset(toyOffsetX.roundToInt(), toyOffsetY.roundToInt()) }
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            toyOffsetX += dragAmount.x
+                            toyOffsetY += dragAmount.y
+                        }
+                    }
             )
         }
     }
 }
 
+@Composable
+fun NudgieTopCard(petStats: PetStats, maxXp: Int, onUpdateName: (String) -> Unit, modifier: Modifier = Modifier) {
+    var isEditingName by remember { mutableStateOf(false) }
+    var nameInput by remember { mutableStateOf(petStats.name) }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
+    Surface(color = NavySurface.copy(alpha = 0.9f), shape = RoundedCornerShape(20.dp), modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isEditingName) {
+                    BasicTextField(
+                        value = nameInput, onValueChange = { if (it.length <= 13) nameInput = it },
+                        singleLine = true, textStyle = TextStyle(fontFamily = VT323, fontSize = 32.sp, color = Color.White, fontWeight = FontWeight.Bold),
+                        cursorBrush = SolidColor(Color.White), keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { onUpdateName(nameInput); isEditingName = false; focusManager.clearFocus() }),
+                        modifier = Modifier.width(IntrinsicSize.Min).focusRequester(focusRequester)
+                    )
+                } else {
+                    Text(text = petStats.name, style = TextStyle(fontFamily = VT323, fontSize = 32.sp, color = Color.White, fontWeight = FontWeight.Bold))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Icon(Icons.Default.Edit, contentDescription = "Edit Name", tint = SpaceSecondaryText, modifier = Modifier.size(24.dp).clickable {
+                    if (isEditingName) onUpdateName(nameInput) else nameInput = petStats.name
+                    isEditingName = !isEditingName
+                })
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Your Nudgie",
+                    style = TextStyle(fontFamily = VT323, fontSize = 32.sp, color = Color.White)
+                )
+                HeartsRow(happiness = petStats.happiness)
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "Level ${petStats.level}", style = TextStyle(fontFamily = VT323, fontSize = 20.sp, color = Color.White))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(imageVector = Icons.Default.Pets, contentDescription = null, tint = SpaceAccent, modifier = Modifier.size(18.dp))
+                }
+                Text(text = "${petStats.xp} / $maxXp XP", style = TextStyle(fontFamily = VT323, fontSize = 18.sp, color = Color.White))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            NudgieProgressBar(
+                progress = petStats.xp.toFloat() / maxXp.toFloat(),
+                color = SuccessGreen,
+                modifier = Modifier.height(12.dp),
+                trackColor = Color.White.copy(alpha = 0.2f)
+            )
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
 fun NudgiePetScreenPreview() {
     NudgieTheme {
         NudgiePetScreen(
-            petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
+            petStats = PetStats(name = "Zorg", level = 1, xp = 0, happiness = 80, energy = 65),
             currentPetType = PetType.BLUE,
+            currentTheme = AppTheme.DEFAULT,
             onUpdatePetName = {},
-            onCustomizeClick = {}
+            onCustomizeClick = {},
+            onShopClick = {},
+            onPetTheNudgie = {},
+            onReplyToPet = {}
         )
     }
 }
@@ -641,7 +641,8 @@ fun DashboardContent(
     onUpdatePetName: (String) -> Unit,
     onDigitalBalanceDoubleTap: () -> Unit,
     streak: Int,
-    currency: Int
+    currency: Int,
+    onPetTheNudgie: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -658,7 +659,8 @@ fun DashboardContent(
             onUpdatePetName = onUpdatePetName,
             onDigitalBalanceDoubleTap = onDigitalBalanceDoubleTap,
             streak = streak,
-            currency = currency
+            currency = currency,
+            onPetTheNudgie = onPetTheNudgie
         )
         Spacer(modifier = Modifier.height(48.dp))
         TasksSection(
@@ -672,32 +674,22 @@ fun DashboardContent(
 
 @Composable
 fun PetFrame(
-    petStats: PetStats,
-    currentTheme: AppTheme,
-    currentPetType: PetType,
-    currentScreenTimeMillis: Long,
-    screenTimeGoalMillis: Long,
-    onUpdatePetName: (String) -> Unit,
-    onDigitalBalanceDoubleTap: () -> Unit,
-    streak: Int,
-    currency: Int
+    petStats: PetStats, currentTheme: AppTheme, currentPetType: PetType, currentScreenTimeMillis: Long, screenTimeGoalMillis: Long,
+    onUpdatePetName: (String) -> Unit, onDigitalBalanceDoubleTap: () -> Unit, streak: Int, currency: Int, onPetTheNudgie: () -> Unit
 ) {
     val statColors = getThemeStatColors(currentTheme)
-    var isEditingName by remember { mutableStateOf(value = false) }
+    var isEditingName by remember { mutableStateOf(false) }
     var nameInput by remember { mutableStateOf(petStats.name) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(isEditingName) {
-        if (isEditingName) {
-            focusRequester.requestFocus()
-        }
-    }
+    LaunchedEffect(isEditingName) { if (isEditingName) focusRequester.requestFocus() }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(510.dp)
+            .height(480.dp)
+            .background(NavyBackground)
     ) {
         // Edge-to-edge Background Image
         Image(
@@ -707,7 +699,7 @@ fun PetFrame(
             contentScale = ContentScale.Crop
         )
 
-        // Feathering mask to dissolve the bottom edge into NavyBackground
+        // Feathering mask
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -723,19 +715,17 @@ fun PetFrame(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .statusBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Overlaid Streak and Currency Row
             Row(
                 modifier = Modifier
-                    .statusBarsPadding()
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = 12.dp, start = 8.dp, end = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Streak Logic
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val streakIcon = when {
                         streak >= 10 -> "🔥"
@@ -745,30 +735,17 @@ fun PetFrame(
                     val fontSize = if (streak >= 25) 22.sp else 20.sp
                     Text(text = streakIcon, fontSize = 24.sp)
                     Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = "$streak Day Streak!",
-                        color = Color.White,
-                        fontSize = fontSize,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = "$streak Day Streak!", color = Color.White, fontSize = fontSize, fontWeight = FontWeight.Bold)
                 }
 
-                // Currency
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = "💎", fontSize = 22.sp)
                     Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = currency.toString(),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
+                    Text(text = currency.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 }
             }
 
-            // Digital Clock Frame and Pet Name wrapper
             Box(contentAlignment = Alignment.BottomCenter) {
-                // Digital Clock Frame with custom background asset
                 Box(
                     modifier = Modifier
                         .width(320.dp)
@@ -787,14 +764,13 @@ fun PetFrame(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text("08:30", fontSize = 72.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                            Text("AM", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
+                            Text("08:30", fontSize = 64.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
+                            Text("AM", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 8.dp, start = 4.dp))
                         }
-                        Text("Thursday, May 7", fontSize = 18.sp, color = Color.White.copy(alpha = 0.8f))
+                        Text("Thursday, May 7", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
                     }
                 }
 
-                // Pet Name Box centered and overlapping the bottom
                 Surface(
                     color = SpaceSurface.copy(alpha = 1f),
                     shape = RoundedCornerShape(8.dp),
@@ -807,114 +783,53 @@ fun PetFrame(
                     ) {
                         if (isEditingName) {
                             BasicTextField(
-                                value = nameInput,
-                                onValueChange = { if (it.length <= 13) nameInput = it },
-                                singleLine = true,
-                                textStyle = TextStyle(
-                                    color = BrandGold,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                cursorBrush = SolidColor(BrandGold),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                keyboardActions = KeyboardActions(
-                                    onDone = {
-                                        onUpdatePetName(nameInput)
-                                        isEditingName = false
-                                        focusManager.clearFocus()
-                                    }
-                                ),
-                                modifier = Modifier
-                                    .width(IntrinsicSize.Min)
-                                    .focusRequester(focusRequester)
+                                value = nameInput, onValueChange = { if (it.length <= 13) nameInput = it }, singleLine = true,
+                                textStyle = TextStyle(color = BrandGold, fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                                cursorBrush = SolidColor(BrandGold), keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(onDone = { onUpdatePetName(nameInput); isEditingName = false; focusManager.clearFocus() }),
+                                modifier = Modifier.width(IntrinsicSize.Min).focusRequester(focusRequester)
                             )
                         } else {
-                            Text(
-                                petStats.name,
-                                color = BrandGold,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text(petStats.name, color = BrandGold, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(Modifier.width(6.dp))
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = "Edit",
-                            modifier = Modifier
-                                .size(14.dp)
-                                .clickable {
-                                    if (isEditingName) {
-                                        onUpdatePetName(nameInput)
-                                    } else {
-                                        nameInput = petStats.name
-                                    }
-                                    isEditingName = !isEditingName
-                                },
-                            tint = BrandGold
-                        )
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(14.dp).clickable {
+                            if (isEditingName) onUpdatePetName(nameInput) else nameInput = petStats.name; isEditingName = !isEditingName
+                        }, tint = BrandGold)
                     }
                 }
             }
 
-            // Bars Box (XP + Digital Balance)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .padding(vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // XP Bar Section
+            Column(modifier = Modifier.fillMaxWidth(0.9f).padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Level ${petStats.level}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Text("${petStats.xp} / 800 XP", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
                     }
                     Spacer(Modifier.height(4.dp))
-                    LinearProgressIndicator(
-                        progress = { petStats.xp / 800f },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
+                    NudgieProgressBar(
+                        progress = petStats.xp / 800f,
                         color = MaterialTheme.colorScheme.primary,
                         trackColor = Color.White.copy(alpha = 0.3f),
-                        strokeCap = StrokeCap.Round
+                        modifier = Modifier.height(8.dp)
                     )
                 }
 
-                // Digital Balance Bar Section
                 val goalHours = screenTimeGoalMillis / 3600000f
                 val currentHours = currentScreenTimeMillis / 3600000f
-
                 Column(
                     modifier = Modifier.pointerInput(Unit) {
-                        detectTapGestures(
-                            onDoubleTap = {
-                                onDigitalBalanceDoubleTap()
-                            }
-                        )
+                        detectTapGestures(onDoubleTap = { onDigitalBalanceDoubleTap() })
                     }
                 ) {
-                    LinearProgressIndicator(
-                        progress = { (currentHours / goalHours.coerceAtLeast(0.1f)).coerceIn(0f, 1f) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
+                    NudgieProgressBar(
+                        progress = (currentHours / goalHours.coerceAtLeast(0.1f)).coerceIn(0f, 1f),
                         color = if (currentHours > goalHours) Color.Red else statColors.success,
                         trackColor = Color.White.copy(alpha = 0.3f),
-                        strokeCap = StrokeCap.Round
+                        modifier = Modifier.height(8.dp)
                     )
                     Spacer(Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Digital Balance", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Text("${"%.1f".format(currentHours)}h / ${"%.1f".format(goalHours)}h", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
                     }
@@ -922,42 +837,34 @@ fun PetFrame(
             }
         }
 
-        // Interactive Bottom Strip - Enlarged Pet
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-            Spacer(Modifier.weight(1f))
-            // Pixel Art Pet
-            Image(
-                painter = painterResource(id = PetAssetManager.getPetDrawable(currentPetType)),
-                contentDescription = "Your Pet",
-                modifier = Modifier.size(225.dp),
-                contentScale = ContentScale.Fit
-            )
-            Spacer(Modifier.weight(3f))
-        }
-
-        // Stats Box with solid background
-        Surface(
-            color = NavySurface,
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(2.dp, NavyOutline),
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 55.dp)
                 .align(Alignment.BottomCenter)
-                .offset(y = 55.dp)
-                .height(70.dp)
+                .offset(y = (-40).dp),
+            verticalAlignment = Alignment.Bottom
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                StatItem("Happiness", "${petStats.happiness}%", statColors.happiness, Icons.Default.Favorite)
-                StatItem("Energy", "${petStats.energy}%", statColors.energy, Icons.Default.FlashOn)
-                StatItem("Level", petStats.level.toString(), statColors.level, Icons.Default.Star)
+            Spacer(Modifier.weight(1f))
+            Box(contentAlignment = Alignment.BottomCenter) {
+                val isEvolved = petStats.level >= 10
+                val currentPetImage = if (isEvolved) R.drawable.zustomize else PetAssetManager.getPetDrawable(currentPetType)
+                DressedUpPet(
+                    basePetRes = currentPetImage,
+                    equippedAccessories = petStats.accessories.filter { it.isEquipped },
+                    modifier = Modifier.size(if (isEvolved) 275.dp else 225.dp),
+                    onClick = onPetTheNudgie
+                )
+                if (petStats.message != null) {
+                    SpeechBubble(
+                        message = petStats.message,
+                        currentTheme = currentTheme,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 40.dp, y = (-20).dp)
+                    )
+                }
             }
+            Spacer(Modifier.weight(3f))
         }
     }
 }
@@ -973,9 +880,7 @@ fun ActivityLogItem(
     val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     val isCompleted = activity.currentCount >= activity.targetCount
     val contentAlpha = if (isCompleted) 0.8f else 1.0f
-    val displayTime = remember {
-        mutableStateOf(activity.time)
-    }
+    val displayTime = remember { mutableStateOf(activity.time) }
 
     Card(
         modifier = Modifier
@@ -993,7 +898,6 @@ fun ActivityLogItem(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Status Icon Box
                 if (activity.targetCount <= 1) {
                     Box(
                         modifier = Modifier
@@ -1009,13 +913,11 @@ fun ActivityLogItem(
                     Spacer(modifier = Modifier.width(12.dp))
                 }
 
-                // Emoji/Icon
                 if (activity.icon.length <= 2) {
                     Text(text = activity.icon, fontSize = 20.sp)
                     Spacer(modifier = Modifier.width(12.dp))
                 }
 
-                // Description
                 Text(
                     text = activity.description,
                     color = contentColor.copy(alpha = contentAlpha),
@@ -1025,7 +927,6 @@ fun ActivityLogItem(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Time
                 Text(
                     text = displayTime.value,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 1f),
@@ -1033,34 +934,15 @@ fun ActivityLogItem(
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                androidx.compose.material3.IconButton(
+                IconButton(
                     onClick = {
-                        val calendar = Calendar.getInstance()
-                        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-                        val currentMinute = calendar.get(Calendar.MINUTE)
-
-                        android.app.TimePickerDialog(
-                            context,
-                            { _, selectedHour, selectedMinute ->
-                                val triggerTime = Calendar.getInstance().apply {
-                                    set(Calendar.HOUR_OF_DAY, selectedHour)
-                                    set(Calendar.MINUTE, selectedMinute)
-                                    set(Calendar.SECOND, 0)
-                                }.timeInMillis
-
-                                AlarmUtils.setExactAlarm(context, triggerTime)
-
-                                val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
-                                displayTime.value = formattedTime
-                            },
-                            currentHour,
-                            currentMinute,
-                            false
-                        ).show()
+                        showReminderTimePicker(context, activity.description) { formattedTime ->
+                            displayTime.value = formattedTime
+                        }
                     },
                     modifier = Modifier.size(24.dp)
                 ) {
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = Icons.Default.Notifications,
                         contentDescription = "Set Reminder",
                         tint = MaterialTheme.colorScheme.primary
@@ -1075,113 +957,51 @@ fun ActivityLogItem(
 fun StatItem(label: String, value: String, color: Color, icon: ImageVector) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp)) // Restored icon size
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(5.dp))
-            Text(label, color = Color.White, fontSize = 16.sp) // White labels as requested
+            Text(label, color = Color.White, fontSize = 16.sp)
         }
         Spacer(Modifier.height((-8).dp))
-        Text(value, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 18.sp, modifier = Modifier.offset(y = (-4).dp)) // Prominent value, now White and larger
+        Text(value, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 18.sp, modifier = Modifier.offset(y = (-4).dp))
         Spacer(Modifier.height(1.dp))
-        LinearProgressIndicator(
-            progress = { value.replace("%", "").toFloatOrNull()?.div(100f) ?: 1f },
-            modifier = Modifier.width(32.dp).height(2.dp).clip(RoundedCornerShape(1.dp)), // Very slim and short bars
+        NudgieProgressBar(
+            progress = value.replace("%", "").toFloatOrNull()?.div(100f) ?: 1f,
             color = color,
             trackColor = MaterialTheme.colorScheme.background,
-            strokeCap = StrokeCap.Round
+            modifier = Modifier.width(32.dp).height(2.dp)
         )
     }
 }
 
 @Composable
-fun TasksSection(
-    categorizedActivities: Map<CozyCategory, List<ActivityItem>>,
-    currentTheme: AppTheme,
-    onToggleHabit: (ActivityItem) -> Unit
-) {
-    // Filter categories that have tasks
+fun TasksSection(categorizedActivities: Map<CozyCategory, List<ActivityItem>>, currentTheme: AppTheme, onToggleHabit: (ActivityItem) -> Unit) {
     val activeCategories = CozyCategory.entries.filter { categorizedActivities[it]?.isNotEmpty() == true }
-
     if (activeCategories.isEmpty()) return
-
     var selectedCategory by remember { mutableStateOf(activeCategories.first()) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Spacer(Modifier.height(5.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 30.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "Today's Tasks",
-                color = LavenderText, // Match mockup
-                fontWeight = FontWeight.Normal,
-                fontSize = 18.sp // Increased font size (Orange Line)
-            )
-            Text(
-                "View All",
-                color = LavenderText, // Match mockup
-                fontSize = 18.sp, // Increased font size (Orange Line)
-                fontWeight = FontWeight.Normal
-
-            )
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("Today's Tasks", color = LavenderText, fontWeight = FontWeight.Normal, fontSize = 18.sp)
+            Text("View All", color = LavenderText, fontSize = 18.sp, fontWeight = FontWeight.Normal)
         }
-
         Spacer(Modifier.height(5.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             activeCategories.forEach { category ->
                 val isSelected = selectedCategory == category
-                val icon = when (category) {
-                    CozyCategory.BODY_VITALITY -> "💪"
-                    CozyCategory.MIND_SPACE -> "🧠"
-                    CozyCategory.DAILY_RHYTHMS -> "📅"
-                    CozyCategory.SELF_CARE_RITUALS -> "✨"
-                    CozyCategory.CONNECTIONS -> "🤝"
-                }
-
+                val icon = when (category) { CozyCategory.BODY_VITALITY -> "💪"; CozyCategory.MIND_SPACE -> "🧠"; CozyCategory.DAILY_RHYTHMS -> "📅"; CozyCategory.SELF_CARE_RITUALS -> "✨"; CozyCategory.CONNECTIONS -> "🤝" }
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                        .background(if (isSelected) NavySurface else Color.Transparent)
-                        .clickable { selectedCategory = category }
-                        .drawBehind {
-                            val strokeWidth = 1.dp.toPx()
-                            val color = NavyOutline
-                            val cornerRadius = 12.dp.toPx()
-
-                            // Full outline for all tabs (including active)
-                            drawRoundRect(
-                                color = color,
-                                cornerRadius = CornerRadius(cornerRadius),
-                                style = Stroke(strokeWidth)
-                            )
-                        },
+                    modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                        .background(if (isSelected) NavySurface else Color.Transparent).clickable { selectedCategory = category }
+                        .drawBehind { drawRoundRect(color = NavyOutline, cornerRadius = CornerRadius(12.dp.toPx()), style = Stroke(1.dp.toPx())) },
                     contentAlignment = Alignment.Center
-                ) {
-                    Text(text = icon, fontSize = 20.sp)
-                }
+                ) { Text(text = icon, fontSize = 20.sp) }
             }
         }
-
         Spacer(Modifier.height(16.dp))
-
         val tasksInCategory = categorizedActivities[selectedCategory] ?: emptyList()
-
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            tasksInCategory.forEach { task ->
-                TaskItem(task, currentTheme, onToggleHabit)
-                Spacer(Modifier.height(12.dp))
-            }
+            tasksInCategory.forEach { task -> TaskItem(task, currentTheme, onToggleHabit); Spacer(Modifier.height(12.dp)) }
         }
     }
 }
@@ -1191,18 +1011,14 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
     val isCompleted = task.isCompleted
     val statColors = getThemeStatColors(currentTheme)
     val successColor = statColors.success
-
+    val context = LocalContext.current
     Card(
         colors = CardDefaults.cardColors(containerColor = NavySurface),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, if(isCompleted) successColor.copy(alpha=0.5f) else NavyOutline),
         modifier = Modifier.clickable { onToggleHabit(task) }
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Task Checkbox Container
+        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .size(24.dp)
@@ -1217,45 +1033,30 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
             }
 
             Spacer(Modifier.width(16.dp))
-
-            // Icon backdrop box
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(NavyBackground.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(NavyBackground.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
                 Text(text = if (task.icon.length <= 2) task.icon else "📌", fontSize = 20.sp)
             }
-
             Spacer(Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    task.description,
-                    color = Color.White,
-                    fontSize = 20.sp, // Increased font size (Orange Line)
-                    fontWeight = FontWeight.SemiBold
-                )
-
+                Text(task.description, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(4.dp))
-
-                // Task Progress Bar
                 val progress = if (task.targetCount > 0) task.currentCount.toFloat() / task.targetCount else 0f
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp)),
+                NudgieProgressBar(
+                    progress = progress,
                     color = if (isCompleted) successColor else MaterialTheme.colorScheme.primary,
                     trackColor = NavyOutline.copy(alpha = 0.3f),
-                    strokeCap = StrokeCap.Round
+                    modifier = Modifier.fillMaxWidth(0.8f).height(4.dp)
                 )
             }
-
-            // Reward
+            IconButton(
+                onClick = {
+                    showReminderTimePicker(context, task.description) { formattedTime ->
+                        // This invokes your time picker utils
+                    }
+                },
+                modifier = Modifier.size(32.dp)
+            ) { Icon(imageVector = Icons.Default.Notifications, contentDescription = "Set Reminder", tint = BrandGold) }
+            Spacer(Modifier.width(8.dp))
             Text("15 XP", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
@@ -1264,15 +1065,13 @@ fun TaskItem(task: ActivityItem, currentTheme: AppTheme, onToggleHabit: (Activit
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun NudgieDashboardPreview() {
-    // Generate some mock activities to match your Figma mockup
     val mockActivities = listOf(
-        ActivityItem(id = 1, icon = "</>", description = "Coding Lesson", category = CozyCategory.MIND_SPACE.name, time = "10:00 AM", isCompleted = true, targetCount = 1, currentCount = 1),
-        ActivityItem(id = 2, icon = "📖", description = "Read 20 Pages", category = CozyCategory.MIND_SPACE.name, time = "1:00 PM", isCompleted = true, targetCount = 1, currentCount = 1),
-        ActivityItem(id = 3, icon = "💧", description = "Drink 8 Glasses of Water", category = CozyCategory.BODY_VITALITY.name, time = "All Day", isCompleted = false, targetCount = 8, currentCount = 0),
-        ActivityItem(id = 4, icon = "🧘", description = "Meditate 10 Minutes", category = CozyCategory.MIND_SPACE.name, time = "8:00 PM", isCompleted = false, targetCount = 1, currentCount = 0)
+        ActivityItem(id = "1", icon = "</>", description = "Coding Lesson", category = CozyCategory.MIND_SPACE.name, time = "10:00 AM", isCompleted = true, targetCount = 1, currentCount = 1),
+        ActivityItem(id = "2", icon = "📖", description = "Read 20 Pages", category = CozyCategory.MIND_SPACE.name, time = "1:00 PM", isCompleted = true, targetCount = 1, currentCount = 1),
+        ActivityItem(id = "3", icon = "💧", description = "Drink 8 Glasses of Water", category = CozyCategory.BODY_VITALITY.name, time = "All Day", isCompleted = false, targetCount = 8, currentCount = 0),
+        ActivityItem(id = "4", icon = "🧘", description = "Meditate 10 Minutes", category = CozyCategory.MIND_SPACE.name, time = "8:00 PM", isCompleted = false, targetCount = 1, currentCount = 0)
     )
 
-    // Group them into a mock category
     val categorizedActivities = mapOf(
         CozyCategory.MIND_SPACE to mockActivities
     )
@@ -1283,24 +1082,283 @@ fun NudgieDashboardPreview() {
         currentScreenTimeMillis = 3600000L,
         screenTimeGoalMillis = 14400000L,
         currentTheme = AppTheme.RETRO_SPACE,
-        petStats = PetStats(name = "Zorg", level = 5, xp = 450, happiness = 80, energy = 65),
+        petStats = PetStats(name = "Zorg", level = 1, xp = 0, happiness = 80, energy = 65),
         isLoading = false
     )
 
-    // Wrap the preview in the NudgieTheme targeting the RETRO_SPACE look
     NudgieTheme(appTheme = AppTheme.RETRO_SPACE) {
         NudgieDashboardContent(
             uiState = sampleUiState,
+            statsUiState = StatsUiState(),
             archivedHabits = emptyList(),
             onToggleHabit = {},
             onAddHabit = { _, _, _, _ -> },
             onDeleteHabit = {},
             onUpdateScreenTimeGoal = {},
             onUpdateTheme = {},
+            onUpdateOverlayEnabled = {},
             onUpdatePetName = {},
             onUpdatePetType = {},
             onArchiveHabit = {},
-            onRestoreHabit = {}
+            onRestoreHabit = {},
+            onBuyAccessory = {},
+            onEquipAccessory = {},
+            onPetTheNudgie = {},
+            startDestination = Screen.Home.route,
+            onReplyToPet = {}
         )
+    }
+}
+
+@Composable
+fun DressedUpPet(basePetRes: Int, equippedAccessories: List<AccessoryItem>, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
+    var isBouncing by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(targetValue = if (isBouncing) 1.15f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMedium), label = "bounce")
+    LaunchedEffect(isBouncing) { if (isBouncing) { delay(150); isBouncing = false } }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .graphicsLayer { scaleX *= scale; scaleY *= scale }
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { isBouncing = true; onClick() }
+    ) {
+        Image(painter = painterResource(id = basePetRes), contentDescription = "Nudgie Character", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+
+        equippedAccessories.forEach { accessory ->
+            val accessoryModifier = when (accessory.name) {
+                "Space Ball" -> Modifier.size(40.dp).align(Alignment.BottomEnd).offset(x = (-10).dp, y = (-10).dp)
+                "Bowl" -> Modifier.size(40.dp).align(Alignment.BottomStart).offset(x = 10.dp, y = (-10).dp)
+                else -> Modifier.fillMaxSize()
+            }
+            Image(
+                painter = painterResource(id = accessory.assetResId),
+                contentDescription = accessory.name,
+                modifier = accessoryModifier,
+                contentScale = ContentScale.Fit
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChatInputBox(onSend: (String) -> Unit, modifier: Modifier = Modifier) {
+    var text by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    Surface(
+        color = NavySurface,
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, NavyOutline),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 32.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            BasicTextField(
+                value = text,
+                onValueChange = { text = it },
+                textStyle = TextStyle(color = Color.White, fontSize = 16.sp),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = { if (text.isNotBlank()) { onSend(text); text = ""; focusManager.clearFocus() } }),
+                modifier = Modifier.weight(1f),
+                decorationBox = { innerTextField ->
+                    if (text.isEmpty()) Text("Type your answer...", color = Color.Gray, fontSize = 16.sp)
+                    innerTextField()
+                }
+            )
+            IconButton(
+                onClick = { if (text.isNotBlank()) { onSend(text); text = ""; focusManager.clearFocus() } },
+                modifier = Modifier.size(32.dp)
+            ) { Icon(Icons.Default.CheckCircle, contentDescription = "Send", tint = BrandGold) }
+        }
+    }
+}
+
+@Composable
+fun SpeechBubble(
+    message: String,
+    currentTheme: AppTheme,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.width(280.dp), // .nudgieCardShadow removed if missing extension
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = NavySurface
+        ),
+        border = BorderStroke(2.dp, NavyOutline)
+    ) {
+        Text(
+            text = message.uppercase(),
+            modifier = Modifier.padding(16.dp),
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            fontFamily = VT323
+        )
+    }
+}
+
+// THE TABBED SHOP BOUTIQUE UI
+@Composable
+fun ShopDialog(
+    currency: Int,
+    accessories: List<AccessoryItem>,
+    onBuy: (AccessoryItem) -> Unit,
+    onEquip: (AccessoryItem) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedCategory by remember { mutableStateOf(AccessoryCategory.CLOTHES) }
+
+    // THIS DIALOG WRAPPER FORCES IT TO THE FRONT!
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            color = NavySurface,
+            shape = RoundedCornerShape(24.dp),
+            border = BorderStroke(2.dp, NavyOutline),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+                .fillMaxHeight(0.85f)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Header Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Nudgie Boutique", fontFamily = VT323, fontSize = 28.sp, color = Color.White)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("💎 $currency", fontFamily = VT323, fontSize = 22.sp, color = BrandGold)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Category Tabs Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    AccessoryCategory.entries.forEach { category ->
+                        val isSelected = selectedCategory == category
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) SpaceAccent else NavyBackground)
+                                .clickable { selectedCategory = category }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = when(category) {
+                                    AccessoryCategory.CLOTHES -> "Clothes"
+                                    AccessoryCategory.HAT -> "Hats"
+                                    AccessoryCategory.GLASSES -> "Glasses"
+                                    AccessoryCategory.OUTFIT -> "Outfits"
+                                    AccessoryCategory.TOY -> "Toys"
+                                    AccessoryCategory.TOYS -> "Toys"
+                                    AccessoryCategory.FOOD -> "Food"
+                                    AccessoryCategory.STAT_BOOST -> "Boosts"
+                                },
+                                fontFamily = VT323,
+                                fontSize = 16.sp,
+                                color = if (isSelected) Color.Black else Color.White
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Filtered Items Grid/List
+                val filteredItems = accessories.filter { it.category == selectedCategory }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    filteredItems.forEach { item ->
+                        ShopItemRow(item = item, onBuy = onBuy, onEquip = onEquip)
+                    }
+                }
+
+                // Close Button
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = NavyBackground)
+                ) {
+                    Text("Close Shop", fontFamily = VT323, fontSize = 18.sp, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ShopItemRow(
+    item: AccessoryItem,
+    onBuy: (AccessoryItem) -> Unit,
+    onEquip: (AccessoryItem) -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = NavyBackground),
+        border = BorderStroke(1.dp, NavyOutline),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(item.name, fontFamily = VT323, fontSize = 22.sp, color = Color.White)
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = item.description,
+                    fontFamily = VT323,
+                    fontSize = 18.sp,
+                    lineHeight = 20.sp,
+                    color = SpaceSecondaryText
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            val isConsumable = item.category == AccessoryCategory.FOOD || item.category == AccessoryCategory.STAT_BOOST
+
+            if (isConsumable) {
+                Button(
+                    onClick = { onBuy(item) },
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandGold)
+                ) {
+                    Text("${item.cost} 💎", fontFamily = VT323, fontSize = 16.sp, color = Color.Black)
+                }
+            } else {
+                if (item.isPurchased) {
+                    Button(
+                        onClick = { onEquip(item) },
+                        colors = ButtonDefaults.buttonColors(containerColor = if (item.isEquipped) Color.Gray else SpaceAccent)
+                    ) {
+                        Text(if (item.isEquipped) "Unequip" else "Equip", fontFamily = VT323, fontSize = 16.sp, color = Color.White)
+                    }
+                } else {
+                    Button(
+                        onClick = { onBuy(item) },
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandGold)
+                    ) {
+                        Text("${item.cost} 💎", fontFamily = VT323, fontSize = 16.sp, color = Color.Black)
+                    }
+                }
+            }
+        }
     }
 }

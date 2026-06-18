@@ -7,12 +7,12 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import com.nightowlcrew.nudgie.NudgieApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import androidx.core.app.NotificationCompat
 
 /**
  * BroadcastReceiver responsible for handling alarm triggers and system boot events.
@@ -22,54 +22,44 @@ class AlarmReceiver : BroadcastReceiver() {
     private val receiverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            // Teammate requirement: retrieve saved alarms from local database and reschedule them here
-            Log.d("AlarmReceiver", "Device booted! Rescheduling alarms...")
-        } else {
-            // Trigger your actual alarm logic (notifications, waking device, etc.)
-            Log.d("AlarmReceiver", "Alarm triggered exactly on time!")
-
-
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val channelId = "nudgie_reminders"
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
-                    channelId,
-                    "Habit Reminders",
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = "Reminders to complete your habits"
-                }
-                notificationManager.createNotificationChannel(channel)
-            }
-
-            val builder = NotificationCompat.Builder(context, channelId)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder) // Default Android icon for now
-                .setContentTitle("Time to Level Up!")
-                .setContentText("Don't forget to complete your habit and earn XP for your Nudgie.")
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true)
-
-
-            val notificationId = System.currentTimeMillis().toInt()
-            notificationManager.notify(notificationId, builder.build())
-        }
-    }
-}
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED -> {
                 Log.d("AlarmReceiver", "Device rebooted. Restoring Nudgie alarms...")
                 restoreAlarmsOnBoot(context)
             }
             else -> {
-                val label = intent.getStringExtra("EXTRA_LABEL") ?: "Pet Alert"
+                // 1. Team's logic: Extract the saved data
+                val label = intent.getStringExtra("EXTRA_LABEL") ?: "Time to Level Up!"
                 val time = intent.getLongExtra("EXTRA_TIME", 0L)
                 Log.d("AlarmReceiver", "Nudgie Alarm Triggered: $label at $time")
 
-                // Trigger notification or UI update here
+                // 2. Your logic: Trigger the actual notification
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                val channelId = "nudgie_reminders"
 
-                // Remove the alarm from DB now that it has fired
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val channel = NotificationChannel(
+                        channelId,
+                        "Habit Reminders",
+                        NotificationManager.IMPORTANCE_HIGH
+                    ).apply {
+                        description = "Reminders to complete your habits"
+                    }
+                    notificationManager.createNotificationChannel(channel)
+                }
+
+                // Using the team's label variable for your notification title
+                val builder = NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(android.R.drawable.ic_popup_reminder)
+                    .setContentTitle(label)
+                    .setContentText("Don't forget to complete your habit and earn XP for your Nudgie.")
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+
+                val notificationId = System.currentTimeMillis().toInt()
+                notificationManager.notify(notificationId, builder.build())
+
+                // 3. Team's logic: Remove the alarm from the DB now that it has fired
                 if (time != 0L) {
                     removeFiredAlarm(context, time)
                 }

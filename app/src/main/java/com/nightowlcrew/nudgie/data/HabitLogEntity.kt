@@ -1,27 +1,13 @@
 package com.nightowlcrew.nudgie.data
 
 import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(
-    tableName = "habit_logs",
-    foreignKeys = [
-        ForeignKey(
-            entity = HabitEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["habitId"],
-            onDelete = ForeignKey.SET_NULL
-        )
-    ],
-    indices = [Index(value = ["habitId"])]
-)
+@Entity(tableName = "habit_logs")
 data class HabitLogEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val habitId: Int?,
-    val completedAtTime: String, // HH:mm
-    val date: String = "", // yyyy-MM-dd
-    val isCompleted: Boolean
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val habitId: String, // Matches HabitEntity's String ID
+    val date: String,
+    val completedAtTime: String,
+    val isCompleted: Boolean = true
 )
