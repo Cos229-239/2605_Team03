@@ -1,12 +1,15 @@
 package com.nightowlcrew.nudgie.data
 
 enum class AccessoryCategory {
-    CLOTHES,     // Combines hats, outfits, and apparel
-    TOYS,
+    CLOTHES,     // Kept for backward compatibility
+    HAT,
+    GLASSES,
+    OUTFIT,
+    TOY,
+    TOYS,        // Kept for backward compatibility
     FOOD,
-    STAT_BOOST   // New category for temporary attribute updates
+    STAT_BOOST
 }
-
 data class AccessoryItem(
     val id: String,
     val name: String,

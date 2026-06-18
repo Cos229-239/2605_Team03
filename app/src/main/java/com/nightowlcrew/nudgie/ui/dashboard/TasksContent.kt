@@ -44,6 +44,7 @@ fun TasksContent(
     onUpdateScreenTimeGoal: (Int) -> Unit,
     onArchiveHabit: (HabitEntity) -> Unit,
     onRestoreHabit: (HabitEntity) -> Unit,
+    onDeleteHabit: (String) -> Unit,
     initialOpenSlider: Boolean = false // Maintained for nav compatibility
 ) {
     var expandedSection by rememberSaveable { mutableStateOf<String?>(if (initialOpenSlider) "balance" else null) }
@@ -126,7 +127,8 @@ fun TasksContentPreview() {
                 onAddHabit = { _, _, _, _ -> },
                 onUpdateScreenTimeGoal = { },
                 onArchiveHabit = { },
-                onRestoreHabit = { }
+                onRestoreHabit = { },
+                onDeleteHabit = { }
             )
         }
     }
