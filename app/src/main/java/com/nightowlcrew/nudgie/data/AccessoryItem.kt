@@ -1,21 +1,21 @@
 package com.nightowlcrew.nudgie.data
 
-// Make sure your enum looks like this now:
 enum class AccessoryCategory {
-    HAT,
-    GLASSES,
-    OUTFIT,
-    TOY,
-    FOOD
+    CLOTHES,     // Combines hats, outfits, and apparel
+    TOYS,
+    FOOD,
+    STAT_BOOST   // New category for temporary attribute updates
 }
 
 data class AccessoryItem(
     val id: String,
     val name: String,
     val cost: Int,
-    val assetResId: Int, // The actual image on the pet
-    val iconResId: Int,  // The image shown in the shop menu
+    val iconResId: Int,
+    val assetResId: Int,
     val category: AccessoryCategory,
+    val description: String = "",
     val isPurchased: Boolean = false,
-    val isEquipped: Boolean = false
+    val isEquipped: Boolean = false,
+    val statEffect: String = "" // e.g., "ENERGY+50", "HAPPINESS+40"
 )
