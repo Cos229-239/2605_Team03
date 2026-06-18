@@ -14,53 +14,35 @@ enum class NudgieIcon(val aliasClassName: String) {
     DRAGON("com.nightowlcrew.nudgie.MainActivityDragon")
 }
 
-/**
- * Architected manager to handle programmatic switching of the application's launcher icon.
- *
- * This implementation uses [PackageManager.setComponentEnabledSetting] to toggle the visibility
- * of <activity-alias> components defined in the manifest.
- *
- * IMPORTANT: Enabling/Disabling the active LAUNCHER component typically triggers an application
- * process restart by the Android system to refresh the launcher cache. Users may experience
- * a brief "app closed" behavior.
- */
 object IconSwitcherManager {
 
-    /**
-     * Switches the app icon to the specified [targetIcon].
-     * Disables all other icons to ensure only one launcher entry exists.
-     *
-     * @param context The application or activity context.
-     * @param targetIcon The [NudgieIcon] to enable.
-     */
     fun switchToIcon(context: Context, targetIcon: NudgieIcon) {
         val packageManager = context.packageManager
         val packageName = context.packageName
 
-        // Check if the target is already enabled to avoid unnecessary restarts
+        // 1. Check if the target is already enabled to avoid unnecessary restarts
         if (getCurrentIcon(context) == targetIcon) return
 
-        NudgieIcon.entries.forEach { icon ->
-            val componentName = ComponentName(packageName, icon.aliasClassName)
-            val state = if (icon == targetIcon) {
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            }
+        // 2. IMPORTANT: Enable the NEW icon first!
+        // This ensures the app always has at least one launcher icon active.
+        packageManager.setComponentEnabledSetting(
+            ComponentName(packageName, targetIcon.aliasClassName),
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+            PackageManager.DONT_KILL_APP
+        )
 
-            // We use DONT_KILL_APP to minimize disruption, but be aware that the system
-            // might still kill the process if the active launcher component is disabled.
-            packageManager.setComponentEnabledSetting(
-                componentName,
-                state,
-                PackageManager.DONT_KILL_APP
-            )
+        // 3. Disable all the OTHER icons safely afterwards.
+        NudgieIcon.entries.forEach { icon ->
+            if (icon != targetIcon) {
+                packageManager.setComponentEnabledSetting(
+                    ComponentName(packageName, icon.aliasClassName),
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            }
         }
     }
 
-    /**
-     * Returns the currently enabled [NudgieIcon] by checking component states.
-     */
     fun getCurrentIcon(context: Context): NudgieIcon {
         val packageManager = context.packageManager
         val packageName = context.packageName
@@ -68,7 +50,15 @@ object IconSwitcherManager {
         return NudgieIcon.entries.find { icon ->
             val componentName = ComponentName(packageName, icon.aliasClassName)
             val state = packageManager.getComponentEnabledSetting(componentName)
-            state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-        } ?: NudgieIcon.BLUE // Default to BLUE if none are explicitly enabled (initial state)
+
+            // MainActivityBlue is enabled by default in the Manifest.
+            // Therefore, its state will be DEFAULT (0) unless explicitly changed.
+            if (icon == NudgieIcon.BLUE) {
+                state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED ||
+                        state == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+            } else {
+                state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+            }
+        } ?: NudgieIcon.BLUE // Fallback
     }
 }
