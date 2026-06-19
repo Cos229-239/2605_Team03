@@ -13,4 +13,8 @@ class PreferencesManager(context: Context) {
     var lastMorningGreetingDate: String
         get() = prefs.getString("last_morning_date", "") ?: ""
         set(value) = prefs.edit().putString("last_morning_date", value).apply()
+    // ADDED: Track if the user has gone through the intake interview
+    var isOnboardingComplete: Boolean
+        get() = prefs.getBoolean("is_onboarding_complete", false)
+        set(value) = prefs.edit().putBoolean("is_onboarding_complete", value).apply()
 }

@@ -80,6 +80,36 @@ class NudgieViewModel(
     private var messageJob: kotlinx.coroutines.Job? = null
     private val _currentActivity = MutableStateFlow("IDLE")
 
+    // --- Onboarding State ---
+    private val _isOnboardingCompleted = MutableStateFlow(sharedPreferences.getBoolean("is_onboarding_complete", false))
+    val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
+
+    // --- Onboarding Finalization ---
+    fun completeOnboarding(
+        userName: String,
+        petType: PetType,
+        petName: String,
+        firstHabit: String
+    ) {
+        // Update Profile & Pet Details
+        updateProfileUserName(userName)
+        updatePetType(petType)
+        updatePetName(petName)
+
+        // Add their first habit from the interview
+        if (firstHabit.isNotBlank()) {
+            addNewHabit(
+                title = firstHabit,
+                category = CozyCategory.DAILY_RHYTHMS.name, // Defaulting to daily rhythms
+                frequency = 1
+            )
+        }
+
+        // Mark onboarding as complete
+        sharedPreferences.edit().putBoolean("is_onboarding_complete", true).apply()
+        _isOnboardingCompleted.value = true
+    }
+
     val statsUiState: StateFlow<StatsUiState> = combine(
         repository.getAllHabits(),
         repository.getAllLogs(),
