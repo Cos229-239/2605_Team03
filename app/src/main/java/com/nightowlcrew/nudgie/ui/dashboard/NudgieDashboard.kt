@@ -1,5 +1,9 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
+import android.Manifest
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -471,6 +475,56 @@ fun NudgiePetScreen(
     onPetTheNudgie: () -> Unit,
     onReplyToPet: (String) -> Unit
 ) {
+    val context = LocalContext.current
+
+    // --- STATE MANAGEMENT ---
+    var showPlayMenu by remember { mutableStateOf(false) }
+    var showWalkSetup by remember { mutableStateOf(false) }
+    var pendingWalkMode by remember { mutableStateOf<WalkTrackingMode?>(null) }
+
+    // --- PERMISSION LAUNCHER & SERVICE TRIGGER ---
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+        val stepsGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            permissions[Manifest.permission.ACTIVITY_RECOGNITION] == true
+        } else true
+
+        val notificationsGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            permissions[Manifest.permission.POST_NOTIFICATIONS] == true
+        } else true
+
+        val mode = pendingWalkMode
+        if (mode != null && notificationsGranted) {
+            val canStartGps = (mode == WalkTrackingMode.DISTANCE || mode == WalkTrackingMode.BOTH) && locationGranted
+            val canStartSteps = (mode == WalkTrackingMode.STEPS || mode == WalkTrackingMode.BOTH) && stepsGranted
+
+            if (canStartGps || canStartSteps) {
+                Toast.makeText(context, "Starting walk!🐾", Toast.LENGTH_SHORT).show()
+
+                // Start the Service!
+                val serviceIntent = android.content.Intent(context, com.nightowlcrew.nudgie.services.WalkTrackingService::class.java).apply {
+                    action = com.nightowlcrew.nudgie.services.WalkTrackingService.ACTION_START
+                    putExtra(com.nightowlcrew.nudgie.services.WalkTrackingService.EXTRA_TRACKING_MODE, mode.name)
+                }
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    context.startForegroundService(serviceIntent)
+                } else {
+                    context.startService(serviceIntent)
+                }
+            } else {
+                Toast.makeText(context, "Permissions required to track walk.", Toast.LENGTH_LONG).show()
+            }
+        } else if (!notificationsGranted) {
+            Toast.makeText(context, "Notifications are required to track walks.", Toast.LENGTH_LONG).show()
+        }
+        pendingWalkMode = null
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.pet_background),
@@ -508,7 +562,58 @@ fun NudgiePetScreen(
             }
 
             Spacer(modifier = Modifier.weight(0.5f))
-            PetActionButtons(onCustomizeClick = onCustomizeClick, onShopClick = onShopClick)
+            PetActionButtons(
+                onCustomizeClick = onCustomizeClick,
+                onShopClick = onShopClick,
+                onPlayClick = { showPlayMenu = true }
+            )
+        }
+
+        // --- OVERLAY DIALOGS ---
+
+        // 1. The Play Menu
+        if (showPlayMenu) {
+            PlayMenuModal(
+                onDismissRequest = { showPlayMenu = false },
+                onOptionSelected = { option ->
+                    showPlayMenu = false
+                    if (option == PlayOption.WALK) {
+                        showWalkSetup = true // Triggers the Setup Dialog
+                    } else {
+                        Toast.makeText(context, "${option.displayName} coming soon!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+        }
+
+        // 2. The Tracking Mode Setup
+        if (showWalkSetup) {
+            WalkSetupDialog(
+                nudgieName = petStats.name,
+                onDismissRequest = { showWalkSetup = false },
+                onStartWalk = { trackingMode ->
+                    showWalkSetup = false
+                    pendingWalkMode = trackingMode
+
+                    val permissionsToRequest = mutableListOf<String>()
+
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                    if (trackingMode == WalkTrackingMode.DISTANCE || trackingMode == WalkTrackingMode.BOTH) {
+                        permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+                        permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    }
+                    if (trackingMode == WalkTrackingMode.STEPS || trackingMode == WalkTrackingMode.BOTH) {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                            permissionsToRequest.add(Manifest.permission.ACTIVITY_RECOGNITION)
+                        }
+                    }
+
+                    // Fire the permission launcher!
+                    permissionLauncher.launch(permissionsToRequest.toTypedArray())
+                }
+            )
         }
     }
 }
