@@ -182,6 +182,7 @@ fun NudgieProgressBar(
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Splash : Screen("splash", "Splash", Icons.Default.FlashOn)
+    object Onboarding : Screen("onboarding", "Onboarding", Icons.Filled.Pets)
     object Home : Screen("home", "Home", Icons.Filled.Home)
     object Pet : Screen("pet", "Pet", Icons.Filled.Favorite)
     object Tasks : Screen("tasks", "Tasks", Icons.Filled.CheckCircle)
@@ -196,11 +197,13 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val statsUiState by viewModel.statsUiState.collectAsStateWithLifecycle()
     val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
+    val isOnboardingComplete by viewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
 
     NudgieDashboardContent(
         uiState = uiState,
         statsUiState = statsUiState,
         archivedHabits = archivedHabits,
+        isOnboardingComplete = isOnboardingComplete,
         onToggleHabit = { viewModel.toggleHabitCompletion(it) },
         onAddHabit = { title, category, frequency, isStock -> viewModel.addNewHabit(title, category, frequency, isStock) },
         onDeleteHabit = { id -> viewModel.deleteHabit(id) },
@@ -224,6 +227,7 @@ fun NudgieDashboardContent(
     uiState: DashboardUiState,
     statsUiState: StatsUiState,
     archivedHabits: List<HabitEntity>,
+    isOnboardingComplete: Boolean,
     onToggleHabit: (ActivityItem) -> Unit,
     onAddHabit: (String, String, Int, Boolean) -> Unit,
     onDeleteHabit: (String) -> Unit,
@@ -268,7 +272,8 @@ fun NudgieDashboardContent(
 
     Scaffold(
         bottomBar = {
-            val showBottomBar = currentDestination?.route != Screen.Splash.route
+            val showBottomBar = currentDestination?.route != Screen.Splash.route && 
+                               currentDestination?.route != Screen.Onboarding.route
             if (showBottomBar) {
                 NavigationBar(containerColor = NavySurface, tonalElevation = 8.dp) {
                     screens.forEach { screen ->
@@ -304,7 +309,22 @@ fun NudgieDashboardContent(
             modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
         ) {
             composable(Screen.Splash.route) {
-                NudgieSplashScreen(onSplashFinished = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Splash.route) { inclusive = true } } })
+                NudgieSplashScreen(onSplashFinished = {
+                    val targetRoute = if (isOnboardingComplete) Screen.Home.route else Screen.Onboarding.route
+                    navController.navigate(targetRoute) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                })
+            }
+            composable(Screen.Onboarding.route) {
+                com.nightowlcrew.nudgie.ui.onboarding.OnboardingScreen(
+                    viewModel = viewModel(factory = NudgieViewModel.Factory), // Reusing the same ViewModel
+                    onComplete = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    }
+                )
             }
             composable(Screen.Home.route) {
                 DashboardContent(
@@ -1091,6 +1111,7 @@ fun NudgieDashboardPreview() {
             uiState = sampleUiState,
             statsUiState = StatsUiState(),
             archivedHabits = emptyList(),
+            isOnboardingComplete = true,
             onToggleHabit = {},
             onAddHabit = { _, _, _, _ -> },
             onDeleteHabit = {},

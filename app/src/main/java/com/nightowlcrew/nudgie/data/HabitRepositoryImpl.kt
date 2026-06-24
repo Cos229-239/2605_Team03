@@ -2,7 +2,7 @@ package com.nightowlcrew.nudgie.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 
 class HabitRepositoryImpl(
@@ -11,8 +11,11 @@ class HabitRepositoryImpl(
 ) : HabitRepository {
 
     override fun getAllHabitsWithLogs(): Flow<List<ActivityItem>> {
-        return habitDao.getHabitsWithLogs().map { list ->
-            list.map { it.toActivityItem() }
+        return combine(habitDao.getAllHabits(), habitDao.getAllLogs()) { habits, logs ->
+            habits.map { habit ->
+                val habitLogs = logs.filter { it.habitId == habit.id }
+                HabitWithLogs(habit, habitLogs).toActivityItem()
+            }
         }
     }
 

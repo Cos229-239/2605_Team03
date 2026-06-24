@@ -2,6 +2,7 @@ package com.nightowlcrew.nudgie.ui.dashboard
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -80,6 +81,36 @@ class NudgieViewModel(
     private var messageJob: kotlinx.coroutines.Job? = null
     private val _currentActivity = MutableStateFlow("IDLE")
 
+    // --- Onboarding State ---
+    private val _isOnboardingCompleted = MutableStateFlow(sharedPreferences.getBoolean("is_onboarding_complete", false))
+    val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
+
+    // --- Onboarding Finalization ---
+    fun completeOnboarding(
+        userName: String,
+        petType: PetType,
+        petName: String,
+        firstHabit: String
+    ) {
+        // Update Profile & Pet Details
+        updateProfileUserName(userName)
+        updatePetType(petType)
+        updatePetName(petName)
+
+        // Add their first habit from the interview
+        if (firstHabit.isNotBlank()) {
+            addNewHabit(
+                title = firstHabit,
+                category = CozyCategory.DAILY_RHYTHMS.name, // Defaulting to daily rhythms
+                frequency = 1
+            )
+        }
+
+        // Mark onboarding as complete
+        sharedPreferences.edit { putBoolean("is_onboarding_complete", true) }
+        _isOnboardingCompleted.value = true
+    }
+
     val statsUiState: StateFlow<StatsUiState> = combine(
         repository.getAllHabits(),
         repository.getAllLogs(),
@@ -115,8 +146,12 @@ class NudgieViewModel(
         if (completedLogs.isEmpty()) return 0
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val completedDates =
-            completedLogs.map { it.date }.filter { it.isNotEmpty() }.toSet().toList()
+            completedLogs.asSequence()
+                .map { it.date }
+                .filter { it.isNotEmpty() }
+                .distinct()
                 .sortedDescending()
+                .toList()
         if (completedDates.isEmpty()) return 0
 
         var streak = 0
@@ -131,7 +166,7 @@ class NudgieViewModel(
         val streakCalendar = Calendar.getInstance()
         try {
             streakCalendar.time = sdf.parse(latestDate) ?: return 0
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return 0
         }
 
@@ -148,10 +183,8 @@ class NudgieViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList<HabitEntity>()
+            initialValue = emptyList()
         )
-
-    val isOverScreenTimeLimit: Boolean get() = uiState.value.currentScreenTimeMillis > uiState.value.screenTimeGoalMillis
 
     private val _currentTheme = MutableStateFlow(
         try {
@@ -159,7 +192,7 @@ class NudgieViewModel(
                 sharedPreferences.getString("app_theme", AppTheme.RETRO_SPACE.name)
                     ?: AppTheme.RETRO_SPACE.name
             )
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             AppTheme.RETRO_SPACE
         }
     )
@@ -171,7 +204,7 @@ class NudgieViewModel(
             PetType.valueOf(
                 sharedPreferences.getString("pet_type", PetType.BLUE.name) ?: PetType.BLUE.name
             )
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             PetType.BLUE
         }
     )
@@ -182,6 +215,7 @@ class NudgieViewModel(
             PetType.FOX -> AppIconTheme.FOX
             PetType.AXOLOTL -> AppIconTheme.AXOLOTL
             PetType.DRAGON -> AppIconTheme.DRAGON
+            PetType.NUDGIE -> AppIconTheme.BLUE
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, AppIconTheme.BLUE)
 
@@ -370,7 +404,7 @@ class NudgieViewModel(
         _currency.update { currency ->
             if (currency >= accessory.cost && !accessory.isPurchased) {
                 val newCurrency = currency - accessory.cost
-                sharedPreferences.edit().putInt("pet_currency", newCurrency).apply()
+                sharedPreferences.edit { putInt("pet_currency", newCurrency) }
 
                 if (accessory.category == AccessoryCategory.STAT_BOOST || accessory.category == AccessoryCategory.FOOD) {
                     applyStatEffect(accessory.statEffect)
@@ -416,37 +450,27 @@ class NudgieViewModel(
 
     fun updateTheme(theme: AppTheme) {
         _currentTheme.update { theme }
-        sharedPreferences.edit().putString("app_theme", theme.name).apply()
+        sharedPreferences.edit { putString("app_theme", theme.name) }
     }
 
     fun updateOverlayEnabled(enabled: Boolean) {
         _overlayEnabled.update { enabled }
-        sharedPreferences.edit().putBoolean("overlay_enabled", enabled).apply()
+        sharedPreferences.edit { putBoolean("overlay_enabled", enabled) }
     }
 
     fun updatePetName(newName: String) {
         _petName.update { newName }
-        sharedPreferences.edit().putString("pet_name", newName).apply()
+        sharedPreferences.edit { putString("pet_name", newName) }
     }
 
     fun updatePetType(newType: PetType) {
         _currentPetType.update { newType }
-        sharedPreferences.edit().putString("pet_type", newType.name).apply()
+        sharedPreferences.edit { putString("pet_type", newType.name) }
     }
 
     fun updateProfileUserName(newName: String) {
         _profileUserName.update { newName }
-        sharedPreferences.edit().putString("profile_user_name", newName).apply()
-    }
-
-    fun updateProfileBio(newBio: String) {
-        _profileBio.update { newBio }
-        sharedPreferences.edit().putString("profile_bio", newBio).apply()
-    }
-
-    fun updateProfileAvatar(avatarResId: Int) {
-        _profileAvatarRes.update { avatarResId }
-        sharedPreferences.edit().putInt("profile_avatar_res", avatarResId).apply()
+        sharedPreferences.edit { putString("profile_user_name", newName) }
     }
 
     private fun prepopulateDefaultHabits() {
@@ -469,7 +493,7 @@ class NudgieViewModel(
                         }
                     }
                 }
-                sharedPreferences.edit().putBoolean("default_habits_v12_added", true).apply()
+                sharedPreferences.edit { putBoolean("default_habits_v12_added", true) }
             }
         }
     }
@@ -535,16 +559,12 @@ class NudgieViewModel(
         _happiness.update { (it - penalty).coerceAtLeast(nonPunishmentFloor) }
     }
 
-    fun drainEnergy(amount: Int) {
-        _energy.update { (it - amount).coerceAtLeast(0) }
-    }
-
     private fun completeHabit() {
         _happiness.update { (it + 20).coerceAtMost(100) }
 
         _currency.update { currentCurrency ->
             val newCurrency = currentCurrency + 5
-            sharedPreferences.edit().putInt("pet_currency", newCurrency).apply()
+            sharedPreferences.edit { putInt("pet_currency", newCurrency) }
             newCurrency
         }
 
@@ -613,6 +633,4 @@ object PetDialogBank {
     val tiredThoughts = listOf("Yawn... running low on energy. Time for a break? 🔋", "My battery is running on fumes... 🪫", "So... sleepy... 🥱")
     val questions = listOf("How is your day going so far? 🌟", "What is our main goal for today? 🎯", "Are you remembering to drink water? 💧", "What's the best thing that happened today? ✨", "Are you feeling productive right now? 📈")
     val idleThoughts = listOf("Just hanging out... 🦠", "You're doing great! ✨", "I wonder what level 20 looks like... 🤔", "Nudgie loves you! ❤️", "A clean to-do list is a happy to-do list! 📋", "My pixels are tingling! ⚡")
-    val praise = listOf("Great job! 🌟", "Way to go! 🚀", "Keep it up! 🔥", "XP get! 💎", "You're crushing it today! ⚡", "Task complete! Proud of you. 😎", "Boom! Another one bites the dust. 💥")
-    val tapReactions = listOf("Purrrrr...", "Happy!", "❤️", "Yay!", "Hehehe that tickles! 🤭", "Aha! Keep the pats coming. 🥰", "Mutually assured happiness! ✨", "You're my favorite human. 🥺")
 }

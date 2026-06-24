@@ -78,19 +78,19 @@ fun Modifier.nudgieCardShadow(
 val CyberpunkShapes = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(24.dp)
+    large = RoundedCornerShape(24.dp),
 )
 
 val SteampunkShapes = Shapes(
     small = RoundedCornerShape(percent = 50),
     medium = RoundedCornerShape(24.dp),
-    large = RoundedCornerShape(32.dp)
+    large = RoundedCornerShape(32.dp),
 )
 
 val GothShapes = Shapes(
     small = RoundedCornerShape(0.dp),
     medium = RoundedCornerShape(0.dp),
-    large = RoundedCornerShape(0.dp)
+    large = RoundedCornerShape(0.dp),
 )
 
 private val CyberpunkColorScheme = darkColorScheme(
@@ -108,7 +108,7 @@ private val CyberpunkColorScheme = darkColorScheme(
     onSurface = cpNeonCyan,       // High visibility interactive text
     surfaceVariant = Color(0xFF1A1A2E), // Darker cards for contrast
     onSurfaceVariant = cpNeonCyan,
-    outline = cpNeonCyan.copy(alpha = 0.5f)
+    outline = cpNeonCyan.copy(alpha = 0.5f),
 )
 
 private val SteampunkColorScheme = darkColorScheme(
@@ -125,7 +125,7 @@ private val SteampunkColorScheme = darkColorScheme(
     onSurface = spParchment,
     surfaceVariant = spBrass.copy(alpha = 0.7f),
     onSurfaceVariant = spParchmentDark,
-    outline = spCopper
+    outline = spCopper,
 )
 
 private val GothColorScheme = darkColorScheme(
@@ -142,7 +142,7 @@ private val GothColorScheme = darkColorScheme(
     onSurface = gothTombstone,
     surfaceVariant = gothBloodRed.copy(alpha = 0.2f),
     onSurfaceVariant = gothNeonPink,
-    outline = gothBloodRed
+    outline = gothBloodRed,
 )
 
 private val RetroSpaceColorScheme = darkColorScheme(
@@ -158,7 +158,7 @@ private val RetroSpaceColorScheme = darkColorScheme(
     onSurface = Color.White,
     surfaceVariant = NavySurface,
     onSurfaceVariant = LavenderText,
-    outline = NavyOutline
+    outline = NavyOutline,
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -170,7 +170,7 @@ private val DarkColorScheme = darkColorScheme(
     surface = DarkGreyScale,
     onSurface = Color.White,
     surfaceVariant = Color(0xFF2C2C2C),
-    onSurfaceVariant = Color.White
+    onSurfaceVariant = Color.White,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -182,7 +182,7 @@ private val LightColorScheme = lightColorScheme(
     surface = Color.White,
     onSurface = Color.Black,
     surfaceVariant = Color(0xFFF5F5F5),
-    onSurfaceVariant = Color.Black
+    onSurfaceVariant = Color.Black,
 )
 
 @Composable
@@ -190,14 +190,14 @@ fun NudgieTheme(
     appTheme: AppTheme = AppTheme.DEFAULT,
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
         appTheme == AppTheme.CYBERPUNK -> CyberpunkColorScheme
         appTheme == AppTheme.STEAMPUNK -> SteampunkColorScheme
         appTheme == AppTheme.GOTH -> GothColorScheme
         appTheme == AppTheme.RETRO_SPACE -> RetroSpaceColorScheme
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        dynamicColor && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
@@ -225,6 +225,6 @@ fun NudgieTheme(
         colorScheme = colorScheme,
         typography = Typography,
         shapes = shapes,
-        content = content
+        content = content,
     )
 }

@@ -9,7 +9,8 @@ enum class PetType(val displayName: String) {
     BLUE("Blue Trashpanda"),
     FOX("Fire Fox"),
     AXOLOTL("Pink Axolotl"),
-    DRAGON("Space Dragon")
+    DRAGON("Space Dragon"),
+    NUDGIE("Nudgie") // ADDED: The secret Nudgie type
 }
 
 /**
@@ -26,6 +27,7 @@ object PetAssetManager {
             PetType.FOX -> R.drawable.red_fox
             PetType.AXOLOTL -> R.drawable.oxylotyl
             PetType.DRAGON -> R.drawable.orange_blue_dragon_bgno
+            PetType.NUDGIE -> R.drawable.nudgie // ADDED: Mapping to the nudgie drawable
         }
     }
 
@@ -38,6 +40,7 @@ object PetAssetManager {
             PetType.FOX -> NudgieIcon.FOX
             PetType.AXOLOTL -> NudgieIcon.AXOLOTL
             PetType.DRAGON -> NudgieIcon.DRAGON
+            PetType.NUDGIE -> NudgieIcon.BLUE // Fallback to blue since Nudgie doesn't have a specific launcher icon yet
         }
     }
 }
