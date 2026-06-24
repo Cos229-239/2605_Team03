@@ -441,12 +441,22 @@ fun PetActionButton(label: String, iconRes: Int, onClick: () -> Unit = {}) {
 }
 
 @Composable
-fun PetActionButtons(onCustomizeClick: () -> Unit, onShopClick: () -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+fun PetActionButtons(
+    onCustomizeClick: () -> Unit,
+    onShopClick: () -> Unit,
+    onPlayClick: () -> Unit, // <--- ADDED THIS PARAMETER
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
         PetActionButton("Customize", R.drawable.zustomize, onClick = onCustomizeClick)
         PetActionButton("Shop", android.R.drawable.ic_menu_manage, onClick = onShopClick)
         PetActionButton("Food", R.drawable.feed)
-        PetActionButton("Play", R.drawable.play)
+        PetActionButton("Play", R.drawable.play, onClick = onPlayClick) // <--- WIRED THE CLICK HERE
     }
 }
 
