@@ -501,7 +501,7 @@ A member function is a function that is defined inside a class or object.
 
 ```kotlin
 class Sample {
-    fun foo() {//...}
+    fun foo() { /*...*/ }
 }
 ```
 
@@ -1047,7 +1047,7 @@ numbers.filter(even).map(mapper)
 ### Enum  <a name="enum"></a>
 An enum is a type that represents a fixed set of values.
 
-```kolitn
+```kotlin
 enum class Color {
    RED, GREEN, BLUE
 }

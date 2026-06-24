@@ -318,7 +318,7 @@ fun NudgieDashboardContent(
             }
             composable(Screen.Onboarding.route) {
                 com.nightowlcrew.nudgie.ui.onboarding.OnboardingScreen(
-                    viewModel = viewModel(), // Reusing the same ViewModel
+                    viewModel = viewModel(factory = NudgieViewModel.Factory), // Reusing the same ViewModel
                     onComplete = {
                         navController.navigate(Screen.Home.route) {
                             popUpTo(Screen.Onboarding.route) { inclusive = true }

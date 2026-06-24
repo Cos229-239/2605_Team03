@@ -6,6 +6,9 @@ add_library(nudgie-logic SHARED
             native-lib.cpp
             NudgiePet.cpp)
 
+# Add the header directory to the include path
+target_include_directories(nudgie-logic PRIVATE ../header)
+
 # Link standard Android libraries
 find_library(log-lib log)
 target_link_libraries(nudgie-logic ${log-lib})

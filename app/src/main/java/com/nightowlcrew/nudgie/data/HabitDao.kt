@@ -39,7 +39,4 @@ interface HabitDao {
 
     @Query("SELECT * FROM habit_logs")
     fun getAllLogs(): Flow<List<HabitLogEntity>>
-
-    @Query("SELECT * FROM habits WHERE isArchived = 0")
-    fun getHabitsWithLogs(): Flow<List<HabitWithLogs>>
 }

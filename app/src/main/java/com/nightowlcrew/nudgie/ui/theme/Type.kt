@@ -10,15 +10,15 @@ import com.nightowlcrew.nudgie.R
 
 // Statically bundle the local font definitions to prevent system fallbacks
 val PressStart2P = FontFamily(
-    Font(R.font.press_start_2p_regular, FontWeight.Normal)
+    Font(R.font.press_start_2p_regular, FontWeight.Normal),
 )
 
 val VT323 = FontFamily(
-    Font(R.font.vt323_regular, FontWeight.Normal)
+    Font(R.font.vt323_regular, FontWeight.Normal),
 )
 
 val FiraSans = FontFamily(
-    Font(R.font.fira_sans_regular, FontWeight.Normal)
+    Font(R.font.fira_sans_regular, FontWeight.Normal),
 )
 
 // Keep your existing typography configurations intact
@@ -31,7 +31,7 @@ val Typography = Typography(
         fontWeight = FontWeight.Normal,
         fontSize = 38.sp,
         lineHeight = 46.sp,
-        letterSpacing = (-1).sp
+        letterSpacing = (-1).sp,
     ),
     // Perfect for sub-headings or active stats
     headlineMedium = TextStyle(
@@ -39,7 +39,7 @@ val Typography = Typography(
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp, // Tighter for inline pixel badges
         lineHeight = 20.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
     ),
     // Crisp, clean game-boy style reading text
     bodyLarge = TextStyle(
@@ -47,14 +47,14 @@ val Typography = Typography(
         fontWeight = FontWeight.Normal,
         fontSize = 26.sp,
         lineHeight = 32.sp,
-        letterSpacing = 0.5.sp
+        letterSpacing = 0.5.sp,
     ),
     bodyMedium = TextStyle(
         fontFamily = VT323,
         fontWeight = FontWeight.Normal,
         fontSize = 22.sp,
         lineHeight = 28.sp,
-        letterSpacing = 0.5.sp
+        letterSpacing = 0.5.sp,
     ),
     // Clean, readable structural labels
     labelLarge = TextStyle(
@@ -62,6 +62,6 @@ val Typography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    )
+        letterSpacing = 0.5.sp,
+    ),
 )
