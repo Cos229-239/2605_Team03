@@ -10,6 +10,15 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" tools:ignore="UseExactAlarm" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- GPS & Pedometer Permissions -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
+
     <application
         android:name=".NudgieApplication"
         android:allowBackup="true"
@@ -79,6 +88,12 @@
         <service
             android:name=".services.NudgieOverlayService"
             android:exported="false" />
+
+        <service
+            android:name=".services.WalkTrackingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location|health" />
 
 
 
