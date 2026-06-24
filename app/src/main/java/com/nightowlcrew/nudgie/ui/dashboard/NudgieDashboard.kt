@@ -481,6 +481,8 @@ fun NudgiePetScreen(
     var showPlayMenu by remember { mutableStateOf(false) }
     var showWalkSetup by remember { mutableStateOf(false) }
     var pendingWalkMode by remember { mutableStateOf<WalkTrackingMode?>(null) }
+    var pendingTargetSteps by remember { mutableStateOf(0) }
+    var pendingTargetDistance by remember { mutableStateOf(0) }
 
     // --- PERMISSION LAUNCHER & SERVICE TRIGGER ---
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -509,6 +511,8 @@ fun NudgiePetScreen(
                 val serviceIntent = android.content.Intent(context, com.nightowlcrew.nudgie.services.WalkTrackingService::class.java).apply {
                     action = com.nightowlcrew.nudgie.services.WalkTrackingService.ACTION_START
                     putExtra(com.nightowlcrew.nudgie.services.WalkTrackingService.EXTRA_TRACKING_MODE, mode.name)
+                    putExtra(com.nightowlcrew.nudgie.services.WalkTrackingService.EXTRA_TARGET_STEPS, pendingTargetSteps)
+                    putExtra(com.nightowlcrew.nudgie.services.WalkTrackingService.EXTRA_TARGET_DISTANCE, pendingTargetDistance.toFloat())
                 }
 
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -591,9 +595,11 @@ fun NudgiePetScreen(
             WalkSetupDialog(
                 nudgieName = petStats.name,
                 onDismissRequest = { showWalkSetup = false },
-                onStartWalk = { trackingMode ->
+                onStartWalk = { trackingMode, targetDistance, targetSteps ->
                     showWalkSetup = false
                     pendingWalkMode = trackingMode
+                    pendingTargetDistance = targetDistance
+                    pendingTargetSteps = targetSteps
 
                     val permissionsToRequest = mutableListOf<String>()
 
