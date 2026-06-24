@@ -19,6 +19,11 @@ import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
 import com.nightowlcrew.nudgie.MainActivity
 import com.nightowlcrew.nudgie.R
+import com.nightowlcrew.nudgie.utils.WalkProgress
+import com.nightowlcrew.nudgie.utils.WalkProgressManager
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 
 class WalkTrackingService : Service(), SensorEventListener {
@@ -26,12 +31,18 @@ class WalkTrackingService : Service(), SensorEventListener {
     companion object {
         const val CHANNEL_ID = "WalkTrackingChannel"
         const val NOTIFICATION_ID = 2
+        const val COMPLETION_NOTIFICATION_ID = 3
         const val ACTION_START = "ACTION_START_WALK"
         const val ACTION_STOP = "ACTION_STOP_WALK"
         const val EXTRA_TRACKING_MODE = "EXTRA_TRACKING_MODE"
+        const val EXTRA_TARGET_STEPS = "EXTRA_TARGET_STEPS"
+        const val EXTRA_TARGET_DISTANCE = "EXTRA_TARGET_DISTANCE"
     }
 
     private var trackingMode: String = "BOTH"
+    private var targetSteps: Int = 0
+    private var targetDistance: Float = 0f
+    private lateinit var walkProgressManager: WalkProgressManager
 
     // GPS Variables
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -50,12 +61,25 @@ class WalkTrackingService : Service(), SensorEventListener {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        walkProgressManager = WalkProgressManager(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> {
                 trackingMode = intent.getStringExtra(EXTRA_TRACKING_MODE) ?: "BOTH"
+                targetSteps = intent.getIntExtra(EXTRA_TARGET_STEPS, 0)
+                targetDistance = intent.getFloatExtra(EXTRA_TARGET_DISTANCE, 0f)
+
+                // Load existing progress if valid for today
+                val savedProgress = walkProgressManager.loadProgressIfValid()
+                if (savedProgress != null) {
+                    currentSessionSteps = savedProgress.currentSteps
+                    totalDistanceMeters = savedProgress.currentDistance
+                    // If target was already set today, we might want to respect the new intent's target
+                    // but for now, let's just ensure we have values.
+                }
+
                 startWalkTracking()
             }
             ACTION_STOP -> stopWalkTracking()
@@ -77,7 +101,9 @@ class WalkTrackingService : Service(), SensorEventListener {
 
     private fun stopWalkTracking() {
         if (trackingMode == "DISTANCE" || trackingMode == "BOTH") {
-            fusedLocationClient.removeLocationUpdates(locationCallback)
+            if (::locationCallback.isInitialized) {
+                fusedLocationClient.removeLocationUpdates(locationCallback)
+            }
         }
         if (trackingMode == "STEPS" || trackingMode == "BOTH") {
             sensorManager.unregisterListener(this)
@@ -100,7 +126,9 @@ class WalkTrackingService : Service(), SensorEventListener {
                     }
                     lastLocation = location
                 }
+                saveCurrentProgress()
                 updateNotification()
+                checkCompletion()
             }
         }
 
@@ -125,14 +153,71 @@ class WalkTrackingService : Service(), SensorEventListener {
         if (event?.sensor?.type == Sensor.TYPE_STEP_COUNTER) {
             val totalStepsSinceReboot = event.values[0].toInt()
 
-            // Set the baseline on the very first step detected
             if (initialStepCount == -1) {
                 initialStepCount = totalStepsSinceReboot
+                // If we loaded saved progress, we need to adjust our session baseline
+                // to continue from where we left off relative to totalStepsSinceReboot.
+                initialStepCount -= currentSessionSteps
             }
 
             currentSessionSteps = totalStepsSinceReboot - initialStepCount
+            saveCurrentProgress()
             updateNotification()
+            checkCompletion()
         }
+    }
+
+    private fun saveCurrentProgress() {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        walkProgressManager.saveProgress(
+            WalkProgress(
+                currentSteps = currentSessionSteps,
+                targetSteps = targetSteps,
+                currentDistance = totalDistanceMeters,
+                targetDistance = targetDistance,
+                lastWalkDate = today
+            )
+        )
+    }
+
+    private fun checkCompletion() {
+        val stepsDone = if (targetSteps > 0) currentSessionSteps >= targetSteps else false
+        val distanceDone = if (targetDistance > 0) totalDistanceMeters >= targetDistance else false
+
+        val isFinished = when (trackingMode) {
+            "DISTANCE" -> distanceDone
+            "STEPS" -> stepsDone
+            "BOTH" -> stepsDone && distanceDone
+            else -> false
+        }
+
+        if (isFinished) {
+            onWalkCompleted()
+        }
+    }
+
+    private fun onWalkCompleted() {
+        // Stop tracking
+        if (::locationCallback.isInitialized) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+        sensorManager.unregisterListener(this)
+
+        // Clear data
+        walkProgressManager.clearProgress()
+
+        // Push completion notification
+        val manager = getSystemService(NotificationManager::class.java)
+        val completionNotification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Walk Completed!")
+            .setContentText("Nudgie is happy! 🐾 You've reached your goal.")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setAutoCancel(true)
+            .build()
+        manager.notify(COMPLETION_NOTIFICATION_ID, completionNotification)
+
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
@@ -150,10 +235,12 @@ class WalkTrackingService : Service(), SensorEventListener {
 
         var statusText = "Walking Nudgie! 🐾"
         if (trackingMode == "DISTANCE" || trackingMode == "BOTH") {
-            statusText += "\nDistance: ${totalDistanceMeters.roundToInt()} meters"
+            val distTargetText = if (targetDistance > 0) "/${targetDistance.roundToInt()}m" else "m"
+            statusText += "\nDistance: ${totalDistanceMeters.roundToInt()}$distTargetText"
         }
         if (trackingMode == "STEPS" || trackingMode == "BOTH") {
-            statusText += "\nSteps: $currentSessionSteps"
+            val stepsTargetText = if (targetSteps > 0) "/$targetSteps" else ""
+            statusText += "\nSteps: $currentSessionSteps$stepsTargetText"
         }
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
@@ -163,6 +250,7 @@ class WalkTrackingService : Service(), SensorEventListener {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .build()
     }
 
