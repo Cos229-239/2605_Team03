@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
@@ -30,13 +32,14 @@ import com.nightowlcrew.nudgie.ui.dashboard.AppTheme
 fun Modifier.nudgieCardShadow(
     theme: AppTheme,
     elevation: Dp = 4.dp,
-    shape: androidx.compose.ui.graphics.Shape = MaterialTheme.shapes.medium
+    shape: Shape? = null,
 ): Modifier {
     // 1. Determine the hard block shadow tint color based on the selected theme style
     val shadowColor = when (theme) {
         AppTheme.CYBERPUNK -> cpNeonPink
         AppTheme.GOTH -> Color.Black
         AppTheme.STEAMPUNK -> Color(0xFF4A3525) // Solid deep brass/leather tone
+        AppTheme.RETRO_SPACE -> Color(0xFF120C1F) // Deeper space purple for shadow
         else -> Color.Black.copy(alpha = 0.15f)   // Clean subtle vintage block for default look
     }
 
@@ -47,14 +50,19 @@ fun Modifier.nudgieCardShadow(
 
         // 2. Map explicit pixel values directly from the active theme structure
         // This guarantees that canvas drawings exactly mirror the roundness of the main layout container
-        val radiusPx = when (theme) {
-            AppTheme.GOTH -> 0f
-            AppTheme.CYBERPUNK -> 12.dp.toPx() // Clean 12.dp match for Cyberpunk cards
-            AppTheme.STEAMPUNK -> {
-                // If the height is small, it's a circular capsule stat badge
-                if (sizePx.height < 40.dp.toPx()) sizePx.height / 2f else 24.dp.toPx()
+        val radiusPx = if (shape != null) {
+            (shape.createOutline(sizePx, layoutDirection, this) as? Outline.Rounded)
+                ?.roundRect?.bottomLeftCornerRadius?.x ?: 0f
+        } else {
+            when (theme) {
+                AppTheme.GOTH -> 0f
+                AppTheme.CYBERPUNK -> 12.dp.toPx() // Clean 12.dp match for Cyberpunk cards
+                AppTheme.STEAMPUNK -> {
+                    // If the height is small, it's a circular capsule stat badge
+                    if (sizePx.height < 40.dp.toPx()) sizePx.height / 2f else 24.dp.toPx()
+                }
+                else -> 12.dp.toPx() // Perfect match for default rounded corners
             }
-            else -> 12.dp.toPx() // Perfect match for default rounded corners
         }
 
         // 3. Positive X shifts right, positive Y shifts down to create a crisp lower-right cast
@@ -62,7 +70,7 @@ fun Modifier.nudgieCardShadow(
             color = shadowColor,
             topLeft = androidx.compose.ui.geometry.Offset(shadowOffsetPx, shadowOffsetPx),
             size = sizePx,
-            cornerRadius = CornerRadius(radiusPx, radiusPx)
+            cornerRadius = CornerRadius(radiusPx, radiusPx),
         )
     }
 }
