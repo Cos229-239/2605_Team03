@@ -1,6 +1,7 @@
 package com.nightowlcrew.nudgie.ui.dashboard
 
 import android.Manifest
+import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -40,6 +41,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -115,6 +117,7 @@ import com.nightowlcrew.nudgie.data.AccessoryItem
 import com.nightowlcrew.nudgie.data.ActivityItem
 import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.data.HabitEntity
+import com.nightowlcrew.nudgie.services.WalkTrackingService
 import com.nightowlcrew.nudgie.ui.theme.BrandGold
 import com.nightowlcrew.nudgie.ui.theme.ElectricYellow
 import com.nightowlcrew.nudgie.ui.theme.HeartRed
@@ -476,13 +479,31 @@ fun NudgiePetScreen(
     onReplyToPet: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val isWalkActive by WalkTrackingService.isServiceRunning.collectAsStateWithLifecycle()
+    val progressManager = remember { com.nightowlcrew.nudgie.utils.WalkProgressManager(context) }
 
     // --- STATE MANAGEMENT ---
     var showPlayMenu by remember { mutableStateOf(false) }
     var showWalkSetup by remember { mutableStateOf(false) }
+    var showEarlyTerminationDialog by remember { mutableStateOf(false) }
     var pendingWalkMode by remember { mutableStateOf<WalkTrackingMode?>(null) }
     var pendingTargetSteps by remember { mutableStateOf(0) }
     var pendingTargetDistance by remember { mutableStateOf(0) }
+
+    // Helper to start the service
+    fun startWalkService(ctx: android.content.Context, mode: WalkTrackingMode, distance: Int, steps: Int) {
+        val intent = Intent(ctx, WalkTrackingService::class.java).apply {
+            action = WalkTrackingService.ACTION_START
+            putExtra(WalkTrackingService.EXTRA_TRACKING_MODE, mode.name)
+            putExtra(WalkTrackingService.EXTRA_TARGET_STEPS, steps)
+            putExtra(WalkTrackingService.EXTRA_TARGET_DISTANCE, distance.toFloat())
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            ctx.startForegroundService(intent)
+        } else {
+            ctx.startService(intent)
+        }
+    }
 
     // --- PERMISSION LAUNCHER & SERVICE TRIGGER ---
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -506,20 +527,7 @@ fun NudgiePetScreen(
 
             if (canStartGps || canStartSteps) {
                 Toast.makeText(context, "Starting walk!🐾", Toast.LENGTH_SHORT).show()
-
-                // Start the Service!
-                val serviceIntent = android.content.Intent(context, com.nightowlcrew.nudgie.services.WalkTrackingService::class.java).apply {
-                    action = com.nightowlcrew.nudgie.services.WalkTrackingService.ACTION_START
-                    putExtra(com.nightowlcrew.nudgie.services.WalkTrackingService.EXTRA_TRACKING_MODE, mode.name)
-                    putExtra(com.nightowlcrew.nudgie.services.WalkTrackingService.EXTRA_TARGET_STEPS, pendingTargetSteps)
-                    putExtra(com.nightowlcrew.nudgie.services.WalkTrackingService.EXTRA_TARGET_DISTANCE, pendingTargetDistance.toFloat())
-                }
-
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    context.startForegroundService(serviceIntent)
-                } else {
-                    context.startService(serviceIntent)
-                }
+                startWalkService(context, mode, pendingTargetDistance, pendingTargetSteps)
             } else {
                 Toast.makeText(context, "Permissions required to track walk.", Toast.LENGTH_LONG).show()
             }
@@ -566,14 +574,47 @@ fun NudgiePetScreen(
             }
 
             Spacer(modifier = Modifier.weight(0.5f))
-            PetActionButtons(
-                onCustomizeClick = onCustomizeClick,
-                onShopClick = onShopClick,
-                onPlayClick = { showPlayMenu = true }
-            )
+
+            if (isWalkActive) {
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center) {
+                    PetActionButton(
+                        label = "Stop Walk",
+                        iconRes = R.drawable.play, // Swap with a stop icon if you have one
+                        onClick = { showEarlyTerminationDialog = true }
+                    )
+                }
+            } else {
+                PetActionButtons(
+                    onCustomizeClick = onCustomizeClick,
+                    onShopClick = onShopClick,
+                    onPlayClick = {
+                        val savedProgress = progressManager.loadProgressIfValid()
+                        if (savedProgress != null) {
+                            startWalkService(context, savedProgress.mode, savedProgress.targetDistance.toInt(), savedProgress.targetSteps)
+                        } else {
+                            showPlayMenu = true
+                        }
+                    }
+                )
+            }
         }
 
         // --- OVERLAY DIALOGS ---
+
+        if (showEarlyTerminationDialog) {
+            EarlyTerminationDialog(
+                onDismiss = { showEarlyTerminationDialog = false },
+                onSaveProgress = {
+                    showEarlyTerminationDialog = false
+                    context.startService(Intent(context, WalkTrackingService::class.java).apply { action = WalkTrackingService.ACTION_STOP })
+                },
+                onClearProgress = {
+                    showEarlyTerminationDialog = false
+                    progressManager.clearProgress()
+                    context.startService(Intent(context, WalkTrackingService::class.java).apply { action = WalkTrackingService.ACTION_STOP })
+                }
+            )
+        }
 
         // 1. The Play Menu
         if (showPlayMenu) {

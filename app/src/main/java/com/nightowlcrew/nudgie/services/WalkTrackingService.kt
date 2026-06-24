@@ -19,8 +19,11 @@ import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
 import com.nightowlcrew.nudgie.MainActivity
 import com.nightowlcrew.nudgie.R
+import com.nightowlcrew.nudgie.ui.dashboard.WalkTrackingMode
 import com.nightowlcrew.nudgie.utils.WalkProgress
 import com.nightowlcrew.nudgie.utils.WalkProgressManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,6 +40,9 @@ class WalkTrackingService : Service(), SensorEventListener {
         const val EXTRA_TRACKING_MODE = "EXTRA_TRACKING_MODE"
         const val EXTRA_TARGET_STEPS = "EXTRA_TARGET_STEPS"
         const val EXTRA_TARGET_DISTANCE = "EXTRA_TARGET_DISTANCE"
+
+        private val _isServiceRunning = MutableStateFlow(false)
+        val isServiceRunning: StateFlow<Boolean> = _isServiceRunning
     }
 
     private var trackingMode: String = "BOTH"
@@ -58,6 +64,7 @@ class WalkTrackingService : Service(), SensorEventListener {
 
     override fun onCreate() {
         super.onCreate()
+        _isServiceRunning.value = true
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
@@ -169,13 +176,15 @@ class WalkTrackingService : Service(), SensorEventListener {
 
     private fun saveCurrentProgress() {
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val modeEnum = try { WalkTrackingMode.valueOf(trackingMode) } catch (e: Exception) { WalkTrackingMode.BOTH }
         walkProgressManager.saveProgress(
             WalkProgress(
                 currentSteps = currentSessionSteps,
                 targetSteps = targetSteps,
                 currentDistance = totalDistanceMeters,
                 targetDistance = targetDistance,
-                lastWalkDate = today
+                lastWalkDate = today,
+                mode = modeEnum
             )
         )
     }
@@ -261,6 +270,15 @@ class WalkTrackingService : Service(), SensorEventListener {
             )
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        _isServiceRunning.value = false
+        if (::locationCallback.isInitialized) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+        sensorManager.unregisterListener(this)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

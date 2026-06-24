@@ -3,6 +3,7 @@ package com.nightowlcrew.nudgie.utils
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.nightowlcrew.nudgie.ui.dashboard.WalkTrackingMode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -12,7 +13,8 @@ data class WalkProgress(
     val targetSteps: Int,
     val currentDistance: Float,
     val targetDistance: Float,
-    val lastWalkDate: String
+    val lastWalkDate: String,
+    val mode: WalkTrackingMode
 )
 
 class WalkProgressManager(context: Context) {
@@ -26,12 +28,15 @@ class WalkProgressManager(context: Context) {
             putFloat("current_distance", progress.currentDistance)
             putFloat("target_distance", progress.targetDistance)
             putString("last_walk_date", progress.lastWalkDate)
+            putString("mode", progress.mode.name)
         }
     }
 
     fun loadProgressIfValid(): WalkProgress? {
         val lastDate = prefs.getString("last_walk_date", null) ?: return null
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val modeStr = prefs.getString("mode", WalkTrackingMode.BOTH.name) ?: WalkTrackingMode.BOTH.name
+        val mode = try { WalkTrackingMode.valueOf(modeStr) } catch (e: Exception) { WalkTrackingMode.BOTH }
 
         return if (lastDate == today) {
             WalkProgress(
@@ -39,7 +44,8 @@ class WalkProgressManager(context: Context) {
                 targetSteps = prefs.getInt("target_steps", 0),
                 currentDistance = prefs.getFloat("current_distance", 0f),
                 targetDistance = prefs.getFloat("target_distance", 0f),
-                lastWalkDate = lastDate
+                lastWalkDate = lastDate,
+                mode = mode
             )
         } else {
             clearProgress()
@@ -54,6 +60,7 @@ class WalkProgressManager(context: Context) {
             remove("current_distance")
             remove("target_distance")
             remove("last_walk_date")
+            remove("mode")
         }
     }
 }
