@@ -261,7 +261,8 @@ fun NudgieDashboardContent(
         PetSelectionDialog(
             onDismissRequest = { showPetSelection = false },
             onPetSelected = onUpdatePetType,
-            currentPetType = uiState.currentPetType
+            currentPetType = uiState.currentPetType,
+            isNudgieUnlocked = uiState.isNudgieUnlocked
         )
     }
 

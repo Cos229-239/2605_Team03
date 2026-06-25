@@ -57,7 +57,8 @@ data class DashboardUiState(
     val profileUserName: String = "Alex",
     val profileBio: String = "Cozy Nudger",
     val profileJoinDate: String = "October 2023",
-    val profileAvatarRes: Int = com.nightowlcrew.nudgie.R.drawable.nudgie
+    val profileAvatarRes: Int = com.nightowlcrew.nudgie.R.drawable.nudgie,
+    val isNudgieUnlocked: Boolean = false
 )
 
 data class StatsUiState(
@@ -85,6 +86,8 @@ class NudgieViewModel(
     private val _isOnboardingCompleted = MutableStateFlow(sharedPreferences.getBoolean("is_onboarding_complete", false))
     val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
 
+    private val _isNudgieUnlocked = MutableStateFlow(sharedPreferences.getBoolean("is_nudgie_unlocked", false))
+
     // --- Onboarding Finalization ---
     fun completeOnboarding(
         userName: String,
@@ -107,8 +110,14 @@ class NudgieViewModel(
         }
 
         // Mark onboarding as complete
-        sharedPreferences.edit { putBoolean("is_onboarding_complete", true) }
+        sharedPreferences.edit { 
+            putBoolean("is_onboarding_complete", true)
+            if (petType == PetType.NUDGIE) {
+                putBoolean("is_nudgie_unlocked", true)
+            }
+        }
         _isOnboardingCompleted.value = true
+        _isNudgieUnlocked.value = sharedPreferences.getBoolean("is_nudgie_unlocked", false)
     }
 
     val statsUiState: StateFlow<StatsUiState> = combine(
@@ -334,7 +343,8 @@ class NudgieViewModel(
                 repository.getAllLogs(),
                 _currentTheme,
                 _currentPetType,
-                _overlayEnabled
+                _overlayEnabled,
+                _isNudgieUnlocked
             ) { flows: Array<Any?> ->
                 @Suppress("UNCHECKED_CAST") val activities = flows[0] as List<ActivityItem>
                 val screenTime = flows[1] as ScreenTimeRecord?
@@ -344,6 +354,7 @@ class NudgieViewModel(
                 val theme = flows[5] as AppTheme
                 val petType = flows[6] as PetType
                 val overlayEnabled = flows[7] as Boolean
+                val isNudgieUnlocked = flows[8] as Boolean
 
                 val categorized = CozyCategory.entries.associateWith { category ->
                     activities.filter { it.category == category.name }
@@ -365,7 +376,8 @@ class NudgieViewModel(
                     profileUserName = profile.first,
                     profileBio = profile.second,
                     profileJoinDate = profile.third.first,
-                    profileAvatarRes = profile.third.second
+                    profileAvatarRes = profile.third.second,
+                    isNudgieUnlocked = isNudgieUnlocked
                 )
             }.onEach { updatedState ->
                 _uiState.update { updatedState }

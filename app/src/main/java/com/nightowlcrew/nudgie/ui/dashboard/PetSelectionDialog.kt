@@ -48,13 +48,15 @@ import com.nightowlcrew.nudgie.utils.PetType
 fun PetSelectionDialog(
     onDismissRequest: () -> Unit,
     onPetSelected: (PetType) -> Unit,
-    currentPetType: PetType
+    currentPetType: PetType,
+    isNudgieUnlocked: Boolean
 ) {
     Dialog(onDismissRequest = onDismissRequest) {
         PetSelectionContent(
             onDismissRequest = onDismissRequest,
             onPetSelected = onPetSelected,
-            currentPetType = currentPetType
+            currentPetType = currentPetType,
+            isNudgieUnlocked = isNudgieUnlocked
         )
     }
 }
@@ -66,7 +68,8 @@ fun PetSelectionDialog(
 private fun PetSelectionContent(
     onDismissRequest: () -> Unit,
     onPetSelected: (PetType) -> Unit,
-    currentPetType: PetType
+    currentPetType: PetType,
+    isNudgieUnlocked: Boolean
 ) {
     Surface(
         modifier = Modifier
@@ -114,7 +117,13 @@ private fun PetSelectionContent(
                         .fillMaxWidth()
                         .weight(1f, fill = false) // Allow grid to take only needed space, up to max
                 ) {
-                    items(PetType.entries) { petType ->
+                    val availablePets = if (isNudgieUnlocked) {
+                        PetType.entries
+                    } else {
+                        PetType.entries.filter { it != PetType.NUDGIE }
+                    }
+
+                    items(availablePets) { petType ->
                         PetOptionItem(
                             petType = petType,
                             isSelected = petType == currentPetType,
@@ -181,7 +190,8 @@ private fun PetSelectionDialogPreview() {
             PetSelectionContent(
                 onDismissRequest = {},
                 onPetSelected = {},
-                currentPetType = PetType.BLUE
+                currentPetType = PetType.BLUE,
+                isNudgieUnlocked = true
             )
         }
     }
