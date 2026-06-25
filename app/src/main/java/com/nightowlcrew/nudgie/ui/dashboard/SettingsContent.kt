@@ -45,11 +45,15 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.nightowlcrew.nudgie.ui.theme.ElectricYellow
 import com.nightowlcrew.nudgie.ui.theme.LavenderText
 import com.nightowlcrew.nudgie.ui.theme.NavyBackground
 import com.nightowlcrew.nudgie.ui.theme.NavyOutline
 import com.nightowlcrew.nudgie.ui.theme.NavySurface
 import com.nightowlcrew.nudgie.ui.theme.PressStart2P
+import com.nightowlcrew.nudgie.ui.theme.SpaceAccent
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import com.nightowlcrew.nudgie.ui.theme.nudgieCardShadow
 
 /**
@@ -265,6 +269,7 @@ fun SettingsContentPreview() {
             SettingsContent(
                 currentTheme = AppTheme.DEFAULT,
                 overlayEnabled = false,
+                isAnonymous = true,
                 onUpdateTheme = { },
                 onUpdateOverlayEnabled = { }
             )
