@@ -1,5 +1,6 @@
 package com.nightowlcrew.nudgie.data
 
+import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,10 +23,16 @@ class AuthRepository(private val auth: FirebaseAuth = FirebaseAuth.getInstance()
             try {
                 auth.signInAnonymously().await()
             } catch (e: Exception) {
-                // In a real app, you'd want to handle this error or propagate it
                 e.printStackTrace()
             }
         }
+    }
+
+    /**
+     * Links the current anonymous account with the provided credential (e.g., Google, Email).
+     */
+    suspend fun linkAccount(credential: AuthCredential) {
+        auth.currentUser?.linkWithCredential(credential)?.await()
     }
 
     fun signOut() {
@@ -34,6 +41,9 @@ class AuthRepository(private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     val isUserLoggedIn: Boolean
         get() = auth.currentUser != null
+
+    val isAnonymous: Boolean
+        get() = auth.currentUser?.isAnonymous ?: true
 
     val userId: String?
         get() = auth.currentUser?.uid

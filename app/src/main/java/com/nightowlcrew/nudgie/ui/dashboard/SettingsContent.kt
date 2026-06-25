@@ -37,6 +37,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nightowlcrew.nudgie.ui.theme.LavenderText
@@ -58,6 +64,7 @@ fun SettingsScreen(
     SettingsContent(
         currentTheme = uiState.currentTheme,
         overlayEnabled = uiState.overlayEnabled,
+        isAnonymous = uiState.isAnonymous,
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
         onUpdateOverlayEnabled = { viewModel.updateOverlayEnabled(it) },
     )
@@ -67,6 +74,7 @@ fun SettingsScreen(
 fun SettingsContent(
     currentTheme: AppTheme,
     overlayEnabled: Boolean,
+    isAnonymous: Boolean,
     onUpdateTheme: (AppTheme) -> Unit,
     onUpdateOverlayEnabled: (Boolean) -> Unit,
     modifier: Modifier = Modifier
@@ -88,6 +96,8 @@ fun SettingsContent(
             fontWeight = FontWeight.Bold
         )
 
+        AccountSettingsCard(isAnonymous = isAnonymous)
+
         ThemeSelectionCard(
             currentTheme = currentTheme,
             onUpdateTheme = onUpdateTheme,
@@ -104,6 +114,50 @@ fun SettingsContent(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AccountSettingsCard(isAnonymous: Boolean) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = NavySurface),
+        border = BorderStroke(1.dp, NavyOutline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = if (isAnonymous) Icons.Default.Lock else Icons.Default.Sync,
+                    contentDescription = null,
+                    tint = if (isAnonymous) androidx.compose.ui.graphics.Color.Gray else ElectricYellow,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                Text(
+                    text = if (isAnonymous) "ANONYMOUS ACCOUNT" else "SYNCED ACCOUNT",
+                    style = MaterialTheme.typography.titleMedium.copy(fontFamily = PressStart2P),
+                    color = androidx.compose.ui.graphics.Color.White
+                )
+            }
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = if (isAnonymous) 
+                    "Your data is only saved on this device. Link an account to sync across devices." 
+                    else "Your data is backed up and synced to the cloud.",
+                style = MaterialTheme.typography.bodySmall,
+                color = LavenderText
+            )
+            if (isAnonymous) {
+                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { /* TODO: Trigger Google/Email Linking */ },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = SpaceAccent)
+                ) {
+                    Text("LINK ACCOUNT", style = MaterialTheme.typography.labelLarge.copy(fontFamily = PressStart2P))
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun ThemeSelectionCard(
     currentTheme: AppTheme,

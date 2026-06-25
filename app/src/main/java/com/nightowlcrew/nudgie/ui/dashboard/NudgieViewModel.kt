@@ -59,7 +59,9 @@ data class DashboardUiState(
     val profileBio: String = "Cozy Nudger",
     val profileJoinDate: String = "October 2023",
     val profileAvatarRes: Int = com.nightowlcrew.nudgie.R.drawable.nudgie,
-    val isNudgieUnlocked: Boolean = false
+    val isNudgieUnlocked: Boolean = false,
+    val isAnonymous: Boolean = true,
+    val isUserLoggedIn: Boolean = false
 )
 
 data class StatsUiState(
@@ -347,7 +349,8 @@ class NudgieViewModel(
                 _currentTheme,
                 _currentPetType,
                 _overlayEnabled,
-                _isNudgieUnlocked
+                _isNudgieUnlocked,
+                authRepository.currentUser
             ) { flows: Array<Any?> ->
                 @Suppress("UNCHECKED_CAST") val activities = flows[0] as List<ActivityItem>
                 val screenTime = flows[1] as ScreenTimeRecord?
@@ -358,6 +361,7 @@ class NudgieViewModel(
                 val petType = flows[6] as PetType
                 val overlayEnabled = flows[7] as Boolean
                 val isNudgieUnlocked = flows[8] as Boolean
+                val firebaseUser = flows[9] as com.google.firebase.auth.FirebaseUser?
 
                 val categorized = CozyCategory.entries.associateWith { category ->
                     activities.filter { it.category == category.name }
@@ -380,7 +384,9 @@ class NudgieViewModel(
                     profileBio = profile.second,
                     profileJoinDate = profile.third.first,
                     profileAvatarRes = profile.third.second,
-                    isNudgieUnlocked = isNudgieUnlocked
+                    isNudgieUnlocked = isNudgieUnlocked,
+                    isAnonymous = firebaseUser?.isAnonymous ?: true,
+                    isUserLoggedIn = firebaseUser != null
                 )
             }.onEach { updatedState ->
                 _uiState.update { updatedState }
