@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -70,6 +71,12 @@ dependencies {
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.1")
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -11,6 +11,7 @@ import com.nightowlcrew.nudgie.NudgieApplication
 import com.nightowlcrew.nudgie.data.AccessoryCategory
 import com.nightowlcrew.nudgie.data.AccessoryItem
 import com.nightowlcrew.nudgie.data.ActivityItem
+import com.nightowlcrew.nudgie.data.AuthRepository
 import com.nightowlcrew.nudgie.data.CozyCategory
 import com.nightowlcrew.nudgie.data.HABIT_TEMPLATES
 import com.nightowlcrew.nudgie.data.HabitEntity
@@ -71,6 +72,7 @@ data class StatsUiState(
 
 class NudgieViewModel(
     private val repository: HabitRepository,
+    private val authRepository: AuthRepository,
     private val sharedPreferences: SharedPreferences
 ) : ViewModel() {
 
@@ -255,6 +257,7 @@ class NudgieViewModel(
 
     init {
         viewModelScope.launch {
+            authRepository.signInAnonymously()
             prepopulateDefaultHabits()
 
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -629,7 +632,11 @@ class NudgieViewModel(
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]) as NudgieApplication
-                return NudgieViewModel(HabitRepositoryImpl(application.database.habitDao(), application.database.screenTimeDao()), application.getSharedPreferences("nudgie_prefs", Context.MODE_PRIVATE)) as T
+                return NudgieViewModel(
+                    repository = HabitRepositoryImpl(application.database.habitDao(), application.database.screenTimeDao()),
+                    authRepository = AuthRepository(),
+                    sharedPreferences = application.getSharedPreferences("nudgie_prefs", Context.MODE_PRIVATE)
+                ) as T
             }
         }
     }
