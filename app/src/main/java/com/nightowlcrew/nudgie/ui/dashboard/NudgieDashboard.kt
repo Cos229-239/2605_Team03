@@ -153,6 +153,18 @@ import com.nightowlcrew.nudgie.utils.showReminderTimePicker
 import kotlinx.coroutines.delay
 import java.util.Calendar
 import kotlin.math.roundToInt
+import androidx.compose.material3.DropdownMenuItem
+
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import com.nightowlcrew.nudgie.data.PersonalityType
 
 data class StatColors(val happiness: Color, val energy: Color, val level: Color, val success: Color)
 
@@ -202,27 +214,37 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
     val statsUiState by viewModel.statsUiState.collectAsStateWithLifecycle()
     val archivedHabits by viewModel.archivedHabits.collectAsStateWithLifecycle()
     val isOnboardingComplete by viewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
+    Column {
+        PersonalityTestSwitcher(viewModel = viewModel)
 
-    NudgieDashboardContent(
-        uiState = uiState,
-        statsUiState = statsUiState,
-        archivedHabits = archivedHabits,
-        isOnboardingComplete = isOnboardingComplete,
-        onToggleHabit = { viewModel.toggleHabitCompletion(it) },
-        onAddHabit = { title, category, frequency, isStock -> viewModel.addNewHabit(title, category, frequency, isStock) },
-        onDeleteHabit = { id -> viewModel.deleteHabit(id) },
-        onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
-        onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
-        onUpdateOverlayEnabled = { viewModel.updateOverlayEnabled(it) },
-        onUpdatePetName = { viewModel.updatePetName(it) },
-        onUpdatePetType = { viewModel.updatePetType(it) },
-        onArchiveHabit = { viewModel.archiveHabit(it) },
-        onRestoreHabit = { viewModel.restoreHabit(it) },
-        onBuyAccessory = { viewModel.buyAccessory(it) },
-        onEquipAccessory = { viewModel.equipAccessory(it) },
-        onPetTheNudgie = { viewModel.petTheNudgie() },
-        onReplyToPet = { viewModel.replyToPet(it) }
-    )
+        NudgieDashboardContent(
+            uiState = uiState,
+            statsUiState = statsUiState,
+            archivedHabits = archivedHabits,
+            isOnboardingComplete = isOnboardingComplete,
+            onToggleHabit = { viewModel.toggleHabitCompletion(it) },
+            onAddHabit = { title, category, frequency, isStock ->
+                viewModel.addNewHabit(
+                    title,
+                    category,
+                    frequency,
+                    isStock
+                )
+            },
+            onDeleteHabit = { id -> viewModel.deleteHabit(id) },
+            onUpdateScreenTimeGoal = { hours -> viewModel.updateScreenTimeGoal(hours) },
+            onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
+            onUpdateOverlayEnabled = { viewModel.updateOverlayEnabled(it) },
+            onUpdatePetName = { viewModel.updatePetName(it) },
+            onUpdatePetType = { viewModel.updatePetType(it) },
+            onArchiveHabit = { viewModel.archiveHabit(it) },
+            onRestoreHabit = { viewModel.restoreHabit(it) },
+            onBuyAccessory = { viewModel.buyAccessory(it) },
+            onEquipAccessory = { viewModel.equipAccessory(it) },
+            onPetTheNudgie = { viewModel.petTheNudgie() },
+            onReplyToPet = { viewModel.replyToPet(it) }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1493,6 +1515,49 @@ fun ShopItemRow(
                     ) {
                         Text("${item.cost} 💎", fontFamily = VT323, fontSize = 16.sp, color = Color.Black)
                     }
+                }
+            }
+        }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PersonalityTestSwitcher(viewModel: NudgieViewModel, modifier: Modifier = Modifier) {
+    val uiState by viewModel.uiState.collectAsState()
+    val currentPersonality = uiState.petStats.personality
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier.padding(16.dp)) {
+        Text(text = "Testing: Debug Personality Switcher", style = MaterialTheme.typography.labelMedium)
+        Spacer(modifier = Modifier.height(4.dp))
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            TextField(
+                modifier = Modifier.menuAnchor(),
+                readOnly = true,
+                value = currentPersonality.name,
+                onValueChange = {},
+                label = { Text("Mascot Personality") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = ExposedDropdownMenuDefaults.textFieldColors()
+            )
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                PersonalityType.values().forEach { personality ->
+                    DropdownMenuItem(
+                        text = { Text(personality.name) },
+                        onClick = {
+                            viewModel.updatePersonality(personality)
+                            expanded = false
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
                 }
             }
         }

@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.play.services.location)
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
     // Room
     implementation(libs.androidx.room.runtime)

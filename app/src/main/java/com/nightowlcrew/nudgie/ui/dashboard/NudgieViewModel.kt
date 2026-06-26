@@ -26,6 +26,11 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import com.nightowlcrew.nudgie.data.PersonalityType
+import com.nightowlcrew.nudgie.data.GeminiService
+
+
+
 
 enum class AppTheme { DEFAULT, CYBERPUNK, STEAMPUNK, GOTH, RETRO_SPACE }
 enum class AppIconTheme { BLUE, FOX, AXOLOTL, DRAGON }
@@ -40,7 +45,8 @@ data class PetStats(
     val accessories: List<AccessoryItem> = emptyList(),
     val message: String? = null,
     val isAwaitingReply: Boolean = false,
-    val currentActivity: String = "IDLE"
+    val currentActivity: String = "IDLE",
+    val personality: PersonalityType = PersonalityType.SUPPORTIVE
 )
 
 data class DashboardUiState(
@@ -70,11 +76,16 @@ data class StatsUiState(
 
 class NudgieViewModel(
     private val repository: HabitRepository,
-    private val sharedPreferences: SharedPreferences
+    private val sharedPreferences: SharedPreferences,
+    private val geminiService: GeminiService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+    fun updatePersonality(newPersonality: PersonalityType) {
+        sharedPreferences.edit().putString("PET_PERSONALITY", newPersonality.name).apply()
+        _personality.value = newPersonality
+    }
 
     private val _petMessage = MutableStateFlow<String?>(null)
     private val _isAwaitingReply = MutableStateFlow(false)
@@ -82,7 +93,8 @@ class NudgieViewModel(
     private val _currentActivity = MutableStateFlow("IDLE")
 
     // --- Onboarding State ---
-    private val _isOnboardingCompleted = MutableStateFlow(sharedPreferences.getBoolean("is_onboarding_complete", false))
+    private val _isOnboardingCompleted =
+        MutableStateFlow(sharedPreferences.getBoolean("is_onboarding_complete", false))
     val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
 
     // --- Onboarding Finalization ---
@@ -197,8 +209,10 @@ class NudgieViewModel(
         }
     )
 
-    private val _overlayEnabled = MutableStateFlow(sharedPreferences.getBoolean("overlay_enabled", false))
-    private val _petName = MutableStateFlow(sharedPreferences.getString("pet_name", "Your Pet") ?: "Your Pet")
+    private val _overlayEnabled =
+        MutableStateFlow(sharedPreferences.getBoolean("overlay_enabled", false))
+    private val _petName =
+        MutableStateFlow(sharedPreferences.getString("pet_name", "Your Pet") ?: "Your Pet")
     private val _currentPetType = MutableStateFlow(
         try {
             PetType.valueOf(
@@ -220,27 +234,119 @@ class NudgieViewModel(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, AppIconTheme.BLUE)
 
     private val _happiness = MutableStateFlow(85)
+    private val _personality = MutableStateFlow(
+        try {
+            PersonalityType.valueOf(
+                sharedPreferences.getString("PET_PERSONALITY", PersonalityType.SUPPORTIVE.name) ?: PersonalityType.SUPPORTIVE.name
+            )
+        } catch (_: Exception) {
+            PersonalityType.SUPPORTIVE
+        }
+    )
     private val _energy = MutableStateFlow(62)
     private val _petLevel = MutableStateFlow(1)
     private val _petXP = MutableStateFlow(0)
     private val _currency = MutableStateFlow(sharedPreferences.getInt("pet_currency", 250))
 
-    private val _profileUserName = MutableStateFlow(sharedPreferences.getString("profile_user_name", "Alex") ?: "Alex")
-    private val _profileBio = MutableStateFlow(sharedPreferences.getString("profile_bio", "Cozy Nudger") ?: "Cozy Nudger")
-    private val _profileJoinDate = MutableStateFlow(sharedPreferences.getString("profile_join_date", "October 2023") ?: "October 2023")
-    private val _profileAvatarRes = MutableStateFlow(sharedPreferences.getInt("profile_avatar_res", com.nightowlcrew.nudgie.R.drawable.nudgie))
+    private val _profileUserName =
+        MutableStateFlow(sharedPreferences.getString("profile_user_name", "Alex") ?: "Alex")
+    private val _profileBio =
+        MutableStateFlow(sharedPreferences.getString("profile_bio", "Cozy Nudger") ?: "Cozy Nudger")
+    private val _profileJoinDate = MutableStateFlow(
+        sharedPreferences.getString("profile_join_date", "October 2023") ?: "October 2023"
+    )
+    private val _profileAvatarRes = MutableStateFlow(
+        sharedPreferences.getInt(
+            "profile_avatar_res",
+            com.nightowlcrew.nudgie.R.drawable.nudgie
+        )
+    )
 
     private val _accessories = MutableStateFlow(
         listOf(
-            AccessoryItem("pink_hat", "Pink Hat", 60, com.nightowlcrew.nudgie.R.drawable.zustomize, com.nightowlcrew.nudgie.R.drawable.zustomize, AccessoryCategory.HAT, "A stylish neon pink cap."),
-            AccessoryItem("cool_shades", "Cool Shades", 100, com.nightowlcrew.nudgie.R.drawable.feed, com.nightowlcrew.nudgie.R.drawable.feed, AccessoryCategory.GLASSES, "Dark UV protection for cool pets."),
-            AccessoryItem("space_suit", "Space Suit", 250, com.nightowlcrew.nudgie.R.drawable.play, com.nightowlcrew.nudgie.R.drawable.play, AccessoryCategory.OUTFIT, "Ready for zero gravity orbits."),
-            AccessoryItem("squeaky_bone", "Squeaky Bone", 75, com.nightowlcrew.nudgie.R.drawable.play, com.nightowlcrew.nudgie.R.drawable.play, AccessoryCategory.TOY, "Makes a loud squeak when chewed."),
-            AccessoryItem("yarn_ball", "Yarn Ball", 40, com.nightowlcrew.nudgie.R.drawable.zustomize, com.nightowlcrew.nudgie.R.drawable.zustomize, AccessoryCategory.TOY, "Perfect for rolling around the floor."),
-            AccessoryItem("mega_burger", "Mega Burger", 25, com.nightowlcrew.nudgie.R.drawable.feed, com.nightowlcrew.nudgie.R.drawable.feed, AccessoryCategory.FOOD, "Juicy pixel burger with extra cheese."),
-            AccessoryItem("crunchy_taco", "Crunchy Taco", 15, com.nightowlcrew.nudgie.R.drawable.feed, com.nightowlcrew.nudgie.R.drawable.feed, AccessoryCategory.FOOD, "Packed with spice and fresh ingredients."),
-            AccessoryItem("energy_booster", "Energy Booster", 120, com.nightowlcrew.nudgie.R.drawable.play, com.nightowlcrew.nudgie.R.drawable.play, AccessoryCategory.STAT_BOOST, "Instantly restores +50 Energy.", statEffect = "ENERGY+50"),
-            AccessoryItem("happiness_elixir", "Happiness Elixir", 150, com.nightowlcrew.nudgie.R.drawable.play, com.nightowlcrew.nudgie.R.drawable.play, AccessoryCategory.STAT_BOOST, "Instantly restores +40 Happiness.", statEffect = "HAPPINESS+40")
+            AccessoryItem(
+                "pink_hat",
+                "Pink Hat",
+                60,
+                com.nightowlcrew.nudgie.R.drawable.zustomize,
+                com.nightowlcrew.nudgie.R.drawable.zustomize,
+                AccessoryCategory.HAT,
+                "A stylish neon pink cap."
+            ),
+            AccessoryItem(
+                "cool_shades",
+                "Cool Shades",
+                100,
+                com.nightowlcrew.nudgie.R.drawable.feed,
+                com.nightowlcrew.nudgie.R.drawable.feed,
+                AccessoryCategory.GLASSES,
+                "Dark UV protection for cool pets."
+            ),
+            AccessoryItem(
+                "space_suit",
+                "Space Suit",
+                250,
+                com.nightowlcrew.nudgie.R.drawable.play,
+                com.nightowlcrew.nudgie.R.drawable.play,
+                AccessoryCategory.OUTFIT,
+                "Ready for zero gravity orbits."
+            ),
+            AccessoryItem(
+                "squeaky_bone",
+                "Squeaky Bone",
+                75,
+                com.nightowlcrew.nudgie.R.drawable.play,
+                com.nightowlcrew.nudgie.R.drawable.play,
+                AccessoryCategory.TOY,
+                "Makes a loud squeak when chewed."
+            ),
+            AccessoryItem(
+                "yarn_ball",
+                "Yarn Ball",
+                40,
+                com.nightowlcrew.nudgie.R.drawable.zustomize,
+                com.nightowlcrew.nudgie.R.drawable.zustomize,
+                AccessoryCategory.TOY,
+                "Perfect for rolling around the floor."
+            ),
+            AccessoryItem(
+                "mega_burger",
+                "Mega Burger",
+                25,
+                com.nightowlcrew.nudgie.R.drawable.feed,
+                com.nightowlcrew.nudgie.R.drawable.feed,
+                AccessoryCategory.FOOD,
+                "Juicy pixel burger with extra cheese."
+            ),
+            AccessoryItem(
+                "crunchy_taco",
+                "Crunchy Taco",
+                15,
+                com.nightowlcrew.nudgie.R.drawable.feed,
+                com.nightowlcrew.nudgie.R.drawable.feed,
+                AccessoryCategory.FOOD,
+                "Packed with spice and fresh ingredients."
+            ),
+            AccessoryItem(
+                "energy_booster",
+                "Energy Booster",
+                120,
+                com.nightowlcrew.nudgie.R.drawable.play,
+                com.nightowlcrew.nudgie.R.drawable.play,
+                AccessoryCategory.STAT_BOOST,
+                "Instantly restores +50 Energy.",
+                statEffect = "ENERGY+50"
+            ),
+            AccessoryItem(
+                "happiness_elixir",
+                "Happiness Elixir",
+                150,
+                com.nightowlcrew.nudgie.R.drawable.play,
+                com.nightowlcrew.nudgie.R.drawable.play,
+                AccessoryCategory.STAT_BOOST,
+                "Instantly restores +40 Happiness.",
+                statEffect = "HAPPINESS+40"
+            )
         )
     )
 
@@ -248,45 +354,35 @@ class NudgieViewModel(
         viewModelScope.launch {
             prepopulateDefaultHabits()
 
-            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            val greeting = when (hour) {
-                in 5..11 -> PetDialogBank.morningGreetings.random()
-                in 12..17 -> PetDialogBank.afternoonGreetings.random()
-                in 18..21 -> PetDialogBank.eveningGreetings.random()
-                else -> PetDialogBank.lateNightGreetings.random()
-            }
-            showMessage(greeting, 6000L, isInteractive = false)
+            //  INITIAL GREETING
+            try {
 
+                val currentStats = _uiState.value.petStats
+
+                val aiGreeting = generateContextualMessage(currentStats, emptyList())
+
+                showMessage(aiGreeting, durationMillis = 6000L, isInteractive = false)
+            } catch (e: Exception) {
+                // Fallback just in case the AI fails or there is no internet
+                showMessage("Hello!", durationMillis = 6000L, isInteractive = false)
+            }
+
+            //  IDLE LOOP
             launch {
                 delay(15000L)
                 while (true) {
-                    delay(30000L)
+                    delay(30000L) // Wait 30 seconds
+
+
                     if (_petMessage.value == null) {
-                        val happiness = _happiness.value
-                        val energy = _energy.value
+                        try {
+                            val currentStats = _uiState.value.petStats
 
-                        val messageType = when {
-                            happiness < 50 -> "Sad"
-                            energy < 40 -> "Tired"
-                            (1..10).random() > 7 -> "Question"
-                            else -> "Thought"
-                        }
+                            val aiMessage = generateContextualMessage(currentStats, emptyList())
 
-                        when (messageType) {
-                            "Sad" -> showMessage(PetDialogBank.sadThoughts.random(), isInteractive = false)
-                            "Tired" -> showMessage(PetDialogBank.tiredThoughts.random(), isInteractive = false)
-                            "Question" -> showMessage(PetDialogBank.questions.random(), isInteractive = true)
-                            else -> {
-                                val activeToy = _accessories.value.firstOrNull { it.isEquipped && it.category == AccessoryCategory.TOY }
-                                val isWearingSpaceSuit = _accessories.value.any { it.isEquipped && it.id == "space_suit" }
-
-                                val contextAwareMessage = when {
-                                    activeToy != null -> "I'm having so much fun chasing this ${activeToy.name}! 🎾"
-                                    isWearingSpaceSuit -> "I feel like a real astronaut in this suit! Shall we explore the galaxy? 🚀"
-                                    else -> PetDialogBank.idleThoughts.random()
-                                }
-                                showMessage(contextAwareMessage, 5000L, isInteractive = false)
-                            }
+                            showMessage(aiMessage, durationMillis = 6000L, isInteractive = false)
+                        } catch (e: Exception) {
+                            // If the AI fails in the background, we just stay quiet
                         }
                     }
                 }
@@ -299,13 +395,27 @@ class NudgieViewModel(
                 _petXP.update { totalXp % 800 }
             }.launchIn(viewModelScope)
 
+            // 1. Group the first three to keep the compiler happy
+            val baseStatsFlow = combine(_petName, _happiness, _energy) { n, h, e ->
+                Triple(n, h, e)
+            }
+
+            // 2. Add _personality into the updated petStatsFlow
             val petStatsFlow = combine(
-                _petName,
-                _happiness,
-                _energy,
+                baseStatsFlow,
                 _petLevel,
-                _petXP
-            ) { name, h, e, l, xp -> PetStats(name, l, xp, h, e) }
+                _petXP,
+                _personality
+            ) { (name, h, e), l, xp, personality ->
+                PetStats(
+                    name = name,
+                    level = l,
+                    xp = xp,
+                    happiness = h,
+                    energy = e,
+                    personality = personality // <-- This saves it!
+                )
+            }
 
             val extendedPetStatsFlow = combine(
                 petStatsFlow,
@@ -322,13 +432,23 @@ class NudgieViewModel(
                 )
             }
 
-            val profileStateFlow = combine(_profileUserName, _profileBio, _profileJoinDate, _profileAvatarRes) { name, bio, date, avatar ->
+            val profileStateFlow = combine(
+                _profileUserName,
+                _profileBio,
+                _profileJoinDate,
+                _profileAvatarRes
+            ) { name, bio, date, avatar ->
                 Triple(name, bio, Pair(date, avatar))
             }
 
             combine(
                 repository.getAllHabitsWithLogs(),
-                repository.getScreenTimeForDate(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())),
+                repository.getScreenTimeForDate(
+                    SimpleDateFormat(
+                        "yyyy-MM-dd",
+                        Locale.getDefault()
+                    ).format(Date())
+                ),
                 extendedPetStatsFlow,
                 profileStateFlow,
                 repository.getAllLogs(),
@@ -339,7 +459,8 @@ class NudgieViewModel(
                 @Suppress("UNCHECKED_CAST") val activities = flows[0] as List<ActivityItem>
                 val screenTime = flows[1] as ScreenTimeRecord?
                 val petStats = flows[2] as PetStats
-                @Suppress("UNCHECKED_CAST") val profile = flows[3] as Triple<String, String, Pair<String, Int>>
+                @Suppress("UNCHECKED_CAST") val profile =
+                    flows[3] as Triple<String, String, Pair<String, Int>>
                 @Suppress("UNCHECKED_CAST") val allLogs = flows[4] as List<HabitLogEntity>
                 val theme = flows[5] as AppTheme
                 val petType = flows[6] as PetType
@@ -373,7 +494,11 @@ class NudgieViewModel(
         }
     }
 
-    private fun showMessage(message: String, durationMillis: Long = 4000L, isInteractive: Boolean = false) {
+    private fun showMessage(
+        message: String,
+        durationMillis: Long = 4000L,
+        isInteractive: Boolean = false
+    ) {
         messageJob?.cancel()
         _petMessage.value = message
         _isAwaitingReply.value = isInteractive
@@ -441,7 +566,9 @@ class NudgieViewModel(
             _accessories.update { currentAccessories ->
                 currentAccessories.map { item ->
                     if (item.category == accessory.category) {
-                        if (item.id == accessory.id) item.copy(isEquipped = !item.isEquipped) else item.copy(isEquipped = false)
+                        if (item.id == accessory.id) item.copy(isEquipped = !item.isEquipped) else item.copy(
+                            isEquipped = false
+                        )
                     } else item
                 }
             }
@@ -488,7 +615,13 @@ class NudgieViewModel(
 
                         if (finalTitle !in existingTitles) {
                             repository.insertHabit(
-                                HabitEntity(title = finalTitle, icon = icon, category = category.name, targetFrequencyPerDay = template.defaultFrequency, isStock = true)
+                                HabitEntity(
+                                    title = finalTitle,
+                                    icon = icon,
+                                    category = category.name,
+                                    targetFrequencyPerDay = template.defaultFrequency,
+                                    isStock = true
+                                )
                             )
                         }
                     }
@@ -504,22 +637,51 @@ class NudgieViewModel(
             val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(now)
             val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now)
             val isCompleting = !activityItem.isCompleted
-            repository.insertLog(HabitLogEntity(habitId = activityItem.id, completedAtTime = currentTime, date = todayDate, isCompleted = isCompleting))
+            repository.insertLog(
+                HabitLogEntity(
+                    habitId = activityItem.id,
+                    completedAtTime = currentTime,
+                    date = todayDate,
+                    isCompleted = isCompleting
+                )
+            )
             if (isCompleting) completeHabit() else missedHabit()
         }
     }
 
-    fun addNewHabit(title: String, category: String, frequency: Int, isStock: Boolean = false, markAsCompleted: Boolean = false) {
+    fun addNewHabit(
+        title: String,
+        category: String,
+        frequency: Int,
+        isStock: Boolean = false,
+        markAsCompleted: Boolean = false
+    ) {
         viewModelScope.launch {
             val now = Date()
             val matchResult = Regex("^(\\p{So}|\\p{Sk})\\s+(.*)$").find(title)
             val (icon, finalTitle) = if (matchResult != null) matchResult.groupValues[1] to matchResult.groupValues[2] else "📌" to title
 
-            val habit = HabitEntity(title = finalTitle, icon = icon, category = category, targetFrequencyPerDay = frequency, isStock = isStock)
+            val habit = HabitEntity(
+                title = finalTitle,
+                icon = icon,
+                category = category,
+                targetFrequencyPerDay = frequency,
+                isStock = isStock
+            )
             repository.insertHabit(habit)
 
             if (markAsCompleted) {
-                repository.insertLog(HabitLogEntity(habitId = habit.id, completedAtTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(now), date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now), isCompleted = true))
+                repository.insertLog(
+                    HabitLogEntity(
+                        habitId = habit.id,
+                        completedAtTime = SimpleDateFormat(
+                            "HH:mm",
+                            Locale.getDefault()
+                        ).format(now),
+                        date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now),
+                        isCompleted = true
+                    )
+                )
                 completeHabit()
             }
         }
@@ -527,7 +689,15 @@ class NudgieViewModel(
 
     fun deleteHabit(id: String) {
         viewModelScope.launch {
-            repository.deleteHabit(HabitEntity(id = id, title = "", icon = "", category = "", targetFrequencyPerDay = 0))
+            repository.deleteHabit(
+                HabitEntity(
+                    id = id,
+                    title = "",
+                    icon = "",
+                    category = "",
+                    targetFrequencyPerDay = 0
+                )
+            )
         }
     }
 
@@ -548,7 +718,11 @@ class NudgieViewModel(
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val limitMillis = newGoalHours.toLong() * 3600000L
             repository.insertOrUpdateScreenTime(
-                ScreenTimeRecord(date = today, targetLimitMillis = limitMillis, actualDurationMillis = _uiState.value.currentScreenTimeMillis)
+                ScreenTimeRecord(
+                    date = today,
+                    targetLimitMillis = limitMillis,
+                    actualDurationMillis = _uiState.value.currentScreenTimeMillis
+                )
             )
         }
     }
@@ -568,16 +742,32 @@ class NudgieViewModel(
             newCurrency
         }
 
-        val praisePhrases = listOf(
-            "Great job! 🌟",
-            "Way to go! 🚀",
-            "Keep it up! 🔥",
-            "XP get! 💎",
-            "You're crushing it today! ⚡",
-            "Task complete! Proud of you. 😎",
-            "Boom! Another one bites the dust. 💥"
-        )
-        showMessage(praisePhrases.random())
+        viewModelScope.launch {
+            try {
+                // Let the AI know we just crushed a habit!
+                val currentStats = _uiState.value.petStats.copy(currentActivity = "JUST_COMPLETED_HABIT")
+                val aiPraise = generateContextualMessage(currentStats, emptyList())
+                showMessage(aiPraise, 4000L)
+            } catch (e: Exception) {
+                showMessage("Great job! 🌟", 4000L)
+            }
+
+            // Level up logic
+            val currentXp = _petXP.value
+            if (currentXp + 15 >= 800) {
+                _petLevel.value += 1
+                _petXP.value -= 800
+
+                try {
+                    val levelStats = _uiState.value.petStats.copy(currentActivity = "JUST_LEVELED_UP")
+                    val aiLevelUp = generateContextualMessage(levelStats, emptyList())
+                    showMessage(aiLevelUp, 6000L)
+                } catch (e: Exception) {
+                    showMessage("Level UP! 🌟 Look at my stats now!", 6000L)
+                }
+            }
+        }
+
 
         viewModelScope.launch {
             val currentXp = _petXP.value
@@ -599,38 +789,105 @@ class NudgieViewModel(
             _happiness.update { it + 1 }
         }
 
-        val petPhrases = listOf(
-            "Purrrrr...",
-            "Happy!",
-            "❤️",
-            "Yay!",
-            "Hehehe that tickles! 🤭",
-            "Aha! Keep the pats coming. 🥰",
-            "Mutually assured happiness! ✨",
-            "You're my favorite human. 🥺"
-        )
-        showMessage(petPhrases.random(), 2000L)
+        viewModelScope.launch {
+            try {
+                // Temporarily flag the activity so the AI knows it is actively being pet
+                val currentStats = _uiState.value.petStats.copy(currentActivity = "GETTING_PET")
+                val aiMessage = generateContextualMessage(currentStats, emptyList())
+                showMessage(aiMessage, 3000L)
+            } catch (e: Exception) {
+                // Fallback just in case
+                showMessage("Purrrrr...", 2000L)
+            }
+        }
     }
 
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]) as NudgieApplication
-                return NudgieViewModel(HabitRepositoryImpl(application.database.habitDao(), application.database.screenTimeDao()), application.getSharedPreferences("nudgie_prefs", Context.MODE_PRIVATE)) as T
+                val application =
+                    checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]) as NudgieApplication
+                return NudgieViewModel(
+                    HabitRepositoryImpl(
+                        application.database.habitDao(),
+                        application.database.screenTimeDao()
+                    ),
+                    application.getSharedPreferences("nudgie_prefs", Context.MODE_PRIVATE),
+                    GeminiService()
+                ) as T
             }
         }
     }
-}
 
-// --- PET DIALOGUE BANK ---
-object PetDialogBank {
-    val morningGreetings = listOf("Good morning! ☀️ Ready to conquer the day?", "Morning! Did you sleep well? 🛌", "Rise and shine! Let's get some tasks done! ☕", "Early bird gets the XP! 🦅", "A fresh start! What's first on the list? 🌱")
-    val afternoonGreetings = listOf("Good afternoon! 🌤️ Halfway through the day!", "Afternoon check-in! Don't forget to stretch. 🧘", "Lunch break? Or task-crushing time? 🥪", "Hope your day is going great so far! ✨")
-    val eveningGreetings = listOf("Good evening! 🌙 Time to wind down soon.", "Evening! Let's review what we finished today. 📝", "Great job surviving the day! Ready to relax? 🛋️", "Sunset vibes. Let's finish strong! 🌆")
-    val lateNightGreetings = listOf("You're up late! 🦉 Rest is a habit too, you know.", "Night owl mode activated! 🌙", "Past midnight... go to sleep soon! 💤", "Still grinding? Don't forget to rest your eyes. 👀")
-    val sadThoughts = listOf("I'm feeling a bit lonely... let's complete a task! 💔", "Could we do something fun? I'm sad. 🌧️", "A completed habit would really cheer me up! 🥺")
-    val tiredThoughts = listOf("Yawn... running low on energy. Time for a break? 🔋", "My battery is running on fumes... 🪫", "So... sleepy... 🥱")
-    val questions = listOf("How is your day going so far? 🌟", "What is our main goal for today? 🎯", "Are you remembering to drink water? 💧", "What's the best thing that happened today? ✨", "Are you feeling productive right now? 📈")
-    val idleThoughts = listOf("Just hanging out... 🦠", "You're doing great! ✨", "I wonder what level 20 looks like... 🤔", "Nudgie loves you! ❤️", "A clean to-do list is a happy to-do list! 📋", "My pixels are tingling! ⚡")
+    suspend fun generateContextualMessage(
+        stats: PetStats,
+        recentHabits: List<ActivityItem>
+    ): String {
+
+        val prompt = """
+        You are Nudgie, a cute goo-monster mascot.
+        Adopt this personality: ${stats.personality.traits}
+        Current activity: ${stats.currentActivity}
+        Recent habit:${'$'}{recentHabits.lastOrNull()?.habitName ?: "none"}
+        
+        Give a short, friendly response (under 15 words).
+    """.trimIndent()
+
+        return geminiService.generateResponse(prompt)
+    }
+
+    // --- PET DIALOGUE BANK ---
+    object PetDialogBank {
+        val morningGreetings = listOf(
+            "Good morning! ☀️ Ready to conquer the day?",
+            "Morning! Did you sleep well? 🛌",
+            "Rise and shine! Let's get some tasks done! ☕",
+            "Early bird gets the XP! 🦅",
+            "A fresh start! What's first on the list? 🌱"
+        )
+        val afternoonGreetings = listOf(
+            "Good afternoon! 🌤️ Halfway through the day!",
+            "Afternoon check-in! Don't forget to stretch. 🧘",
+            "Lunch break? Or task-crushing time? 🥪",
+            "Hope your day is going great so far! ✨"
+        )
+        val eveningGreetings = listOf(
+            "Good evening! 🌙 Time to wind down soon.",
+            "Evening! Let's review what we finished today. 📝",
+            "Great job surviving the day! Ready to relax? 🛋️",
+            "Sunset vibes. Let's finish strong! 🌆"
+        )
+        val lateNightGreetings = listOf(
+            "You're up late! 🦉 Rest is a habit too, you know.",
+            "Night owl mode activated! 🌙",
+            "Past midnight... go to sleep soon! 💤",
+            "Still grinding? Don't forget to rest your eyes. 👀"
+        )
+        val sadThoughts = listOf(
+            "I'm feeling a bit lonely... let's complete a task! 💔",
+            "Could we do something fun? I'm sad. 🌧️",
+            "A completed habit would really cheer me up! 🥺"
+        )
+        val tiredThoughts = listOf(
+            "Yawn... running low on energy. Time for a break? 🔋",
+            "My battery is running on fumes... 🪫",
+            "So... sleepy... 🥱"
+        )
+        val questions = listOf(
+            "How is your day going so far? 🌟",
+            "What is our main goal for today? 🎯",
+            "Are you remembering to drink water? 💧",
+            "What's the best thing that happened today? ✨",
+            "Are you feeling productive right now? 📈"
+        )
+        val idleThoughts = listOf(
+            "Just hanging out... 🦠",
+            "You're doing great! ✨",
+            "I wonder what level 20 looks like... 🤔",
+            "Nudgie loves you! ❤️",
+            "A clean to-do list is a happy to-do list! 📋",
+            "My pixels are tingling! ⚡"
+        )
+    }
 }
