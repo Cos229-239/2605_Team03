@@ -1053,7 +1053,7 @@ fun PetFrame(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .offset(y = (-40).dp),
+                .offset(y = ( 70).dp),
             verticalAlignment = Alignment.Bottom
         ) {
             Spacer(Modifier.weight(1f))
@@ -1344,12 +1344,12 @@ fun DressedUpPet(basePetRes: Int, equippedAccessories: List<AccessoryItem>, modi
                 "Space Ball" -> Modifier.size(40.dp).align(Alignment.BottomEnd).offset(x = (-10).dp, y = (-10).dp)
                 "Bowl" -> Modifier.size(40.dp).align(Alignment.BottomStart).offset(x = 10.dp, y = (-10).dp)
                 else -> Modifier.fillMaxSize()
-            }
-            Image(
-                painter = painterResource(id = accessory.assetResId),
-                contentDescription = accessory.name,
-                modifier = accessoryModifier,
-                contentScale = ContentScale.Fit
+                }
+                Image(
+                    painter = painterResource(id = accessory.assetResId),
+                    contentDescription = accessory.name,
+                    modifier = accessoryModifier,
+                    contentScale = ContentScale.Fit
             )
         }
     }
