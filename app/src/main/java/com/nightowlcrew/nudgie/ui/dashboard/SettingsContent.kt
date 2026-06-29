@@ -71,6 +71,8 @@ fun SettingsScreen(
         isAnonymous = uiState.isAnonymous,
         onUpdateTheme = { theme -> viewModel.updateTheme(theme) },
         onUpdateOverlayEnabled = { viewModel.updateOverlayEnabled(it) },
+        onSignOut = { viewModel.signOut() },
+        onLinkWithEmail = { email, pass -> viewModel.linkWithEmail(email, pass) }
     )
 }
 
@@ -81,9 +83,12 @@ fun SettingsContent(
     isAnonymous: Boolean,
     onUpdateTheme: (AppTheme) -> Unit,
     onUpdateOverlayEnabled: (Boolean) -> Unit,
+    onSignOut: () -> Unit,
+    onLinkWithEmail: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isThemeDropdownExpanded by rememberSaveable { mutableStateOf(false) }
+    var showEmailDialog by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -100,7 +105,11 @@ fun SettingsContent(
             fontWeight = FontWeight.Bold
         )
 
-        AccountSettingsCard(isAnonymous = isAnonymous)
+        AccountSettingsCard(
+            isAnonymous = isAnonymous,
+            onSignOut = onSignOut,
+            onEmailLinkClick = { showEmailDialog = true }
+        )
 
         ThemeSelectionCard(
             currentTheme = currentTheme,
@@ -115,11 +124,66 @@ fun SettingsContent(
             currentTheme = currentTheme
         )
     }
+
+    if (showEmailDialog) {
+        EmailLinkDialog(
+            onDismiss = { showEmailDialog = false },
+            onLink = { email, pass ->
+                onLinkWithEmail(email, pass)
+                showEmailDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun EmailLinkDialog(
+    onDismiss: () -> Unit,
+    onLink: (String, String) -> Unit
+) {
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Link Email Account", fontFamily = PressStart2P, style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onLink(email, password) }) {
+                Text("LINK")
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text("CANCEL")
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AccountSettingsCard(isAnonymous: Boolean) {
+fun AccountSettingsCard(
+    isAnonymous: Boolean,
+    onSignOut: () -> Unit,
+    onEmailLinkClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = NavySurface),
@@ -148,14 +212,33 @@ fun AccountSettingsCard(isAnonymous: Boolean) {
                 style = MaterialTheme.typography.bodySmall,
                 color = LavenderText
             )
+            
             if (isAnonymous) {
                 androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { /* TODO: Trigger Google Linking */ },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = SpaceAccent)
+                    ) {
+                        Text("LINK WITH GOOGLE", style = MaterialTheme.typography.labelLarge.copy(fontFamily = PressStart2P))
+                    }
+                    Button(
+                        onClick = onEmailLinkClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = SpaceAccent)
+                    ) {
+                        Text("LINK WITH EMAIL", style = MaterialTheme.typography.labelLarge.copy(fontFamily = PressStart2P))
+                    }
+                }
+            } else {
+                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = { /* TODO: Trigger Google/Email Linking */ },
+                    onClick = onSignOut,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = SpaceAccent)
+                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.DarkGray)
                 ) {
-                    Text("LINK ACCOUNT", style = MaterialTheme.typography.labelLarge.copy(fontFamily = PressStart2P))
+                    Text("SIGN OUT", style = MaterialTheme.typography.labelLarge.copy(fontFamily = PressStart2P))
                 }
             }
         }
@@ -272,7 +355,9 @@ fun SettingsContentPreview() {
                 overlayEnabled = false,
                 isAnonymous = true,
                 onUpdateTheme = { },
-                onUpdateOverlayEnabled = { }
+                onUpdateOverlayEnabled = { },
+                onSignOut = { },
+                onLinkWithEmail = { _, _ -> }
             )
         }
     }

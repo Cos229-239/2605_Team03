@@ -621,6 +621,22 @@ class NudgieViewModel(
         sharedPreferences.edit { putString("profile_user_name", newName) }
     }
 
+    fun signOut() {
+        authRepository.signOut()
+    }
+
+    fun linkWithEmail(email: String, password: String) {
+        viewModelScope.launch {
+            try {
+                val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, password)
+                authRepository.linkAccount(credential)
+                showMessage("Account linked successfully! 🎉", 3000L)
+            } catch (e: Exception) {
+                showMessage("Failed to link account: ${e.localizedMessage}", 4000L)
+            }
+        }
+    }
+
     private fun prepopulateDefaultHabits() {
         val alreadyAdded = sharedPreferences.getBoolean("default_habits_v12_added", false)
         if (!alreadyAdded) {

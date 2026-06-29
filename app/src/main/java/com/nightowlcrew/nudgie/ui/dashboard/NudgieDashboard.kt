@@ -245,7 +245,9 @@ fun NudgieDashboard(viewModel: NudgieViewModel = viewModel(factory = NudgieViewM
             onBuyAccessory = { viewModel.buyAccessory(it) },
             onEquipAccessory = { viewModel.equipAccessory(it) },
             onPetTheNudgie = { viewModel.petTheNudgie() },
-            onReplyToPet = { viewModel.replyToPet(it) }
+            onReplyToPet = { viewModel.replyToPet(it) },
+            onSignOut = { viewModel.signOut() },
+            onLinkWithEmail = { email, password -> viewModel.linkWithEmail(email, password) }
         )
     }
 }
@@ -271,6 +273,8 @@ fun NudgieDashboardContent(
     onEquipAccessory: (AccessoryItem) -> Unit,
     onPetTheNudgie: () -> Unit,
     onReplyToPet: (String) -> Unit,
+    onSignOut: () -> Unit,
+    onLinkWithEmail: (String, String) -> Unit,
     startDestination: String = Screen.Splash.route
 ) {
     val navController = rememberNavController()
@@ -418,7 +422,9 @@ fun NudgieDashboardContent(
                     overlayEnabled = uiState.overlayEnabled,
                     isAnonymous = uiState.isAnonymous,
                     onUpdateTheme = onUpdateTheme,
-                    onUpdateOverlayEnabled = onUpdateOverlayEnabled
+                    onUpdateOverlayEnabled = onUpdateOverlayEnabled,
+                    onSignOut = onSignOut,
+                    onLinkWithEmail = onLinkWithEmail
                 )
             }
         }
@@ -1311,8 +1317,10 @@ fun NudgieDashboardPreview() {
             onBuyAccessory = {},
             onEquipAccessory = {},
             onPetTheNudgie = {},
-            startDestination = Screen.Home.route,
-            onReplyToPet = {}
+            onReplyToPet = {},
+            onSignOut = {},
+            onLinkWithEmail = { _, _ -> },
+            startDestination = Screen.Home.route
         )
     }
 }
