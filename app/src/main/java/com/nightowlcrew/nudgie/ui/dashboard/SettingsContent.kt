@@ -162,6 +162,7 @@ fun AccountSettingsCard(isAnonymous: Boolean) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSelectionCard(
     currentTheme: AppTheme,

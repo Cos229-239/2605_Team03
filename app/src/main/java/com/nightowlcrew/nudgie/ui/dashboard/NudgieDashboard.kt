@@ -394,6 +394,7 @@ fun NudgieDashboardContent(
                 SettingsContent(
                     currentTheme = uiState.currentTheme,
                     overlayEnabled = uiState.overlayEnabled,
+                    isAnonymous = uiState.isAnonymous,
                     onUpdateTheme = onUpdateTheme,
                     onUpdateOverlayEnabled = onUpdateOverlayEnabled
                 )
