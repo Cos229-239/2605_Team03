@@ -1,152 +1,42 @@
 ###############################################################################
-#
-# .gitignore
-#
-# AUTHOR: Patrick J. Kelly
-# DATE: May 2026
-#
-# PURPOSE:
-# This file tells Git what NOT to upload to GitHub.
-#
-# CORE RULE:
-# If YOU did not type it yourself, it probably does not belong in Git.
-#
-# IMPORTANT ABOUT ORDER (READ THIS):
-# - Git reads this file TOP → BOTTOM
-# - If a file is ignored early, it STAYS ignored
-# - UNLESS a later rule uses "!" to override it
-#
-# → ALL EXCEPTIONS MUST BE AT THE BOTTOM OF THIS FILE
-#
-# If something is not committing when it should:
-# - It is being ignored above
-# - You must explicitly UN-IGNORE it at the bottom
-#
+# CORE RULE: Ignore everything except the app and Documents folders
 ###############################################################################
 
+/*
+!/app/
+!/Documents/
+!/.gitignore
+!/README.md
+!/index.html
+!/roster-v2-sample.json
 
-###############################################################################
-# ENVIRONMENT FILES (STRICT)
-#
-# These often contain:
-# - API keys
-# - passwords
-# - local machine config
-#
-# RULE:
-# NEVER commit real environment files
-#
-# NOTE:
-# We intentionally DO NOT use ".env.*"
-# because it incorrectly ignores files like:
-#   .xcode.env
-###############################################################################
+# Keep essential build files (Recommended for project builds)
+!/build.gradle.kts
+!/settings.gradle.kts
+!/gradle.properties
+!/gradlew
+!/gradlew.bat
+!/gradle/
 
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-
-###############################################################################
-# OS / EDITOR JUNK
-#
-# Shared by: macOS, Windows, VS Code, Visual Studio, JetBrains
-###############################################################################
-
-.DS_Store
-Thumbs.db
-desktop.ini
-
-.vs/
-.vscode/
+# Specific ignores for Android/IDE
 .idea/
-*.iml
-
-
-###############################################################################
-# LOGS / TEMP / BACKUPS
-#
-# Shared by: OS, editors, package managers, build tools
-###############################################################################
-
-*.log
-*.tmp
-*.temp
-*.swp
-*.swo
-*.bak
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-
-###############################################################################
-# DEPENDENCIES / PACKAGE MANAGERS
-#
-# Shared by: Node, Ruby, iOS
-###############################################################################
-
-node_modules/
-ios/Pods/
-
-.bundle/
-vendor/bundle/
-
-
-###############################################################################
-# BUILD OUTPUT / GENERATED FILES
-#
-# Shared by: JS frameworks, Android, iOS, TypeScript
-###############################################################################
-
-dist/
-build/
-out/
-
-.next/
-coverage/
-.expo/
-.expo-shared/
-.turbo/
-.cache/
-.parcel-cache/
-.sass-cache/
-*.tsbuildinfo
-
 .gradle/
-.externalNativeBuild/
-.cxx/
-DerivedData/
-
-
-###############################################################################
-# PYTHON GENERATED FILES
-###############################################################################
-
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-
-.venv/
-venv/
-ENV/
-env/
-
-pip-wheel-metadata/
-.pytest_cache/
-.mypy_cache/
-
-
-###############################################################################
-# ANDROID / JAVA LOCAL FILES
-###############################################################################
-
+build/
+*.iml
 local.properties
+.DS_Store
+captures/
+*.hprof
+.navigation/
+*.keystore
+*.jks
+
+# Android C++ / NDK build artifacts
+.cxx/
+.externalNativeBuild/
+
+# Presentation script
+Presentation_Script.md
 
 *.apk
 *.aab
@@ -170,6 +60,7 @@ xcuserdata/
 ###############################################################################
 
 google-services.json
+secrets.properties
 serviceAccountKey.json
 firebase-adminsdk*.json
 firebase-debug.log
