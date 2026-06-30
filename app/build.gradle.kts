@@ -64,7 +64,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.play.services.location)
-    implementation(libs.firebase.vertexai)
+    implementation(libs.firebase.ai)
 
     // Room
     implementation(libs.androidx.room.runtime)
