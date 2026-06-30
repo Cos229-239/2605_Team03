@@ -42,6 +42,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -50,7 +51,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
-    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui)    
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
@@ -63,7 +64,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.play.services.location)
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+    implementation(libs.firebase.vertexai)
 
     // Room
     implementation(libs.androidx.room.runtime)
@@ -75,9 +76,9 @@ dependencies {
 
     // Firebase
     implementation(platform(libs.firebase.bom))
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.1")
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

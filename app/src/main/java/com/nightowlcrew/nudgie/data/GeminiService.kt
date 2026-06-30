@@ -1,12 +1,11 @@
 package com.nightowlcrew.nudgie.data
 
-import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.content
-import com.google.ai.client.generativeai.type.generationConfig
+import com.google.firebase.Firebase
+import com.google.firebase.vertexai.vertexAI
+import com.google.firebase.vertexai.type.content
+import com.google.firebase.vertexai.type.generationConfig
 
 class GeminiService {
-    private val apiKey = "YOUR_API_KEY_HERE"
-
 
     private val systemInstruction = content {
         text("""
@@ -18,10 +17,10 @@ class GeminiService {
         """.trimIndent())
     }
 
+    // Initialize using Firebase Vertex AI instead of the raw client
     private val generativeModel by lazy {
-        GenerativeModel(
+        Firebase.vertexAI.generativeModel(
             modelName = "gemini-1.5-flash",
-            apiKey = apiKey,
             systemInstruction = systemInstruction,
             generationConfig = generationConfig {
                 temperature = 0.7f
@@ -29,16 +28,14 @@ class GeminiService {
         )
     }
 
-
     private val chat = generativeModel.startChat()
 
     suspend fun generateResponse(prompt: String): String {
         return try {
-            // Send the prompt through the chat session instead of generateContent
             val response = chat.sendMessage(prompt)
             response.text ?: "..."
         } catch (e: Exception) {
-            android.util.Log.e("NUDGIE_AI_ERROR", "API call failed", e)
+            android.util.Log.e("NUDGIE_AI_ERROR", "Firebase Vertex API call failed", e)
             "I'm having trouble thinking: ${e.message}"
         }
     }

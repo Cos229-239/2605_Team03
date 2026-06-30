@@ -60,6 +60,7 @@ xcuserdata/
 ###############################################################################
 
 google-services.json
+secrets.properties
 serviceAccountKey.json
 firebase-adminsdk*.json
 firebase-debug.log

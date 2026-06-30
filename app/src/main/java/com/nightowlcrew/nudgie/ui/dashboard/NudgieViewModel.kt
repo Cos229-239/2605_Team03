@@ -29,6 +29,7 @@ import java.util.Date
 import java.util.Locale
 import com.nightowlcrew.nudgie.data.PersonalityType
 import com.nightowlcrew.nudgie.data.GeminiService
+import com.nightowlcrew.nudgie.data.UserSettingsRepository
 
 
 
@@ -81,14 +82,14 @@ data class StatsUiState(
 class NudgieViewModel(
     private val repository: HabitRepository,
     private val authRepository: AuthRepository,
-    private val sharedPreferences: SharedPreferences,
+    private val userSettingsRepository: UserSettingsRepository,
     private val geminiService: GeminiService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
     fun updatePersonality(newPersonality: PersonalityType) {
-        sharedPreferences.edit().putString("PET_PERSONALITY", newPersonality.name).apply()
+        userSettingsRepository.edit { putString("PET_PERSONALITY", newPersonality.name) }
         _personality.value = newPersonality
     }
 
@@ -99,10 +100,10 @@ class NudgieViewModel(
 
     // --- Onboarding State ---
     private val _isOnboardingCompleted =
-        MutableStateFlow(sharedPreferences.getBoolean("is_onboarding_complete", false))
+        MutableStateFlow(userSettingsRepository.getBoolean("is_onboarding_complete", false))
     val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
 
-    private val _isNudgieUnlocked = MutableStateFlow(sharedPreferences.getBoolean("is_nudgie_unlocked", false))
+    private val _isNudgieUnlocked = MutableStateFlow(userSettingsRepository.getBoolean("is_nudgie_unlocked", false))
 
     // --- Onboarding Finalization ---
     fun completeOnboarding(
@@ -126,14 +127,14 @@ class NudgieViewModel(
         }
 
         // Mark onboarding as complete
-        sharedPreferences.edit { 
+        userSettingsRepository.edit { 
             putBoolean("is_onboarding_complete", true)
             if (petType == PetType.NUDGIE) {
                 putBoolean("is_nudgie_unlocked", true)
             }
         }
         _isOnboardingCompleted.value = true
-        _isNudgieUnlocked.value = sharedPreferences.getBoolean("is_nudgie_unlocked", false)
+        _isNudgieUnlocked.value = userSettingsRepository.getBoolean("is_nudgie_unlocked", false)
     }
 
     val statsUiState: StateFlow<StatsUiState> = combine(
@@ -214,7 +215,7 @@ class NudgieViewModel(
     private val _currentTheme = MutableStateFlow(
         try {
             AppTheme.valueOf(
-                sharedPreferences.getString("app_theme", AppTheme.RETRO_SPACE.name)
+                userSettingsRepository.getString("app_theme", AppTheme.RETRO_SPACE.name)
                     ?: AppTheme.RETRO_SPACE.name
             )
         } catch (_: Exception) {
@@ -223,13 +224,13 @@ class NudgieViewModel(
     )
 
     private val _overlayEnabled =
-        MutableStateFlow(sharedPreferences.getBoolean("overlay_enabled", false))
+        MutableStateFlow(userSettingsRepository.getBoolean("overlay_enabled", false))
     private val _petName =
-        MutableStateFlow(sharedPreferences.getString("pet_name", "Your Pet") ?: "Your Pet")
+        MutableStateFlow(userSettingsRepository.getString("pet_name", "Your Pet") ?: "Your Pet")
     private val _currentPetType = MutableStateFlow(
         try {
             PetType.valueOf(
-                sharedPreferences.getString("pet_type", PetType.BLUE.name) ?: PetType.BLUE.name
+                userSettingsRepository.getString("pet_type", PetType.BLUE.name) ?: PetType.BLUE.name
             )
         } catch (_: Exception) {
             PetType.BLUE
@@ -250,7 +251,7 @@ class NudgieViewModel(
     private val _personality = MutableStateFlow(
         try {
             PersonalityType.valueOf(
-                sharedPreferences.getString("PET_PERSONALITY", PersonalityType.SUPPORTIVE.name) ?: PersonalityType.SUPPORTIVE.name
+                userSettingsRepository.getString("PET_PERSONALITY", PersonalityType.SUPPORTIVE.name) ?: PersonalityType.SUPPORTIVE.name
             )
         } catch (_: Exception) {
             PersonalityType.SUPPORTIVE
@@ -259,17 +260,17 @@ class NudgieViewModel(
     private val _energy = MutableStateFlow(62)
     private val _petLevel = MutableStateFlow(1)
     private val _petXP = MutableStateFlow(0)
-    private val _currency = MutableStateFlow(sharedPreferences.getInt("pet_currency", 250))
+    private val _currency = MutableStateFlow(userSettingsRepository.getInt("pet_currency", 250))
 
     private val _profileUserName =
-        MutableStateFlow(sharedPreferences.getString("profile_user_name", "Alex") ?: "Alex")
+        MutableStateFlow(userSettingsRepository.getString("profile_user_name", "Alex") ?: "Alex")
     private val _profileBio =
-        MutableStateFlow(sharedPreferences.getString("profile_bio", "Cozy Nudger") ?: "Cozy Nudger")
+        MutableStateFlow(userSettingsRepository.getString("profile_bio", "Cozy Nudger") ?: "Cozy Nudger")
     private val _profileJoinDate = MutableStateFlow(
-        sharedPreferences.getString("profile_join_date", "October 2023") ?: "October 2023"
+        userSettingsRepository.getString("profile_join_date", "October 2023") ?: "October 2023"
     )
     private val _profileAvatarRes = MutableStateFlow(
-        sharedPreferences.getInt(
+        userSettingsRepository.getInt(
             "profile_avatar_res",
             com.nightowlcrew.nudgie.R.drawable.nudgie
         )
@@ -550,7 +551,7 @@ class NudgieViewModel(
         _currency.update { currency ->
             if (currency >= accessory.cost && !accessory.isPurchased) {
                 val newCurrency = currency - accessory.cost
-                sharedPreferences.edit { putInt("pet_currency", newCurrency) }
+                userSettingsRepository.edit { putInt("pet_currency", newCurrency) }
 
                 if (accessory.category == AccessoryCategory.STAT_BOOST || accessory.category == AccessoryCategory.FOOD) {
                     applyStatEffect(accessory.statEffect)
@@ -598,27 +599,35 @@ class NudgieViewModel(
 
     fun updateTheme(theme: AppTheme) {
         _currentTheme.update { theme }
-        sharedPreferences.edit { putString("app_theme", theme.name) }
+        viewModelScope.launch {
+            userSettingsRepository.saveAppTheme(theme.name)
+        }
     }
 
     fun updateOverlayEnabled(enabled: Boolean) {
         _overlayEnabled.update { enabled }
-        sharedPreferences.edit { putBoolean("overlay_enabled", enabled) }
+        userSettingsRepository.edit { putBoolean("overlay_enabled", enabled) }
     }
 
     fun updatePetName(newName: String) {
         _petName.update { newName }
-        sharedPreferences.edit { putString("pet_name", newName) }
+        viewModelScope.launch {
+            userSettingsRepository.savePetName(newName)
+        }
     }
 
     fun updatePetType(newType: PetType) {
         _currentPetType.update { newType }
-        sharedPreferences.edit { putString("pet_type", newType.name) }
+        viewModelScope.launch {
+            userSettingsRepository.savePetType(newType.name)
+        }
     }
 
     fun updateProfileUserName(newName: String) {
         _profileUserName.update { newName }
-        sharedPreferences.edit { putString("profile_user_name", newName) }
+        viewModelScope.launch {
+            userSettingsRepository.saveProfileUserName(newName)
+        }
     }
 
     fun signOut() {
@@ -638,7 +647,7 @@ class NudgieViewModel(
     }
 
     private fun prepopulateDefaultHabits() {
-        val alreadyAdded = sharedPreferences.getBoolean("default_habits_v12_added", false)
+        val alreadyAdded = userSettingsRepository.getBoolean("default_habits_v12_added", false)
         if (!alreadyAdded) {
             viewModelScope.launch {
                 val existingHabits = repository.getAllHabits().first()
@@ -663,7 +672,7 @@ class NudgieViewModel(
                         }
                     }
                 }
-                sharedPreferences.edit { putBoolean("default_habits_v12_added", true) }
+                userSettingsRepository.edit { putBoolean("default_habits_v12_added", true) }
             }
         }
     }
@@ -775,7 +784,7 @@ class NudgieViewModel(
 
         _currency.update { currentCurrency ->
             val newCurrency = currentCurrency + 5
-            sharedPreferences.edit { putInt("pet_currency", newCurrency) }
+            userSettingsRepository.edit { putInt("pet_currency", newCurrency) }
             newCurrency
         }
 
@@ -829,10 +838,11 @@ class NudgieViewModel(
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]) as NudgieApplication
+                val sharedPrefs = application.getSharedPreferences("nudgie_prefs", Context.MODE_PRIVATE)
                 return NudgieViewModel(
                     repository = HabitRepositoryImpl(application.database.habitDao(), application.database.screenTimeDao()),
                     authRepository = AuthRepository(),
-                    sharedPreferences = application.getSharedPreferences("nudgie_prefs", Context.MODE_PRIVATE),
+                    userSettingsRepository = UserSettingsRepository(sharedPrefs),
                     geminiService = GeminiService()
                 ) as T
             }
