@@ -371,33 +371,39 @@ class NudgieViewModel(
 
             //  INITIAL GREETING
             try {
-
                 val currentStats = _uiState.value.petStats
-
                 val aiGreeting = generateContextualMessage(currentStats, emptyList())
-
-                showMessage(aiGreeting, durationMillis = 6000L, isInteractive = false)
+                val finalGreeting = if (aiGreeting.startsWith("I'm having trouble thinking")) {
+                    getRandomFallbackMessage()
+                } else {
+                    aiGreeting
+                }
+                showMessage(finalGreeting, durationMillis = 6000L, isInteractive = false)
             } catch (e: Exception) {
-                // Fallback just in case the AI fails or there is no internet
-                showMessage("Hello!", durationMillis = 6000L, isInteractive = false)
+                showMessage(getRandomFallbackMessage(), durationMillis = 6000L, isInteractive = false)
             }
 
             //  IDLE LOOP
             launch {
-                delay(15000L)
+                delay(10000L) // Wait 10 seconds after start
                 while (true) {
-                    delay(30000L) // Wait 30 seconds
-
+                    // Speak between 30 and 120 seconds
+                    val nextDelay = kotlin.random.Random.nextLong(30000L, 120000L)
+                    delay(nextDelay)
 
                     if (_petMessage.value == null) {
                         try {
                             val currentStats = _uiState.value.petStats
-
                             val aiMessage = generateContextualMessage(currentStats, emptyList())
-
-                            showMessage(aiMessage, durationMillis = 6000L, isInteractive = false)
+                            val finalMessage = if (aiMessage.startsWith("I'm having trouble thinking")) {
+                                getRandomFallbackMessage()
+                            } else {
+                                aiMessage
+                            }
+                            showMessage(finalMessage, durationMillis = 6000L, isInteractive = false)
                         } catch (e: Exception) {
-                            // If the AI fails in the background, we just stay quiet
+                            // If AI fails and we are offline, use local bank
+                            showMessage(getRandomFallbackMessage(), durationMillis = 6000L, isInteractive = false)
                         }
                     }
                 }
@@ -793,7 +799,12 @@ class NudgieViewModel(
                 // Let the AI know we just crushed a habit!
                 val currentStats = _uiState.value.petStats.copy(currentActivity = "JUST_COMPLETED_HABIT")
                 val aiPraise = generateContextualMessage(currentStats, emptyList())
-                showMessage(aiPraise, 4000L)
+                val finalPraise = if (aiPraise.startsWith("I'm having trouble thinking")) {
+                    "Great job! 🌟"
+                } else {
+                    aiPraise
+                }
+                showMessage(finalPraise, 4000L)
             } catch (e: Exception) {
                 showMessage("Great job! 🌟", 4000L)
             }
@@ -807,7 +818,12 @@ class NudgieViewModel(
                 try {
                     val levelStats = _uiState.value.petStats.copy(currentActivity = "JUST_LEVELED_UP")
                     val aiLevelUp = generateContextualMessage(levelStats, emptyList())
-                    showMessage(aiLevelUp, 6000L)
+                    val finalLevelUp = if (aiLevelUp.startsWith("I'm having trouble thinking")) {
+                        "Level UP! 🌟 Look at my stats now!"
+                    } else {
+                        aiLevelUp
+                    }
+                    showMessage(finalLevelUp, 6000L)
                 } catch (e: Exception) {
                     showMessage("Level UP! 🌟 Look at my stats now!", 6000L)
                 }
@@ -825,7 +841,12 @@ class NudgieViewModel(
                 // Temporarily flag the activity so the AI knows it is actively being pet
                 val currentStats = _uiState.value.petStats.copy(currentActivity = "GETTING_PET")
                 val aiMessage = generateContextualMessage(currentStats, emptyList())
-                showMessage(aiMessage, 3000L)
+                val finalMessage = if (aiMessage.startsWith("I'm having trouble thinking")) {
+                    "Purrrrr..."
+                } else {
+                    aiMessage
+                }
+                showMessage(finalMessage, 3000L)
             } catch (e: Exception) {
                 // Fallback just in case
                 showMessage("Purrrrr...", 2000L)
@@ -864,6 +885,21 @@ class NudgieViewModel(
     """.trimIndent()
 
         return geminiService.generateResponse(prompt)
+    }
+
+    private fun getRandomFallbackMessage(): String {
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+
+        return when {
+            _uiState.value.petStats.happiness < 50 -> PetDialogBank.sadThoughts.random()
+            _uiState.value.petStats.energy < 40 -> PetDialogBank.tiredThoughts.random()
+            hour in 5..11 -> PetDialogBank.morningGreetings.random()
+            hour in 12..16 -> PetDialogBank.afternoonGreetings.random()
+            hour in 17..21 -> PetDialogBank.eveningGreetings.random()
+            hour in 22..23 || hour in 0..4 -> PetDialogBank.lateNightGreetings.random()
+            else -> (PetDialogBank.idleThoughts + PetDialogBank.questions).random()
+        }
     }
 
     // --- PET DIALOGUE BANK ---

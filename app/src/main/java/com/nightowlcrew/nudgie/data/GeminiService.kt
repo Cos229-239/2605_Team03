@@ -37,7 +37,7 @@ class GeminiService {
             val response = chat.sendMessage(prompt)
             response.text ?: "..."
         } catch (e: Exception) {
-            android.util.Log.e("NUDGIE_AI_ERROR", "Firebase AI Logic call failed", e)
+            android.util.Log.e("NUDGIE_AI_ERROR", "Firebase AI Logica call failed", e)
             "I'm having trouble thinking: ${e.message}"
         }
     }
